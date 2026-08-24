@@ -227,6 +227,14 @@ actor HelperClient {
         }
     }
 
+    func leaseSnapshot(sessionID: UUID) async throws(ServiceFailure) -> LeaseSnapshot {
+        try await call(LeaseSnapshot.self) { proxy, box in
+            proxy.getLeaseSnapshot(sessionID: sessionID.uuidString) { data, error in
+                box.resume(with: HelperClient.result(data: data, error: error))
+            }
+        }
+    }
+
     func recoverStaleState() async throws(ServiceFailure) -> RecoveryReport {
         try await call(RecoveryReport.self) { proxy, box in
             proxy.recoverStaleState { data, error in

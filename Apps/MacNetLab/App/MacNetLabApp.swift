@@ -10,6 +10,7 @@ struct MacNetLabApp: App {
     @State private var interfaces = InterfaceMonitor()
     @State private var profiles = ProfileLibrary()
     @State private var session: SessionController
+    @State private var leases: LeaseMonitor
 
     private let environment: AppEnvironment
 
@@ -21,6 +22,7 @@ struct MacNetLabApp: App {
         // One XPC client shared by both: a second connection would mean the helper
         // serving two peers that each believe they own the session state.
         _session = State(wrappedValue: SessionController(client: helperStatus.client))
+        _leases = State(wrappedValue: LeaseMonitor(client: helperStatus.client))
     }
 
     var body: some Scene {
@@ -32,6 +34,7 @@ struct MacNetLabApp: App {
                 .environment(interfaces)
                 .environment(profiles)
                 .environment(session)
+                .environment(leases)
                 .environment(\.appEnvironment, environment)
                 // Ticket §10.2: check on launch so the user learns the helper needs
                 // attention immediately, rather than when Start fails.

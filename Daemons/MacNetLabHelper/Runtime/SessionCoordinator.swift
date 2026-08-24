@@ -50,6 +50,7 @@ actor SessionCoordinator {
     private var unexpectedExitHandler: (@Sendable (UnexpectedExitReport) -> Void)?
 
     private var exitWatcher: Task<Void, Never>?
+    private var leaseWatcher: LeaseFileWatcher?
 
     init(
         runtimeFiles: RuntimeFileManager,
@@ -306,6 +307,7 @@ actor SessionCoordinator {
             )
             state = .running(session)
             startWatchingForUnexpectedExit(session: session, digest: verification.sha256)
+            await startWatchingLeases(sessionID: sessionID, path: paths.leaseFile)
 
             logger.log(
                 """
@@ -535,6 +537,8 @@ actor SessionCoordinator {
         state = .stopping
         exitWatcher?.cancel()
         exitWatcher = nil
+        await leaseWatcher?.stop()
+        leaseWatcher = nil
 
         var journal = journalStore.read()
         if let current = journal {
@@ -661,6 +665,48 @@ actor SessionCoordinator {
         }
     }
 
+    // MARK: - Leases
+
+    /// Latest leases for a session, for a client that has just asked.
+    ///
+    /// Returns an empty snapshot rather than an error when nothing is running: "no session" is
+    /// a state the Leases page renders on purpose (ticket §5.4), not a failure.
+    func leaseSnapshot(sessionID: UUID) async -> LeaseSnapshot {
+        guard let watcher = leaseWatcher, activeSession?.id == sessionID else {
+            return LeaseSnapshot(
+                sessionID: sessionID, leases: [], readAt: clock(), malformedLineCount: 0
+            )
+        }
+        return await watcher.currentSnapshot()
+    }
+
+    private func startWatchingLeases(sessionID: UUID, path: String) async {
+        await leaseWatcher?.stop()
+
+        let watcher = LeaseFileWatcher(
+            sessionID: sessionID,
+            path: path,
+            clock: clock
+        ) { [weak self] snapshot in
+            Task { await self?.publishLeaseSnapshot(snapshot) }
+        }
+        leaseWatcher = watcher
+        await watcher.start()
+    }
+
+    private func publishLeaseSnapshot(_ snapshot: LeaseSnapshot) {
+        // Pushed rather than polled, so a device appearing shows up in under the two seconds
+        // ticket §25 asks for without the app asking every second.
+        leaseSnapshotHandler?(snapshot)
+    }
+
+    /// Notified whenever the lease set changes.
+    private var leaseSnapshotHandler: (@Sendable (LeaseSnapshot) -> Void)?
+
+    func setLeaseSnapshotHandler(_ handler: @escaping @Sendable (LeaseSnapshot) -> Void) {
+        leaseSnapshotHandler = handler
+    }
+
     // MARK: - Unexpected exit
 
     /// Watches for dnsmasq exiting without being asked (ticket §17.4).
@@ -696,6 +742,9 @@ actor SessionCoordinator {
             let tail = logPath
                 .flatMap { try? runtimeFiles.readFile(at: $0, maximumBytes: 64 * 1024) }
                 .map { $0.split(separator: "\n").suffix(100).map(String.init) } ?? []
+
+            await leaseWatcher?.stop()
+            leaseWatcher = nil
 
             let warnings = await removeOrphanedAlias(
                 journalStore.read() ?? Self.syntheticJournal(for: session, digest: digest)

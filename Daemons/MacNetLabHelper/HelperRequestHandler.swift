@@ -136,7 +136,17 @@ final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol, @unchecked 
         sessionID: String,
         withReply reply: @escaping @Sendable (Data?, NSError?) -> Void
     ) {
-        replyNotImplemented("getLeaseSnapshot", phase: 9, reply)
+        Task {
+            guard let identifier = UUID(uuidString: sessionID) else {
+                Self.respond(
+                    failure: ServiceFailure.invalidRequest("not a session identifier"),
+                    to: reply
+                )
+                return
+            }
+            let snapshot = await coordinator.leaseSnapshot(sessionID: identifier)
+            Self.respond(with: snapshot, to: reply)
+        }
     }
 
     func getLogSnapshot(
