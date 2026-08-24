@@ -170,22 +170,71 @@ if [[ -f "${DNSMASQ}" ]]; then
         fail "dnsmasq signature invalid"
     fi
 
+    # The digest is taken of the *unsigned* build artefact, not of the copy in the bundle.
+    #
+    # codesign writes the signature into the Mach-O itself, so the bundled file's bytes — and
+    # therefore its digest — necessarily differ from what came out of the compiler. Comparing
+    # the bundled copy against the build digest could never pass. What this check answers is
+    # "did we ship the dnsmasq we built?", and the dist copy is the right subject for it.
+    #
+    # Provenance of the copy that actually runs is established by its code signature, checked
+    # below and re-checked by the helper before every launch.
     EXPECTED_HASH_FILE="${REPO_ROOT}/Resources/ThirdParty/dnsmasq/BINARY_SHA256"
-    if [[ -f "${EXPECTED_HASH_FILE}" ]]; then
+    DIST_DNSMASQ="${REPO_ROOT}/Resources/ThirdParty/dnsmasq/dist/dnsmasq"
+    if [[ -f "${EXPECTED_HASH_FILE}" && -f "${DIST_DNSMASQ}" ]]; then
         expected="$(tr -d '[:space:]' < "${EXPECTED_HASH_FILE}")"
-        actual="$(shasum -a 256 "${DNSMASQ}" | awk '{print $1}')"
+        actual="$(shasum -a 256 "${DIST_DNSMASQ}" | awk '{print $1}')"
         [[ "${expected}" == "${actual}" ]] \
-            && pass "dnsmasq SHA-256 matches the recorded value" \
-            || fail "dnsmasq SHA-256 mismatch: expected ${expected}, got ${actual}"
+            && pass "vendored dnsmasq matches its recorded digest" \
+            || fail "vendored dnsmasq digest mismatch: expected ${expected}, got ${actual}"
     else
-        fail "no recorded dnsmasq hash at ${EXPECTED_HASH_FILE}"
+        fail "no recorded dnsmasq digest at ${EXPECTED_HASH_FILE}"
     fi
 
-    DNSMASQ_VERSION_OUTPUT="$("${DNSMASQ}" --version 2>/dev/null || true)"
-    if [[ "${DNSMASQ_VERSION_OUTPUT}" == *"Dnsmasq version"* ]]; then
-        pass "dnsmasq runs and reports a version"
+    # The bundled copy must satisfy the same requirement the helper will demand of it.
+    DNSMASQ_REQUIREMENT="anchor apple generic and certificate leaf[subject.OU] = \"${MNL_DEVELOPMENT_TEAM}\""
+    if codesign --verify -R="${DNSMASQ_REQUIREMENT}" "${DNSMASQ}" 2>/dev/null; then
+        pass "bundled dnsmasq is signed by team ${MNL_DEVELOPMENT_TEAM}"
     else
-        fail "dnsmasq did not report a version"
+        fail "bundled dnsmasq does not satisfy the team requirement"
+    fi
+
+    # Ticket §21.3: a binary a normal user can rewrite is a binary the root helper would
+    # happily execute.
+    if [[ -L "${DNSMASQ}" ]]; then
+        fail "bundled dnsmasq is a symlink"
+    else
+        pass "bundled dnsmasq is a regular file"
+    fi
+    if [[ -n "$(find "${DNSMASQ}" -perm -0022 2>/dev/null)" ]]; then
+        fail "bundled dnsmasq is group- or world-writable"
+    else
+        pass "bundled dnsmasq is not group- or world-writable"
+    fi
+
+    EXPECTED_VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/Resources/ThirdParty/dnsmasq/VERSION")"
+
+    DNSMASQ_VERSION_OUTPUT="$("${DNSMASQ}" --version 2>/dev/null || true)"
+    if [[ "${DNSMASQ_VERSION_OUTPUT}" == *"Dnsmasq version ${EXPECTED_VERSION}"* ]]; then
+        pass "bundled dnsmasq reports version ${EXPECTED_VERSION}"
+    else
+        fail "bundled dnsmasq did not report version ${EXPECTED_VERSION}"
+    fi
+
+    # Ticket §3.5: features that are not compiled in cannot be reached by a configuration
+    # mistake and cannot carry a vulnerability. Asserted on the shipped copy, not just at
+    # build time, because this is the binary that will actually run.
+    for feature in TFTP DHCPv6 auth dumpfile; do
+        if [[ " ${DNSMASQ_VERSION_OUTPUT} " == *" ${feature} "* ]]; then
+            fail "bundled dnsmasq has ${feature} compiled in"
+        else
+            pass "bundled dnsmasq has no ${feature}"
+        fi
+    done
+    if [[ " ${DNSMASQ_VERSION_OUTPUT} " == *" DHCP "* ]]; then
+        pass "bundled dnsmasq has DHCP compiled in"
+    else
+        fail "bundled dnsmasq has no DHCP support"
     fi
 else
     # Phase 4 vendors dnsmasq. Before then its absence is expected, and reporting it as a

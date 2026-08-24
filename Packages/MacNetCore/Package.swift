@@ -42,7 +42,14 @@ let package = Package(
         .target(name: "MacNetXPC", dependencies: ["MacNetModels"]),
 
         .testTarget(name: "MacNetValidationTests", dependencies: ["MacNetValidation"]),
-        .testTarget(name: "MacNetDnsmasqTests", dependencies: ["MacNetDnsmasq"]),
+        // Golden files rather than inline literals: the expected dnsmasq configuration is
+        // the specification, and keeping it as a readable file makes a diff in review show
+        // exactly what changed about the generated output.
+        .testTarget(
+            name: "MacNetDnsmasqTests",
+            dependencies: ["MacNetDnsmasq"],
+            resources: [.copy("Golden")]
+        ),
         .testTarget(name: "MacNetLeaseTests", dependencies: ["MacNetLeases"]),
         .testTarget(name: "MacNetLoggingTests", dependencies: ["MacNetLogging"]),
         .testTarget(name: "MacNetXPCTests", dependencies: ["MacNetXPC"]),

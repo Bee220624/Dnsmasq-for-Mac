@@ -1,9 +1,15 @@
 #!/bin/bash
-# Render the LaunchDaemon plist template into the built app bundle.
+# Stage the helper's payload into the built app bundle.
 #
-# Runs as a post-build phase of the MacNetLab target. The plist cannot simply be copied,
-# because its Label, Mach service name, and BundleProgram path all come from
-# Config/Identifiers.xcconfig.
+# Runs as a post-build phase of the MacNetLab target and does two things:
+#
+#   1. Renders the LaunchDaemon plist template. It cannot simply be copied, because its
+#      Label, Mach service name, and BundleProgram path all come from
+#      Config/Identifiers.xcconfig.
+#   2. Copies the vendored dnsmasq next to the helper and signs it.
+#
+# Both land under Contents/Library, and both must be in place before Xcode's own code signing
+# phase seals the bundle.
 
 set -euo pipefail
 
@@ -49,3 +55,42 @@ if [[ "${PARSED_VALUES}" =~ @[A-Z_]+@ ]]; then
 fi
 
 echo "==> embedded ${OUTPUT}"
+
+# --- dnsmasq -----------------------------------------------------------------------------
+DNSMASQ_SOURCE="${REPO_ROOT}/Resources/ThirdParty/dnsmasq/dist/dnsmasq"
+HELPER_TOOLS_DIR="${APP_PATH}/Contents/Library/HelperTools"
+DNSMASQ_DEST="${HELPER_TOOLS_DIR}/dnsmasq"
+
+if [[ ! -f "${DNSMASQ_SOURCE}" ]]; then
+    # Not fatal: the app and helper are perfectly buildable before dnsmasq has been vendored,
+    # and failing here would block every build until someone ran a network-dependent step.
+    # Scripts/verify-bundle.sh reports the absence, and the helper refuses to start a session
+    # without a verified binary, so this cannot be mistaken for a working build.
+    echo "warning: no vendored dnsmasq at ${DNSMASQ_SOURCE}; run 'make vendor-dnsmasq'" >&2
+    exit 0
+fi
+
+mkdir -p "${HELPER_TOOLS_DIR}"
+# ditto rather than cp: it preserves the extended attributes a signature lives in.
+ditto "${DNSMASQ_SOURCE}" "${DNSMASQ_DEST}"
+
+# The digest the helper checks is of the file as it sits in the bundle, so verify it here —
+# a copy that changed the bytes would otherwise only be discovered at launch.
+EXPECTED_DIGEST="$(tr -d '[:space:]' < "${REPO_ROOT}/Resources/ThirdParty/dnsmasq/BINARY_SHA256")"
+ACTUAL_DIGEST="$(shasum -a 256 "${DNSMASQ_DEST}" | awk '{print $1}')"
+if [[ "${EXPECTED_DIGEST}" != "${ACTUAL_DIGEST}" ]]; then
+    echo "error: staged dnsmasq does not match its recorded digest" >&2
+    echo "       expected ${EXPECTED_DIGEST}" >&2
+    echo "         actual ${ACTUAL_DIGEST}" >&2
+    exit 1
+fi
+
+# Xcode signs nested code it placed itself; a file added by a script is invisible to it, so
+# this signs dnsmasq explicitly before the outer bundle signature seals it.
+if [[ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" ]]; then
+    codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY}" \
+        --options runtime --timestamp=none "${DNSMASQ_DEST}"
+    echo "==> signed ${DNSMASQ_DEST}"
+fi
+
+echo "==> embedded dnsmasq (${ACTUAL_DIGEST})"

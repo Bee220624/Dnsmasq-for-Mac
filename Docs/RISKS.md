@@ -124,6 +124,12 @@ compiled into the app executable, keeping the boundary at arm's length. `COPYING
 `COPYING-v3`, the exact version, the official source URL, the build script, and any patches
 are retained and surfaced in Settings → Licenses.
 
+*Release gate.* The source archive is deliberately not committed to git — the build fetches it
+from a pinned URL and verifies a pinned digest, which is better than a blob in history. But
+reproducibility is not the same as the distribution obligation: `Scripts/package-release.sh`
+must ship the verified `dnsmasq-<VERSION>.tar.xz`, `Scripts/build-dnsmasq.sh`, and both
+licence texts *alongside the distributed app*, not merely cite where they came from.
+
 *Owner action required.* Ticket §23 is explicit that the final licence of MacNetLab itself is
 **not** an implementation decision. A legal review is required before commercial
 distribution. `LICENSE_PENDING` is intentionally left in place.
@@ -225,3 +231,71 @@ make test-ui
 
 and answer the authorization prompt once. Thereafter the grant persists for that machine,
 and `make test-all` runs the complete suite unattended.
+
+---
+
+## R-12 — The dnsmasq signing key's provenance is asserted, not independently established
+
+**Severity:** S2 · **Status:** `blocked-on-owner` · **Phase:** 4
+
+`Scripts/build-dnsmasq.sh` verifies the upstream archive two ways: its SHA-256 must match
+`Resources/ThirdParty/dnsmasq/SHA256SUMS`, and its detached OpenPGP signature must verify
+**and** be made by the fingerprint in `SIGNING_KEY_FINGERPRINT`:
+
+```
+D6EACBD6EE46B834248D111215CDDA6AE19135A2
+```
+
+That key carries the user IDs `Simon Kelley <simon@thekelleys.org.uk>` and
+`Simon Kelley <srk@debian.org>`, and the signature on the 2.93 archive verifies against it.
+
+*The gap.* The fingerprint was taken from the signature it is used to check. The upstream site
+publishes no key file, and the archive contains none, so within this repository the assertion
+is self-referential: it proves the archive was signed by whoever signed it. Pinning the
+fingerprint still has real value — it means a compromised keyserver produces a build failure
+rather than a silent key substitution — but it is not a trust root.
+
+*Mitigation.* The SHA-256 pin is independent of the signature entirely, and is the check that
+actually holds the line for the specific artefact vetted here. Both must pass.
+
+*Owner action required.* Corroborate the fingerprint against a source that does not derive
+from thekelleys.org.uk. The Debian keyring is the natural choice, since the same person
+maintains dnsmasq there. Record the result in
+`Resources/ThirdParty/dnsmasq/SIGNING_KEY_FINGERPRINT` alongside where it was confirmed.
+
+---
+
+## R-13 — Ticket §21.3's launch-time SHA-256 check is not constructible as written
+
+**Severity:** S2 · **Status:** `mitigated` · **Phases:** 4, 7
+
+Ticket §21.3 specifies: compute the dnsmasq digest at build time, generate a Swift constant
+from it, and have the helper recompute the digest before every launch and refuse to start on a
+mismatch.
+
+*Why it cannot work as written.* `codesign` embeds the signature **inside** the Mach-O, so the
+bytes of dnsmasq in the app bundle necessarily differ from the bytes the compiler produced.
+The helper is compiled before dnsmasq is copied in and signed, so no constant compiled into
+the helper can describe the signed file. The signing identity also differs between Debug
+(Apple Development) and Release (Developer ID), so there is no single value that could be
+correct for both. Implemented literally, the check would fail on every launch.
+
+*What is implemented instead*, meeting the requirement's intent — never execute a dnsmasq that
+is not the one we shipped:
+
+1. **Code signature.** Before launching, the helper verifies the bundled dnsmasq against a
+   requirement pinning our Team ID — the same mechanism that authenticates the XPC peer. This
+   is stronger than a digest: it proves provenance rather than matching a number that an
+   attacker able to replace the binary could equally replace.
+2. **File properties.** Regular file, not a symlink, not group- or world-writable.
+3. **Version.** `--version` must report the pinned upstream version, and must show `DHCP`
+   compiled in and TFTP, DHCPv6, auth, and dumpfile absent.
+4. **Build-time digest.** The SHA-256 of the *unsigned* build artefact is recorded in
+   `BINARY_SHA256` and `DnsmasqBinaryIdentity.expectedSHA256`, and `verify-bundle.sh` checks
+   it against `dist/dnsmasq`. This answers a different and still useful question: did we ship
+   the dnsmasq we built?
+
+*Owner action.* This is a deliberate deviation from the ticket text. Confirm the substitution
+is acceptable, or specify a two-pass build that signs dnsmasq, digests the signed file, then
+rebuilds the helper with that value — at the cost of a build that must run twice and a digest
+that differs per signing identity.

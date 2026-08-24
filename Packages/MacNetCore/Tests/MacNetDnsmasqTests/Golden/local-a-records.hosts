@@ -1,0 +1,3 @@
+192.168.50.20 bmc01.lab.test bmc01
+192.168.50.22 switch01.other.test
+192.168.50.21 web.lab.test web
