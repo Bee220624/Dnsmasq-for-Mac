@@ -20,6 +20,7 @@ let package = Package(
         .library(name: "MacNetLeases", targets: ["MacNetLeases"]),
         .library(name: "MacNetLogging", targets: ["MacNetLogging"]),
         .library(name: "MacNetXPC", targets: ["MacNetXPC"]),
+        .library(name: "MacNetInterfaces", targets: ["MacNetInterfaces"]),
     ],
     targets: [
         // Value types crossing the XPC boundary. No behaviour beyond Codable conformance.
@@ -41,6 +42,15 @@ let package = Package(
         // XPC protocol declaration and request/response envelopes.
         .target(name: "MacNetXPC", dependencies: ["MacNetModels"]),
 
+        // Network interface enumeration and the policy deciding which may host a
+        // session.
+        //
+        // Shared rather than duplicated in the app and the helper: ticket §12.4 requires
+        // the helper to re-enumerate and re-decide rather than trusting what the app
+        // sent, and two implementations of "is this interface safe to serve DHCP on"
+        // would eventually disagree. The one that mattered would be whichever was wrong.
+        .target(name: "MacNetInterfaces", dependencies: ["MacNetModels", "MacNetValidation"]),
+
         .testTarget(name: "MacNetValidationTests", dependencies: ["MacNetValidation"]),
         // Golden files rather than inline literals: the expected dnsmasq configuration is
         // the specification, and keeping it as a readable file makes a diff in review show
@@ -53,6 +63,7 @@ let package = Package(
         .testTarget(name: "MacNetLeaseTests", dependencies: ["MacNetLeases"]),
         .testTarget(name: "MacNetLoggingTests", dependencies: ["MacNetLogging"]),
         .testTarget(name: "MacNetXPCTests", dependencies: ["MacNetXPC"]),
+        .testTarget(name: "MacNetInterfaceTests", dependencies: ["MacNetInterfaces"]),
     ],
     swiftLanguageModes: [.v6]
 )

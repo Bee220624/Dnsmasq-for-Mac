@@ -60,6 +60,8 @@ targets:
         product: MacNetLogging
       - package: MacNetCore
         product: MacNetXPC
+      - package: MacNetCore
+        product: MacNetInterfaces
       # The helper ships inside the app bundle. SMAppService resolves it relative to the
       # bundle, so it must be copied — never embedded as a framework — and re-signed.
       # `embed` must stay true: XcodeGen only emits a Copy Files phase for an embedded
@@ -113,6 +115,8 @@ targets:
         product: MacNetLogging
       - package: MacNetCore
         product: MacNetXPC
+      - package: MacNetCore
+        product: MacNetInterfaces
 
   # ---------------------------------------------------------------------------------------
   # Integration tests for helper runtime logic, driven entirely through injected fakes so

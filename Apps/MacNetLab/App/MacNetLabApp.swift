@@ -7,6 +7,7 @@ struct MacNetLabApp: App {
     @State private var appState = AppState()
     @State private var router = AppRouter()
     @State private var helperStatus: HelperStatusModel
+    @State private var interfaces = InterfaceMonitor()
 
     private let environment: AppEnvironment
 
@@ -22,10 +23,15 @@ struct MacNetLabApp: App {
                 .environment(appState)
                 .environment(router)
                 .environment(helperStatus)
+                .environment(interfaces)
                 .environment(\.appEnvironment, environment)
                 // Ticket §10.2: check on launch so the user learns the helper needs
                 // attention immediately, rather than when Start fails.
                 .task { await helperStatus.refresh() }
+                // Enumerate immediately and keep watching: an adapter plugged in while
+                // the app is open should appear without the user hunting for a refresh.
+                .onAppear { interfaces.start() }
+                .onDisappear { interfaces.stop() }
                 // Ticket §5.1: minimum window 1000 x 680.
                 .frame(minWidth: 1000, minHeight: 680)
         }
