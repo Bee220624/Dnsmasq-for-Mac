@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- App Sandbox is intentionally NOT enabled in v0.1.
+	     Ticket §12 forbids enabling it without full testing, and a sandboxed app cannot
+	     register a SMAppService LaunchDaemon or reach its Mach service without a set of
+	     temporary exceptions that would weaken, not strengthen, the security posture.
+	     The privilege boundary in this product is the helper's caller validation
+	     (ticket §10.4), not the sandbox. Revisit as its own ticket. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+</dict>
+</plist>

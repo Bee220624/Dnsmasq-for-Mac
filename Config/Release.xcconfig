@@ -1,0 +1,22 @@
+// Release.xcconfig
+
+#include "Base.xcconfig"
+
+SWIFT_OPTIMIZATION_LEVEL = -O
+SWIFT_COMPILATION_MODE = wholemodule
+GCC_OPTIMIZATION_LEVEL = s
+ONLY_ACTIVE_ARCH = NO
+ENABLE_TESTABILITY = NO
+
+// Release must produce a Universal 2 binary (ticket header).
+ARCHS = arm64 x86_64
+
+// DEBUG is deliberately absent: ticket §10.4 requires that the relaxed helper security
+// policy cannot exist in a release build. Scripts/verify-bundle.sh asserts this.
+SWIFT_ACTIVE_COMPILATION_CONDITIONS =
+GCC_PREPROCESSOR_DEFINITIONS = $(inherited)
+
+// Ticket §12 requires Developer ID signing for distribution. Not available in this
+// environment — see Docs/RISKS.md R-01. Left as the intended value so that a machine with
+// the certificate installed builds correctly with no further edits.
+CODE_SIGN_IDENTITY = Developer ID Application

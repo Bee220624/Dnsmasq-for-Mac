@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+
+	<key>MNLMachServiceName</key>
+	<string>$(MACH_SERVICE_NAME)</string>
+	<key>MNLProtocolVersion</key>
+	<string>$(PROTOCOL_VERSION)</string>
+	<!-- Team ID the caller's code signature must carry. Read by CallerValidator so that
+	     the requirement is enforced in code, not only declared in SMAuthorizedClients. -->
+	<key>MNLTeamIdentifier</key>
+	<string>$(DEVELOPMENT_TEAM)</string>
+
+	<!-- Bundle identifiers of clients permitted to drive this helper. Enforced in code by
+	     CallerValidator against the connection's audit token, not merely declared here. -->
+	<key>SMAuthorizedClients</key>
+	<array>
+		<string>identifier "$(APP_BUNDLE_ID)" and anchor apple generic and certificate leaf[subject.OU] = "$(DEVELOPMENT_TEAM)"</string>
+	</array>
+</dict>
+</plist>

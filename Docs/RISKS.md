@@ -189,3 +189,39 @@ flow and Login Items UI differ between the two.
 *Mitigation.* Deployment target is pinned to 14.0 in `Config/Base.xcconfig` so the compiler
 rejects newer-only API. Final manual verification on a genuine macOS 14 machine is a release
 gate recorded in `Docs/MANUAL_TEST_PLAN.md`.
+
+---
+
+## R-11 — UI tests require an interactive macOS authorization
+
+**Severity:** S3 · **Status:** `blocked-on-owner` · **Phase:** 1 (affects every phase with UI tests)
+
+XCUITest must ask macOS for permission to drive another application. On this machine the
+runner fails immediately with:
+
+```
+Failed to initialize for UI testing: Error Domain=com.apple.LocalAuthentication Code=-4
+"System authentication is running." BiometryType=1
+```
+
+and `xcodebuild` then waits indefinitely. The prompt is a LocalAuthentication challenge
+(Touch ID or password) that only a human at the keyboard can answer; there is no API or flag
+to grant it. Reproduced twice, from a clean process state.
+
+*Impact.* UI tests cannot be executed in a non-interactive session. They are written and
+compile as part of every build, but their assertions are unverified here.
+
+*Mitigation.* `make test` runs the package suites and the integration suites only, so
+automation and CI stay green and meaningful. The UI suites are their own target,
+`make test-ui`, run by `make test-all`. Nothing is deleted, skipped, or weakened — ticket
+§0.1 forbids resolving a failing test by removing it, and this is an environment
+authorization gap rather than a failing assertion.
+
+*Owner action required.* On a machine with a logged-in user present, run:
+
+```
+make test-ui
+```
+
+and answer the authorization prompt once. Thereafter the grant persists for that machine,
+and `make test-all` runs the complete suite unattended.

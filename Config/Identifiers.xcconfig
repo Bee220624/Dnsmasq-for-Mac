@@ -1,0 +1,33 @@
+// Identifiers.xcconfig
+//
+// Single source of truth for every identifier in the project (ticket §3.1).
+// Nothing below may be hardcoded anywhere else in the codebase; Swift code reads these
+// through generated build settings / Info.plist, and shell scripts read them by parsing
+// this file. Renaming the product before release is a change to this file only.
+
+PRODUCT_NAME_BASE = MacNetLab
+
+APP_BUNDLE_ID = com.bee.macnetlab
+HELPER_LABEL = com.bee.macnetlab.helper
+MACH_SERVICE_NAME = com.bee.macnetlab.helper
+
+// Helper bundle identifier must equal the LaunchDaemon label so that SMAppService can
+// match the embedded plist to the embedded executable.
+HELPER_BUNDLE_ID = $(HELPER_LABEL)
+
+// XPC contract version. Bump on ANY breaking change to MacNetLabHelperProtocol or to the
+// JSON payloads exchanged across it. App refuses to talk to a helper with a different value.
+PROTOCOL_VERSION = 1
+
+// Marketing / build version.
+APP_VERSION = 0.1.0
+APP_BUILD = 1
+
+// Signing. Team ID is required by the helper's caller validation, not just by codesign.
+DEVELOPMENT_TEAM = MDUMXF88CA
+
+// Runtime state directory owned by the helper (root). Never supplied by the app.
+HELPER_RUNTIME_ROOT = /var/db/com.bee.macnetlab
+
+// User-level data directory for profiles. Never written by the helper.
+APP_SUPPORT_DIR_NAME = com.bee.macnetlab

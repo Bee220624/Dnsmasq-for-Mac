@@ -1,0 +1,173 @@
+# XcodeGen project definition.
+#
+# This file is the source of truth for the Xcode project (ticket §4.1). project.pbxproj is
+# generated output and must never be hand-edited; run `make generate` after changing this.
+
+name: MacNetLab
+
+options:
+  bundleIdPrefix: com.bee
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  generateEmptyDirectories: false
+  minimumXcodeGenVersion: "2.38.0"
+
+# All build settings come from xcconfig files so that identifiers live in exactly one place.
+configFiles:
+  Debug: Config/Debug.xcconfig
+  Release: Config/Release.xcconfig
+
+packages:
+  MacNetCore:
+    path: Packages/MacNetCore
+
+targets:
+
+  # ---------------------------------------------------------------------------------------
+  # The SwiftUI application. Runs as the logged-in user and is never root.
+  # ---------------------------------------------------------------------------------------
+  MacNetLab:
+    type: application
+    platform: macOS
+    sources:
+      - path: Apps/MacNetLab
+        excludes:
+          - "Info.plist"
+          - "MacNetLab.entitlements"
+    settings:
+      base:
+        PRODUCT_NAME: $(PRODUCT_NAME_BASE)
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
+        INFOPLIST_FILE: Apps/MacNetLab/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Apps/MacNetLab/MacNetLab.entitlements
+        ENABLE_PREVIEWS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/../Frameworks
+    dependencies:
+      - package: MacNetCore
+        product: MacNetModels
+      - package: MacNetCore
+        product: MacNetValidation
+      - package: MacNetCore
+        product: MacNetDnsmasq
+      - package: MacNetCore
+        product: MacNetLeases
+      - package: MacNetCore
+        product: MacNetLogging
+      - package: MacNetCore
+        product: MacNetXPC
+      # The helper ships inside the app bundle. SMAppService resolves it relative to the
+      # bundle, so it must be copied — never embedded as a framework — and re-signed.
+      # `embed` must stay true: XcodeGen only emits a Copy Files phase for an embedded
+      # dependency, and `copy` merely redirects where that phase puts it.
+      - target: MacNetLabHelper
+        embed: true
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Contents/Library/HelperTools
+    postBuildScripts:
+      - name: Embed LaunchDaemon plist
+        script: |
+          "${SRCROOT}/Scripts/embed-helper.sh"
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/Library/LaunchDaemons/$(HELPER_LABEL).plist
+
+  # ---------------------------------------------------------------------------------------
+  # Privileged helper. Runs as root under launchd; started on demand via its Mach service.
+  # Product name must equal the LaunchDaemon label so BundleProgram resolves.
+  # ---------------------------------------------------------------------------------------
+  MacNetLabHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Daemons/MacNetLabHelper
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: $(HELPER_LABEL)
+        PRODUCT_BUNDLE_IDENTIFIER: $(HELPER_BUNDLE_ID)
+        # A tool has no bundle, so its Info.plist is linked into the binary as a __TEXT
+        # section. Bundle.main.infoDictionary reads it back at runtime.
+        INFOPLIST_FILE: Daemons/MacNetLabHelper/Info.plist
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        SKIP_INSTALL: YES
+        # Ticket §10: the helper links only the shared core. No AppKit, no SwiftUI.
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/../../../Frameworks
+    dependencies:
+      - package: MacNetCore
+        product: MacNetModels
+      - package: MacNetCore
+        product: MacNetValidation
+      - package: MacNetCore
+        product: MacNetDnsmasq
+      - package: MacNetCore
+        product: MacNetLeases
+      - package: MacNetCore
+        product: MacNetLogging
+      - package: MacNetCore
+        product: MacNetXPC
+
+  # ---------------------------------------------------------------------------------------
+  # Integration tests for helper runtime logic, driven entirely through injected fakes so
+  # that no test requires root (ticket §24.2).
+  # ---------------------------------------------------------------------------------------
+  HelperIntegrationTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/HelperIntegrationTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).helper-integration-tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - package: MacNetCore
+        product: MacNetModels
+      - package: MacNetCore
+        product: MacNetValidation
+      - package: MacNetCore
+        product: MacNetDnsmasq
+
+  # ---------------------------------------------------------------------------------------
+  # UI tests (ticket §24.3).
+  # ---------------------------------------------------------------------------------------
+  MacNetLabUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: Tests/MacNetLabUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).ui-tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: MacNetLab
+    dependencies:
+      - target: MacNetLab
+
+schemes:
+  MacNetLab:
+    build:
+      targets:
+        MacNetLab: all
+        MacNetLabHelper: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - HelperIntegrationTests
+        - MacNetLabUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
