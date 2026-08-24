@@ -14,6 +14,11 @@ DERIVED_DATA := build/DerivedData
 XCB          := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED_DATA)
 
 # Keep xcodebuild output readable without hiding failures.
+#
+# A plain `tail` is wrong for tests: with more than one test bundle it truncates away an
+# earlier bundle's summary, so a run can look like it covered less than it did — or hide a
+# failure entirely. XCB_FILTER keeps every failure, every error, and each bundle's own summary.
+XCB_FILTER := | grep -E "error:|Test run with|Executed .* test|\*\* (BUILD|TEST) (SUCCEEDED|FAILED)|recorded an issue" || true
 XCPRETTY := | tail -40
 
 .PHONY: help bootstrap generate build test test-all test-package test-xcode test-ui \
@@ -51,9 +56,9 @@ test-package:
 
 test-xcode: generate
 	@echo "==> xcodebuild test ($(SCHEME)) — integration targets"
-	@set -o pipefail; $(XCB) -configuration Debug \
+	@$(XCB) -configuration Debug \
 		-only-testing:HelperIntegrationTests \
-		-only-testing:MacNetLabTests test $(XCPRETTY)
+		-only-testing:MacNetLabTests test $(XCB_FILTER)
 
 # UI tests are separated from the default `test` target on purpose.
 #
@@ -66,8 +71,8 @@ test-xcode: generate
 test-ui: generate
 	@echo "==> xcodebuild test ($(SCHEME)) — UI targets"
 	@echo "    Requires a one-time authorization; see Docs/RISKS.md R-11."
-	@set -o pipefail; $(XCB) -configuration Debug \
-		-only-testing:MacNetLabUITests test $(XCPRETTY)
+	@$(XCB) -configuration Debug \
+		-only-testing:MacNetLabUITests test $(XCB_FILTER)
 
 test: test-package test-xcode
 

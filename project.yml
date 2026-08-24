@@ -127,6 +127,13 @@ targets:
     platform: macOS
     sources:
       - path: Tests/HelperIntegrationTests
+      # The helper's own sources are compiled into the test bundle so its runtime logic can be
+      # driven against fakes. main.swift is excluded because top-level executable code cannot
+      # live in a bundle, and Info.plist is not source.
+      - path: Daemons/MacNetLabHelper
+        excludes:
+          - "main.swift"
+          - "Info.plist"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).helper-integration-tests
@@ -138,6 +145,14 @@ targets:
         product: MacNetValidation
       - package: MacNetCore
         product: MacNetDnsmasq
+      - package: MacNetCore
+        product: MacNetXPC
+      - package: MacNetCore
+        product: MacNetInterfaces
+      - package: MacNetCore
+        product: MacNetLeases
+      - package: MacNetCore
+        product: MacNetLogging
 
   # ---------------------------------------------------------------------------------------
   # Unit tests for app-process logic that cannot live in the shared package.
