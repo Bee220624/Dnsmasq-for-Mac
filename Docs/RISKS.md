@@ -1,0 +1,191 @@
+# MacNetLab v0.1 — Risk Register
+
+Ticket: **MNL-001**. Opened during Phase 0 on **2026-08-25**.
+
+Severity: **S1** blocks release · **S2** blocks a feature · **S3** degrades quality.
+Status: `open` · `mitigated` · `accepted` · `blocked-on-owner`.
+
+---
+
+## R-01 — No Developer ID certificate; release signing and notarization cannot be completed
+
+**Severity:** S1 · **Status:** `blocked-on-owner` · **Phases:** 2, 12
+
+The only codesigning identity on this machine is `Apple Development` (Team `MDUMXF88CA`).
+Phase 12 requires a `Developer ID Application` certificate plus notarization credentials
+for stapled, off-store distribution.
+
+*Impact.* Phase 12 cannot be finished here. Phase 2 is **not** blocked: `SMAppService`
+daemon registration works with a development-signed app for local testing, with the user
+approving the daemon in System Settings → General → Login Items.
+
+*Mitigation.* `DEVELOPMENT_TEAM` and the signing identity live only in
+`Config/Identifiers.xcconfig`. All signing behaviour is driven from `Scripts/build-release.sh`
+and validated by `Scripts/verify-bundle.sh`, so switching identities is a one-file change
+plus a re-run. Everything not dependent on Developer ID is implemented and tested.
+
+*Owner action required.* Enrol/obtain a Developer ID Application certificate and configure
+a notarytool keychain profile, then run `make verify-bundle` and the Phase 12 checklist.
+
+---
+
+## R-02 — `SMAppService` daemon approval is user-gated and cannot be scripted
+
+**Severity:** S2 · **Status:** `open` · **Phase:** 2
+
+`SMAppService.daemon(plistName:).register()` may return `requiresApproval`, leaving the
+daemon disabled until a human toggles it in System Settings. There is no API to grant this,
+and it is deliberately not scriptable.
+
+*Impact.* No fully automated end-to-end test of the privileged path is possible; the first
+run on any machine needs one manual approval.
+
+*Mitigation.* Ticket §10.2 is implemented literally: never loop on `register()`, surface the
+exact status, offer **Open Login Items Settings**, and observe status changes so the app
+reconnects once approval lands. The manual step is scripted as far as it can be in
+`Scripts/install-dev-app.sh` and documented in `Docs/PRIVILEGED_HELPER.md`.
+
+*Also note.* The app must run from a stable location. A daemon registered from a
+`DerivedData` path breaks as soon as that path changes, so the dev install script stages the
+app into `/Applications`.
+
+---
+
+## R-03 — Helper caller validation is the single security boundary
+
+**Severity:** S1 · **Status:** `open` · **Phases:** 2, 7
+
+The helper runs as root and accepts XPC from the app. If caller validation is weak, any
+local process gains a root-privileged network-configuration interface.
+
+*Impact.* Worst case is local privilege escalation.
+
+*Mitigation.* `CallerValidator` verifies the peer via its **audit token**
+(`SecCodeCopyGuestWithAttributes` + `kSecGuestAttributeAudit`) against a designated
+requirement pinning both bundle identifier and Team ID — never UID, PID, executable name, or
+bundle path. Per ticket §10.4 the relaxed development policy is compiled out entirely under
+`#if DEBUG`; `Scripts/verify-bundle.sh` fails the build if a release bundle carries the debug
+security flag. Malicious-input coverage lives in the security unit tests (§24.1).
+
+*Residual.* Audit-token APIs used here are effectively required for correctness but parts are
+not formally public API. Reviewed against Apple's own sample guidance; revisit on each major
+macOS release.
+
+---
+
+## R-04 — DHCP on a production network can cause an outage
+
+**Severity:** S1 · **Status:** `mitigated` · **Phases:** 5, 8
+
+A rogue DHCP server on a live network hands out addresses to machines that already have
+them. In a datacenter this is a serious, visible incident.
+
+*Mitigation.* Layered and enforced in the helper, not only the UI:
+Wi-Fi is permanently barred from DHCP in v0.1; the current default-route interface is
+barred; loopback/VPN/bridge/AWDL/utun are barred; an explicit isolation confirmation is
+required, is never persisted, and resets on stop, interface change, and pool change; the
+listener is pinned with `interface=`/`bind-interfaces`; and UDP 67 is probed both during
+preflight and again after the alias is added.
+
+*Residual.* No amount of software can tell an isolated lab switch from a production one.
+The confirmation checkbox is the last line of defence and is deliberately unskippable.
+
+---
+
+## R-05 — Temporary IP alias can leak if rollback fails
+
+**Severity:** S2 · **Status:** `open` · **Phases:** 8, 13
+
+An alias added to an interface but not removed leaves the Mac holding an address it should
+not have, which can itself cause a conflict.
+
+*Mitigation.* Every side effect is recorded in an atomically-updated journal
+(`/var/db/com.bee.macnetlab/active-session.json`) before and after it happens. Start is a
+transaction with reverse-order rollback (§15.2). Only aliases recorded with
+`aliasAddedByApp = true` are ever removed, so a user's own addresses are never touched.
+Removal is verified with `getifaddrs`. On helper restart the journal drives recovery.
+
+*Residual.* If alias removal genuinely fails, the app must not hide it: state moves to
+cleanup-failure and the UI shows the exact interface, address, and a manual recovery command.
+A hard power loss between two journal writes is handled by the recovery path on next start.
+
+---
+
+## R-06 — dnsmasq is GPL; distribution obligations must be met
+
+**Severity:** S1 · **Status:** `blocked-on-owner` · **Phases:** 4, 23
+
+dnsmasq is licensed GPL v2 *or* GPL v3, at the distributor's choice. Shipping it inside a
+distributed `.app` triggers source-availability and notice obligations.
+
+*Mitigation.* dnsmasq stays a **separate executable**, invoked via config file and process
+management. No dnsmasq object code is linked into any Swift binary and no dnsmasq C source is
+compiled into the app executable, keeping the boundary at arm's length. `COPYING`,
+`COPYING-v3`, the exact version, the official source URL, the build script, and any patches
+are retained and surfaced in Settings → Licenses.
+
+*Owner action required.* Ticket §23 is explicit that the final licence of MacNetLab itself is
+**not** an implementation decision. A legal review is required before commercial
+distribution. `LICENSE_PENDING` is intentionally left in place.
+
+---
+
+## R-07 — Universal 2 build correctness
+
+**Severity:** S2 · **Status:** `open` · **Phase:** 4
+
+dnsmasq is a C project built via its own Makefile, not Xcode. Building two architectures in
+one tree easily produces object-file cross-contamination, and a stray Homebrew include path
+silently introduces a `/opt/homebrew` dylib dependency that will fail on a clean Mac.
+
+*Mitigation.* `Scripts/build-dnsmasq.sh` uses a **separate clean build directory per
+architecture**, merges with `lipo`, then asserts on the merged binary: both slices present via
+`lipo -info`; `otool -L` shows system libraries only; and `--version` output confirms `DHCP`
+is compiled in while TFTP, DHCPv6, scripts, auth, and dumpfile are not. `verify-bundle.sh`
+repeats the architecture and dependency assertions on the shipped bundle.
+
+*Note.* This host is arm64 only, so the x86_64 slice is cross-compiled and **cannot be
+executed here**. Runtime verification of the Intel slice requires an Intel Mac or Rosetta.
+
+---
+
+## R-08 — dnsmasq privilege drop to `nobody` is unverified on macOS
+
+**Severity:** S2 · **Status:** `open` · **Phases:** 4, 8
+
+The generated config sets `user=nobody` / `group=nobody` per ticket §9.2. On macOS `nobody`
+is uid/gid `-2` (`4294967294` unsigned), which is unusual compared with Linux. dnsmasq opens
+its DHCP, raw, and ICMP sockets before dropping privileges, so this is expected to work, but
+it is not proven on this platform.
+
+*Impact.* If the drop fails, dnsmasq exits at startup and Start fails cleanly — a visible
+failure, not a silent one.
+
+*Mitigation.* Runtime files (`dnsmasq.leases`, `dnsmasq.log`, `dnsmasq.pid`) are pre-created
+`nobody:nobody 0640` so dnsmasq never needs write access to the session directory itself.
+Must be confirmed by the Phase 8 integration test and Manual Test A before release.
+
+---
+
+## R-09 — Preflight-to-start race on port availability
+
+**Severity:** S3 · **Status:** `mitigated` · **Phases:** 14, 15
+
+Ports 53/67 can be taken by another process between preflight and start.
+
+*Mitigation.* Ticket §15 Step 12 re-probes UDP 67 and TCP/UDP 53 *after* the alias is added
+and immediately before launch; a conflict at that point rolls the alias back. Preflight is
+advisory; the check inside the start transaction is authoritative.
+
+---
+
+## R-10 — macOS 14 deployment target is not testable on this host
+
+**Severity:** S3 · **Status:** `open` · **Phase:** 12
+
+Development happens on macOS 15.7.9. The product targets macOS 14.0. `SMAppService` approval
+flow and Login Items UI differ between the two.
+
+*Mitigation.* Deployment target is pinned to 14.0 in `Config/Base.xcconfig` so the compiler
+rejects newer-only API. Final manual verification on a genuine macOS 14 machine is a release
+gate recorded in `Docs/MANUAL_TEST_PLAN.md`.

@@ -1,0 +1,29 @@
+# Xcode / build
+build/
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+xcuserdata/
+*.xcuserstate
+.swiftpm/
+.build/
+
+# macOS
+.DS_Store
+
+# Vendored dnsmasq build artifacts (source tarball is fetched, never committed)
+Resources/ThirdParty/dnsmasq/source/
+Resources/ThirdParty/dnsmasq/build/
+Resources/ThirdParty/dnsmasq/dist/
+
+# Release output
+Release/
+*.dmg
+*.zip
+
+# Secrets — must never be committed
+*.p12
+*.mobileprovision
+*.cer
+notary-credentials*
