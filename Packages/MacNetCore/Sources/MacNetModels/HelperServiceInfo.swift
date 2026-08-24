@@ -28,18 +28,46 @@ public struct HelperServiceInfo: Codable, Sendable, Equatable {
     /// Bundle identifier the helper was built with, so a mismatched pairing is visible.
     public let bundleIdentifier: String
 
+    /// What the helper found when it checked the bundled dnsmasq, or `nil` if the check
+    /// failed.
+    ///
+    /// Reported by the helper rather than read from the app's own compiled constants: Settings
+    /// should show what the process that will actually run it sees, not what the app was built
+    /// believing. A `nil` here means the engine did not verify, and no session can start.
+    public let engineVerification: EngineVerification?
+
+    /// A summary of the bundled dnsmasq (ticket §5.7).
+    public struct EngineVerification: Codable, Sendable, Equatable {
+        public let version: String
+        public let sha256: String
+        public let architectures: String
+        /// The `Compile time options:` line from `--version`.
+        public let compileOptions: String
+
+        public init(
+            version: String, sha256: String, architectures: String, compileOptions: String
+        ) {
+            self.version = version
+            self.sha256 = sha256
+            self.architectures = architectures
+            self.compileOptions = compileOptions
+        }
+    }
+
     public init(
         helperVersion: String,
         protocolVersion: Int,
         effectiveUID: UInt32,
         buildType: HelperBuildType,
-        bundleIdentifier: String
+        bundleIdentifier: String,
+        engineVerification: EngineVerification? = nil
     ) {
         self.helperVersion = helperVersion
         self.protocolVersion = protocolVersion
         self.effectiveUID = effectiveUID
         self.buildType = buildType
         self.bundleIdentifier = bundleIdentifier
+        self.engineVerification = engineVerification
     }
 
     /// True when this helper is safe for the app to drive.

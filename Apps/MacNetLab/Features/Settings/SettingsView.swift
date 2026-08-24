@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
-    @Environment(AppState.self) private var appState
+    @Environment(SessionController.self) private var session
 
     var body: some View {
         Form {
@@ -14,7 +14,11 @@ struct SettingsView: View {
                 LabeledContent("Architecture", value: appEnvironment.architecture)
             }
 
-            HelperStatusSection(isSessionRunning: appState.runtimePhase == .running)
+            HelperStatusSection(isSessionRunning: session.isRunning)
+
+            EngineSection()
+
+            LicensesSection()
 
             Section("Privacy") {
                 Text("MacNetLab does not collect analytics, upload logs, or send network configuration to external services.")

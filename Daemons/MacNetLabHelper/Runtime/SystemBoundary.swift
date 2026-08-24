@@ -253,12 +253,22 @@ public struct ExecutableVerification: Sendable, Equatable {
     public let sha256: String
     public let version: String
     public let architectures: String
+    /// The `Compile time options:` line, retained so Settings can show which features are
+    /// actually compiled in rather than which ones the build script asked for.
+    public let compileOptions: String
 
-    public init(path: String, sha256: String, version: String, architectures: String) {
+    public init(
+        path: String,
+        sha256: String,
+        version: String,
+        architectures: String,
+        compileOptions: String = ""
+    ) {
         self.path = path
         self.sha256 = sha256
         self.version = version
         self.architectures = architectures
+        self.compileOptions = compileOptions
     }
 }
 

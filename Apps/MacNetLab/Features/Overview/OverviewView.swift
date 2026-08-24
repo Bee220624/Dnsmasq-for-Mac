@@ -9,7 +9,24 @@ struct OverviewView: View {
     @Environment(InterfaceMonitor.self) private var interfaces
     @Environment(SessionController.self) private var session
 
+    @Environment(HelperStatusModel.self) private var helper
+
     var body: some View {
+        // Until the helper is usable there is exactly one thing to do, so Overview shows that
+        // instead of a page of disabled controls with no explanation.
+        if !isHelperReady {
+            OnboardingView()
+        } else {
+            configuration
+        }
+    }
+
+    private var isHelperReady: Bool {
+        if case .ready = helper.readiness { return true }
+        return false
+    }
+
+    private var configuration: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if let failure = session.lastFailure {

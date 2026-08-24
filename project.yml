@@ -39,6 +39,8 @@ targets:
     settings:
       base:
         PRODUCT_NAME: $(PRODUCT_NAME_BASE)
+        # Ticket §26.1: English and Simplified Chinese in v0.1.
+        SWIFT_EMIT_LOC_STRINGS: YES
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
         INFOPLIST_FILE: Apps/MacNetLab/Info.plist
         CODE_SIGN_ENTITLEMENTS: Apps/MacNetLab/MacNetLab.entitlements

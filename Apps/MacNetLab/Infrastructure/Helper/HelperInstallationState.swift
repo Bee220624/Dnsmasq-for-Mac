@@ -59,6 +59,9 @@ struct HelperServiceInfoSnapshot: Equatable, Sendable {
     let effectiveUID: UInt32
     let isDebugBuild: Bool
     let bundleIdentifier: String
+    /// What the helper found when it checked the bundled dnsmasq. `nil` means it did not
+    /// verify — which the UI must show plainly, because no session can start.
+    let engine: HelperServiceInfo.EngineVerification?
 
     init(_ info: HelperServiceInfo) {
         helperVersion = info.helperVersion
@@ -66,5 +69,6 @@ struct HelperServiceInfoSnapshot: Equatable, Sendable {
         effectiveUID = info.effectiveUID
         isDebugBuild = info.buildType == .debug
         bundleIdentifier = info.bundleIdentifier
+        engine = info.engineVerification
     }
 }

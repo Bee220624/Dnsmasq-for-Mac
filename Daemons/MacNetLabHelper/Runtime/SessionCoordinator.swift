@@ -90,6 +90,17 @@ actor SessionCoordinator {
         return nil
     }
 
+    /// Verifies the bundled engine and summarises it for display (ticket §5.7).
+    func verifyEngine() async throws(ServiceFailure) -> HelperServiceInfo.EngineVerification {
+        let verification = try await executableVerifier.verifyBundledDnsmasq()
+        return HelperServiceInfo.EngineVerification(
+            version: verification.version,
+            sha256: verification.sha256,
+            architectures: verification.architectures,
+            compileOptions: verification.compileOptions
+        )
+    }
+
     // MARK: - Preflight
 
     func preflight(request: SessionStartRequest) async -> PreflightReport {

@@ -35,23 +35,31 @@ final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol, @unchecked 
     // MARK: - Identity
 
     func getServiceInfo(withReply reply: @escaping @Sendable (Data?, NSError?) -> Void) {
-        let info = HelperServiceInfo(
-            helperVersion: HelperIdentity.version,
-            protocolVersion: HelperIdentity.protocolVersion,
-            effectiveUID: geteuid(),
-            buildType: HelperIdentity.buildType,
-            bundleIdentifier: HelperIdentity.bundleIdentifier
-        )
+        Task {
+            // Verified here rather than read from a constant, so Settings shows what the
+            // process that will actually run dnsmasq sees. A failure leaves the field nil,
+            // which the UI renders as "not verified" — and no session can start either way.
+            let engine = try? await coordinator.verifyEngine()
 
-        logger.log(
-            """
-            getServiceInfo: version=\(info.helperVersion, privacy: .public) \
-            protocol=\(info.protocolVersion, privacy: .public) \
-            euid=\(info.effectiveUID, privacy: .public) \
-            build=\(info.buildType.rawValue, privacy: .public)
-            """
-        )
-        Self.respond(with: info, to: reply)
+            let info = HelperServiceInfo(
+                helperVersion: HelperIdentity.version,
+                protocolVersion: HelperIdentity.protocolVersion,
+                effectiveUID: geteuid(),
+                buildType: HelperIdentity.buildType,
+                bundleIdentifier: HelperIdentity.bundleIdentifier,
+                engineVerification: engine
+            )
+
+            logger.log(
+                """
+                getServiceInfo: version=\(info.helperVersion, privacy: .public) \
+                protocol=\(info.protocolVersion, privacy: .public) \
+                euid=\(info.effectiveUID, privacy: .public) \
+                build=\(info.buildType.rawValue, privacy: .public)
+                """
+            )
+            Self.respond(with: info, to: reply)
+        }
     }
 
     // MARK: - Status

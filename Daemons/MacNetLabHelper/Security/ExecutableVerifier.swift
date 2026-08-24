@@ -45,7 +45,7 @@ struct ExecutableVerifier: ExecutableVerifying {
         try Self.verifyCodeSignature(at: path, teamIdentifier: HelperIdentity.teamIdentifier)
 
         let digest = try fileManager.digest(ofFileAt: path)
-        let (version, architectures) = try await readVersion(at: path)
+        let (version, architectures, compileOptions) = try await readVersion(at: path)
 
         logger.log(
             """
@@ -55,7 +55,8 @@ struct ExecutableVerifier: ExecutableVerifying {
         )
 
         return ExecutableVerification(
-            path: path, sha256: digest, version: version, architectures: architectures
+            path: path, sha256: digest, version: version,
+            architectures: architectures, compileOptions: compileOptions
         )
     }
 
@@ -153,7 +154,9 @@ struct ExecutableVerifier: ExecutableVerifying {
 
     // MARK: - Version
 
-    private func readVersion(at path: String) async throws(ServiceFailure) -> (String, String) {
+    private func readVersion(
+        at path: String
+    ) async throws(ServiceFailure) -> (String, String, String) {
         let result: CommandResult
         do {
             result = try await commandRunner.run(
@@ -192,7 +195,13 @@ struct ExecutableVerifier: ExecutableVerifying {
             }
         }
 
-        return (expected, Self.machOArchitectures(at: path))
+        let compileOptions = output
+            .split(separator: "\n")
+            .first { $0.hasPrefix("Compile time options:") }
+            .map { $0.replacingOccurrences(of: "Compile time options: ", with: "") }
+            ?? ""
+
+        return (expected, Self.machOArchitectures(at: path), String(compileOptions))
     }
 
     /// Reads the architecture list straight from the Mach-O header.
