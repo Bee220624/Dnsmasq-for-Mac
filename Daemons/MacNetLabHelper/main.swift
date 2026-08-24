@@ -3,17 +3,17 @@ import OSLog
 
 // Entry point for the privileged helper.
 //
-// This process is started on demand by launchd as root when the app connects to the Mach
-// service declared in the embedded LaunchDaemon plist. It must never do anything before the
-// caller has been validated; the listener delegate in HelperListenerDelegate is what decides
-// whether a connection is allowed to exist at all.
+// launchd starts this process as root, on demand, when a client connects to the Mach service
+// declared in the embedded LaunchDaemon plist. It is never started at boot and never runs on
+// a schedule (ticket §10.1).
 //
-// Phase 1 establishes the target, its Info.plist section, and the launchd handshake shape.
-// Phase 2 replaces the body below with the real NSXPCListener and caller validation.
+// Nothing privileged happens before the caller has been verified: HelperService constrains
+// the listener with a code signing requirement, and the system refuses non-matching peers
+// before any of our code sees them.
 
-let logger = Logger(subsystem: HelperIdentity.bundleIdentifier, category: "main")
+let bootLogger = Logger(subsystem: HelperIdentity.bundleIdentifier, category: "main")
 
-logger.log(
+bootLogger.log(
     """
     helper starting: version=\(HelperIdentity.version, privacy: .public) \
     protocol=\(HelperIdentity.protocolVersion, privacy: .public) \
@@ -21,10 +21,10 @@ logger.log(
     """
 )
 
-// A helper that is not root cannot do its job, and silently continuing would produce
-// confusing downstream failures. Refusing loudly is the correct response.
+// A helper that is not root cannot do its job, and continuing would turn a clear
+// configuration problem into confusing downstream permission failures.
 guard geteuid() == 0 else {
-    logger.fault("helper must run as root, effective uid is \(geteuid(), privacy: .public)")
+    bootLogger.fault("helper must run as root, effective uid is \(geteuid(), privacy: .public)")
     exit(EXIT_FAILURE)
 }
 

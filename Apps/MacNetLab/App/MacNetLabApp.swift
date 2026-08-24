@@ -6,15 +6,26 @@ struct MacNetLabApp: App {
 
     @State private var appState = AppState()
     @State private var router = AppRouter()
+    @State private var helperStatus: HelperStatusModel
 
-    private let environment = AppEnvironment.resolve()
+    private let environment: AppEnvironment
+
+    init() {
+        let environment = AppEnvironment.resolve()
+        self.environment = environment
+        _helperStatus = State(wrappedValue: HelperStatusModel(environment: environment))
+    }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(appState)
                 .environment(router)
+                .environment(helperStatus)
                 .environment(\.appEnvironment, environment)
+                // Ticket §10.2: check on launch so the user learns the helper needs
+                // attention immediately, rather than when Start fails.
+                .task { await helperStatus.refresh() }
                 // Ticket §5.1: minimum window 1000 x 680.
                 .frame(minWidth: 1000, minHeight: 680)
         }

@@ -12,6 +12,8 @@ struct AppEnvironment: Sendable {
     let helperLabel: String
     let machServiceName: String
     let protocolVersion: Int
+    /// Team identifier this build was signed with; used to pin the helper's signature.
+    let teamIdentifier: String?
     let operatingSystemVersion: String
     let architecture: String
 
@@ -32,6 +34,9 @@ struct AppEnvironment: Sendable {
             helperLabel: string("MNLHelperLabel", default: "unknown"),
             machServiceName: string("MNLMachServiceName", default: "unknown"),
             protocolVersion: Int(protocolText) ?? -1,
+            teamIdentifier: (info["MNLTeamIdentifier"] as? String).flatMap {
+                $0.isEmpty ? nil : $0
+            },
             operatingSystemVersion:
                 "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)",
             architecture: Self.currentArchitecture

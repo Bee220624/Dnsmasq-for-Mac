@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
+    @Environment(AppState.self) private var appState
 
     var body: some View {
         Form {
@@ -13,15 +14,7 @@ struct SettingsView: View {
                 LabeledContent("Architecture", value: appEnvironment.architecture)
             }
 
-            Section("Privileged Helper") {
-                LabeledContent("Label", value: appEnvironment.helperLabel)
-                LabeledContent("Protocol Version", value: "\(appEnvironment.protocolVersion)")
-                LabeledContent("Status") {
-                    Text("Not installed")
-                        .foregroundStyle(.secondary)
-                }
-                .accessibilityIdentifier("settings.helperStatus")
-            }
+            HelperStatusSection(isSessionRunning: appState.runtimePhase == .running)
 
             Section("Privacy") {
                 Text("MacNetLab does not collect analytics, upload logs, or send network configuration to external services.")

@@ -39,9 +39,12 @@ plutil -lint "${OUTPUT}" >/dev/null
 # Sanity check: no placeholder survived substitution. Inspect the parsed values rather than
 # the raw file, so that the template's own explanatory comments are not mistaken for
 # leftover tokens.
-if plutil -p "${OUTPUT}" | grep -q '@[A-Z_]*@'; then
+# Captured before matching: piping into `grep -q` under `pipefail` inverts the result,
+# because grep closes the pipe on its first match and plutil then dies of SIGPIPE.
+PARSED_VALUES="$(plutil -p "${OUTPUT}" 2>/dev/null || true)"
+if [[ "${PARSED_VALUES}" =~ @[A-Z_]+@ ]]; then
     echo "error: unsubstituted placeholder remains in ${OUTPUT}" >&2
-    plutil -p "${OUTPUT}" | grep -n '@[A-Z_]*@' >&2
+    printf '%s\n' "${PARSED_VALUES}" | grep -n '@[A-Z_]*@' >&2 || true
     exit 1
 fi
 
