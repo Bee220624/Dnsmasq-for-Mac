@@ -8,6 +8,7 @@ struct MacNetLabApp: App {
     @State private var router = AppRouter()
     @State private var helperStatus: HelperStatusModel
     @State private var interfaces = InterfaceMonitor()
+    @State private var profiles = ProfileLibrary()
 
     private let environment: AppEnvironment
 
@@ -24,10 +25,12 @@ struct MacNetLabApp: App {
                 .environment(router)
                 .environment(helperStatus)
                 .environment(interfaces)
+                .environment(profiles)
                 .environment(\.appEnvironment, environment)
                 // Ticket §10.2: check on launch so the user learns the helper needs
                 // attention immediately, rather than when Start fails.
                 .task { await helperStatus.refresh() }
+                .task { await profiles.load() }
                 // Enumerate immediately and keep watching: an adapter plugged in while
                 // the app is open should appear without the user hunting for a refresh.
                 .onAppear { interfaces.start() }

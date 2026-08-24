@@ -11,12 +11,13 @@ struct OverviewView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                ProfileCard(isLocked: isLocked)
                 InterfaceCard(isLocked: isLocked)
 
                 PagePlaceholder(
                     systemImage: "slider.horizontal.3",
                     title: "More settings",
-                    message: "Profile, DHCP, DNS, safety confirmation, and preflight are added in later phases.",
+                    message: "DHCP, DNS, safety confirmation, and preflight are added in later phases.",
                     identifier: "overview.pendingCards"
                 )
                 .frame(minHeight: 160)

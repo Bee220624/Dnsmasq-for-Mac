@@ -140,6 +140,30 @@ targets:
         product: MacNetDnsmasq
 
   # ---------------------------------------------------------------------------------------
+  # Unit tests for app-process logic that cannot live in the shared package.
+  #
+  # ProfileStore belongs to the app by design — ticket §20.1 forbids the root helper from
+  # writing user profiles — so its tests need the app's sources. The target compiles the
+  # specific files it exercises rather than taking the app as a test host: a hosted test
+  # bundle launches the app, and these tests should not need a window on screen.
+  # ---------------------------------------------------------------------------------------
+  MacNetLabTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/MacNetLabTests
+      - path: Apps/MacNetLab/Infrastructure/Profiles
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).unit-tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - package: MacNetCore
+        product: MacNetModels
+      - package: MacNetCore
+        product: MacNetValidation
+
+  # ---------------------------------------------------------------------------------------
   # UI tests (ticket §24.3).
   # ---------------------------------------------------------------------------------------
   MacNetLabUITests:
@@ -168,6 +192,7 @@ schemes:
       gatherCoverageData: true
       targets:
         - HelperIntegrationTests
+        - MacNetLabTests
         - MacNetLabUITests
     profile:
       config: Release

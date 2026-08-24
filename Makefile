@@ -52,7 +52,8 @@ test-package:
 test-xcode: generate
 	@echo "==> xcodebuild test ($(SCHEME)) — integration targets"
 	@set -o pipefail; $(XCB) -configuration Debug \
-		-only-testing:HelperIntegrationTests test $(XCPRETTY)
+		-only-testing:HelperIntegrationTests \
+		-only-testing:MacNetLabTests test $(XCPRETTY)
 
 # UI tests are separated from the default `test` target on purpose.
 #

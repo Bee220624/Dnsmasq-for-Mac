@@ -15,7 +15,16 @@ public struct NetworkProfile: Codable, Sendable, Equatable, Identifiable {
     public var dnsConfiguration: DNSConfiguration
 
     public let createdAt: Date
-    public var updatedAt: Date
+
+    /// Normalized on every assignment, not only in `init`.
+    ///
+    /// Callers naturally write `profile.updatedAt = Date()`, which would reintroduce
+    /// sub-second precision and break the save verification described in
+    /// `Date.truncatedToSeconds`. Enforcing it here means no call site has to remember.
+    /// Assigning inside an observer does not re-enter it.
+    public var updatedAt: Date {
+        didSet { updatedAt = updatedAt.truncatedToSeconds }
+    }
 
     public init(
         schemaVersion: Int = MacNetCoreInfo.schemaVersion,
@@ -33,8 +42,11 @@ public struct NetworkProfile: Codable, Sendable, Equatable, Identifiable {
         self.interfaceConfiguration = interfaceConfiguration
         self.dhcpConfiguration = dhcpConfiguration
         self.dnsConfiguration = dnsConfiguration
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
+        // Normalized here so the invariant holds however a profile is constructed: a
+        // timestamp that cannot be represented in the persisted format would make every
+        // save's read-back verification fail. See Date.truncatedToSeconds.
+        self.createdAt = createdAt.truncatedToSeconds
+        self.updatedAt = updatedAt.truncatedToSeconds
     }
 }
 
