@@ -299,3 +299,34 @@ is not the one we shipped:
 is acceptable, or specify a two-pass build that signs dnsmasq, digests the signed file, then
 rebuilds the helper with that value — at the cost of a build that must run twice and a digest
 that differs per signing identity.
+
+---
+
+## R-14 — Log category precedence departs from the ticket's listed order
+
+**Severity:** S3 · **Status:** `mitigated` · **Phase:** 10
+
+Ticket §5.5 lists the log categories as DHCP, DNS, Warning, Error, System. Read as a
+precedence order, that misfiles real dnsmasq output:
+
+```
+dnsmasq[421]: cannot read config file
+```
+
+contains `config` — a DNS keyword — and `cannot` — an error keyword. With DNS tried first the
+line is filed under DNS, so an engineer filtering to **Error** never learns that their
+configuration could not be read. That is exactly the moment the Error filter exists for.
+
+*What is implemented.* Severity is evaluated first: **Warning, Error, DHCP, DNS, System**.
+Warning precedes Error because dnsmasq labels its own non-fatal problems `warning:`, and
+promoting those to errors would cry wolf.
+
+Keywords are also matched as whole words rather than substrings, so `errors` does not read as
+`error` and `replying` does not read as `reply`.
+
+*Cost.* None in practice: dnsmasq's DHCP message types never appear inside its failure text, so
+ordinary lease traffic still classifies as DHCP — while `failed to send DHCPOFFER` now reaches
+someone filtering for failures. Covered by `LogClassifierTests.severityWinsOverProtocol`.
+
+*Owner action.* Confirm the reordering is acceptable, or say which behaviour you prefer for a
+line that is both a protocol event and a failure.

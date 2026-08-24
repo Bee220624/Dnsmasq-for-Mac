@@ -130,7 +130,7 @@ final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol, @unchecked 
         }
     }
 
-    // MARK: - Awaiting their phase
+    // MARK: - Logs
 
     func getLeaseSnapshot(
         sessionID: String,
@@ -154,7 +154,19 @@ final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol, @unchecked 
         afterSequence: Int64,
         withReply reply: @escaping @Sendable (Data?, NSError?) -> Void
     ) {
-        replyNotImplemented("getLogSnapshot", phase: 10, reply)
+        Task {
+            guard let identifier = UUID(uuidString: sessionID) else {
+                Self.respond(
+                    failure: ServiceFailure.invalidRequest("not a session identifier"),
+                    to: reply
+                )
+                return
+            }
+            let batch = await coordinator.logSnapshot(
+                sessionID: identifier, after: afterSequence
+            )
+            Self.respond(with: batch, to: reply)
+        }
     }
 
     // MARK: - Replying

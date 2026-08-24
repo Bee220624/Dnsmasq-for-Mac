@@ -11,6 +11,7 @@ struct MacNetLabApp: App {
     @State private var profiles = ProfileLibrary()
     @State private var session: SessionController
     @State private var leases: LeaseMonitor
+    @State private var logs: LogMonitor
 
     private let environment: AppEnvironment
 
@@ -23,6 +24,7 @@ struct MacNetLabApp: App {
         // serving two peers that each believe they own the session state.
         _session = State(wrappedValue: SessionController(client: helperStatus.client))
         _leases = State(wrappedValue: LeaseMonitor(client: helperStatus.client))
+        _logs = State(wrappedValue: LogMonitor(client: helperStatus.client))
     }
 
     var body: some Scene {
@@ -35,6 +37,7 @@ struct MacNetLabApp: App {
                 .environment(profiles)
                 .environment(session)
                 .environment(leases)
+                .environment(logs)
                 .environment(\.appEnvironment, environment)
                 // Ticket §10.2: check on launch so the user learns the helper needs
                 // attention immediately, rather than when Start fails.

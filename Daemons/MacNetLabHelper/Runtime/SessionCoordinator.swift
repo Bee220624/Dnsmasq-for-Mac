@@ -51,6 +51,7 @@ actor SessionCoordinator {
 
     private var exitWatcher: Task<Void, Never>?
     private var leaseWatcher: LeaseFileWatcher?
+    private var logTailer: LogFileTailer?
 
     init(
         runtimeFiles: RuntimeFileManager,
@@ -308,6 +309,7 @@ actor SessionCoordinator {
             state = .running(session)
             startWatchingForUnexpectedExit(session: session, digest: verification.sha256)
             await startWatchingLeases(sessionID: sessionID, path: paths.leaseFile)
+            await startTailingLog(sessionID: sessionID, path: paths.logFile)
 
             logger.log(
                 """
@@ -539,6 +541,8 @@ actor SessionCoordinator {
         exitWatcher = nil
         await leaseWatcher?.stop()
         leaseWatcher = nil
+        await logTailer?.stop()
+        logTailer = nil
 
         var journal = journalStore.read()
         if let current = journal {
@@ -707,6 +711,36 @@ actor SessionCoordinator {
         leaseSnapshotHandler = handler
     }
 
+    // MARK: - Logs
+
+    /// Log lines after `sequence`, for a client that has just connected or reconnected.
+    func logSnapshot(sessionID: UUID, after sequence: Int64) async -> LogBatch {
+        guard let tailer = logTailer, activeSession?.id == sessionID else {
+            return LogBatch(sessionID: sessionID, events: [], highestSequence: sequence)
+        }
+        return await tailer.snapshot(after: sequence)
+    }
+
+    private func startTailingLog(sessionID: UUID, path: String) async {
+        await logTailer?.stop()
+
+        let tailer = LogFileTailer(sessionID: sessionID, path: path, clock: clock) { [weak self] batch in
+            Task { await self?.publishLogBatch(batch) }
+        }
+        logTailer = tailer
+        await tailer.start()
+    }
+
+    private func publishLogBatch(_ batch: LogBatch) {
+        logBatchHandler?(batch)
+    }
+
+    private var logBatchHandler: (@Sendable (LogBatch) -> Void)?
+
+    func setLogBatchHandler(_ handler: @escaping @Sendable (LogBatch) -> Void) {
+        logBatchHandler = handler
+    }
+
     // MARK: - Unexpected exit
 
     /// Watches for dnsmasq exiting without being asked (ticket §17.4).
@@ -745,6 +779,8 @@ actor SessionCoordinator {
 
             await leaseWatcher?.stop()
             leaseWatcher = nil
+            await logTailer?.stop()
+            logTailer = nil
 
             let warnings = await removeOrphanedAlias(
                 journalStore.read() ?? Self.syntheticJournal(for: session, digest: digest)

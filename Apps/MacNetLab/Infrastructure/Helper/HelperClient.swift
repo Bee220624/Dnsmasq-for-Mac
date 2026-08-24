@@ -235,6 +235,19 @@ actor HelperClient {
         }
     }
 
+    func logSnapshot(
+        sessionID: UUID,
+        after sequence: Int64
+    ) async throws(ServiceFailure) -> LogBatch {
+        try await call(LogBatch.self) { proxy, box in
+            proxy.getLogSnapshot(
+                sessionID: sessionID.uuidString, afterSequence: sequence
+            ) { data, error in
+                box.resume(with: HelperClient.result(data: data, error: error))
+            }
+        }
+    }
+
     func recoverStaleState() async throws(ServiceFailure) -> RecoveryReport {
         try await call(RecoveryReport.self) { proxy, box in
             proxy.recoverStaleState { data, error in
