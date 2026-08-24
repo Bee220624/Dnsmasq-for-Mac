@@ -1,4 +1,5 @@
 import Foundation
+import MacNetInterfaces
 import MacNetModels
 import MacNetXPC
 import OSLog
@@ -6,20 +7,32 @@ import OSLog
 /// The object exported to a verified client — the helper's entire externally reachable
 /// surface (ticket §10.5).
 ///
-/// Every method here is a fixed, named operation. There is deliberately no way for a caller
-/// to name a command, an executable, or a path: the operations that need them derive them
-/// from the helper's own location and from identifiers the helper generated itself.
+/// Every method here is a fixed, named operation. There is deliberately no way for a caller to
+/// name a command, an executable, or a path: the operations that need them derive them from the
+/// helper's own location and from identifiers the helper generated itself.
 ///
-/// Methods land here phase by phase. Anything not yet implemented answers with a structured
-/// failure rather than silently succeeding, so a premature call is unmistakable.
-final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol {
+/// This type does no work of its own. It decodes, delegates to the `SessionCoordinator`, and
+/// encodes — so the transport layer stays free of policy, and the policy stays testable without
+/// a transport.
+///
+/// `@unchecked Sendable` is sound here rather than a papering-over: both stored properties are
+/// `let` and Sendable (an actor reference and a logger), and the class is final. The unchecked
+/// part is only needed because `NSObject`, which the XPC interface requires, is not Sendable.
+final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol, @unchecked Sendable {
 
     private let logger = Logger(
         subsystem: HelperIdentity.bundleIdentifier,
         category: "requests"
     )
 
-    // MARK: - Implemented
+    private let coordinator: SessionCoordinator
+
+    init(coordinator: SessionCoordinator) {
+        self.coordinator = coordinator
+        super.init()
+    }
+
+    // MARK: - Identity
 
     func getServiceInfo(withReply reply: @escaping @Sendable (Data?, NSError?) -> Void) {
         let info = HelperServiceInfo(
@@ -38,42 +51,86 @@ final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol {
             build=\(info.buildType.rawValue, privacy: .public)
             """
         )
+        Self.respond(with: info, to: reply)
+    }
 
-        do {
-            reply(try XPCPayload.encodeResponse(info), nil)
-        } catch let failure as ServiceFailure {
-            reply(nil, failure.asNSError)
-        } catch {
-            reply(nil, ServiceFailure.internalError("\(error)").asNSError)
+    // MARK: - Status
+
+    func getRuntimeStatus(withReply reply: @escaping @Sendable (Data?, NSError?) -> Void) {
+        Task {
+            let state = await coordinator.runtimeStatus()
+            Self.respond(with: state, to: reply)
         }
     }
 
-    // MARK: - Awaiting their phase
-
-    func getRuntimeStatus(withReply reply: @escaping @Sendable (Data?, NSError?) -> Void) {
-        replyNotImplemented("getRuntimeStatus", phase: 8, reply)
-    }
+    // MARK: - Lifecycle
 
     func runPreflight(
         requestData: Data,
         withReply reply: @escaping @Sendable (Data?, NSError?) -> Void
     ) {
-        replyNotImplemented("runPreflight", phase: 8, reply)
+        Task {
+            do {
+                let request = try XPCPayload.decodeRequest(
+                    SessionStartRequest.self, from: requestData
+                )
+                let report = await coordinator.preflight(request: request)
+                Self.respond(with: report, to: reply)
+            } catch {
+                Self.respond(failure: error, to: reply)
+            }
+        }
     }
 
     func startSession(
         requestData: Data,
         withReply reply: @escaping @Sendable (Data?, NSError?) -> Void
     ) {
-        replyNotImplemented("startSession", phase: 8, reply)
+        Task {
+            do {
+                let request = try XPCPayload.decodeRequest(
+                    SessionStartRequest.self, from: requestData
+                )
+                let session = try await coordinator.start(request: request)
+                Self.respond(with: session, to: reply)
+            } catch {
+                Self.respond(failure: error, to: reply)
+            }
+        }
     }
 
     func stopSession(
         sessionID: String,
         withReply reply: @escaping @Sendable (Data?, NSError?) -> Void
     ) {
-        replyNotImplemented("stopSession", phase: 8, reply)
+        Task {
+            // A `String` on the wire because the interface is Objective-C. Parsing it into a
+            // UUID here means a malformed identifier is refused before it reaches any logic,
+            // and a session id can never be used to build a path.
+            guard let identifier = UUID(uuidString: sessionID) else {
+                Self.respond(
+                    failure: ServiceFailure.invalidRequest("not a session identifier"),
+                    to: reply
+                )
+                return
+            }
+            do {
+                try await coordinator.stop(sessionID: identifier)
+                Self.respond(with: EmptyReply(), to: reply)
+            } catch {
+                Self.respond(failure: error, to: reply)
+            }
+        }
     }
+
+    func recoverStaleState(withReply reply: @escaping @Sendable (Data?, NSError?) -> Void) {
+        Task {
+            let report = await coordinator.recoverStaleState()
+            Self.respond(with: report, to: reply)
+        }
+    }
+
+    // MARK: - Awaiting their phase
 
     func getLeaseSnapshot(
         sessionID: String,
@@ -90,8 +147,32 @@ final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol {
         replyNotImplemented("getLogSnapshot", phase: 10, reply)
     }
 
-    func recoverStaleState(withReply reply: @escaping @Sendable (Data?, NSError?) -> Void) {
-        replyNotImplemented("recoverStaleState", phase: 8, reply)
+    // MARK: - Replying
+
+    /// Encodes a successful result, turning an encoding failure into a reported error rather
+    /// than a silent empty reply.
+    private static func respond<T: Encodable>(
+        with value: T,
+        to reply: @escaping @Sendable (Data?, NSError?) -> Void
+    ) {
+        // `encodeResponse` has typed throws, so the failure is already structured — there is
+        // no untyped case left to translate.
+        do {
+            reply(try XPCPayload.encodeResponse(value), nil)
+        } catch {
+            reply(nil, error.asNSError)
+        }
+    }
+
+    private static func respond(
+        failure: any Error,
+        to reply: @escaping @Sendable (Data?, NSError?) -> Void
+    ) {
+        if let serviceFailure = failure as? ServiceFailure {
+            reply(nil, serviceFailure.asNSError)
+        } else {
+            reply(nil, ServiceFailure.internalError("\(failure)").asNSError)
+        }
     }
 
     private func replyNotImplemented(
@@ -111,3 +192,9 @@ final class HelperRequestHandler: NSObject, MacNetLabHelperProtocol {
         reply(nil, failure.asNSError)
     }
 }
+
+/// Stands in for a reply with no payload.
+///
+/// The interface always answers with `(Data?, NSError?)`, and replying `(nil, nil)` would be
+/// indistinguishable from a bug. An empty object says "this succeeded and had nothing to say".
+struct EmptyReply: Codable, Sendable {}

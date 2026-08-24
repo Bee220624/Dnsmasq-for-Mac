@@ -28,7 +28,9 @@ public enum XPCPayload {
     }
 
     /// Encodes a value, refusing anything larger than `limit`.
-    public static func encode<T: Encodable>(_ value: T, limit: Int) throws -> Data {
+    public static func encode<T: Encodable>(
+        _ value: T, limit: Int
+    ) throws(ServiceFailure) -> Data {
         let data: Data
         do {
             data = try makeEncoder().encode(value)
@@ -49,7 +51,7 @@ public enum XPCPayload {
         _ type: T.Type,
         from data: Data,
         limit: Int
-    ) throws -> T {
+    ) throws(ServiceFailure) -> T {
         guard data.count <= limit else {
             throw ServiceFailure.payloadTooLarge(byteCount: data.count, limit: limit)
         }
@@ -63,19 +65,23 @@ public enum XPCPayload {
     // Convenience wrappers so call sites cannot accidentally apply the wrong direction's
     // limit.
 
-    public static func encodeRequest<T: Encodable>(_ value: T) throws -> Data {
+    public static func encodeRequest<T: Encodable>(_ value: T) throws(ServiceFailure) -> Data {
         try encode(value, limit: XPCLimits.maximumRequestBytes)
     }
 
-    public static func decodeRequest<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+    public static func decodeRequest<T: Decodable>(
+        _ type: T.Type, from data: Data
+    ) throws(ServiceFailure) -> T {
         try decode(type, from: data, limit: XPCLimits.maximumRequestBytes)
     }
 
-    public static func encodeResponse<T: Encodable>(_ value: T) throws -> Data {
+    public static func encodeResponse<T: Encodable>(_ value: T) throws(ServiceFailure) -> Data {
         try encode(value, limit: XPCLimits.maximumResponseBytes)
     }
 
-    public static func decodeResponse<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+    public static func decodeResponse<T: Decodable>(
+        _ type: T.Type, from data: Data
+    ) throws(ServiceFailure) -> T {
         try decode(type, from: data, limit: XPCLimits.maximumResponseBytes)
     }
 }

@@ -258,12 +258,18 @@ final class FakeProcessController: ProcessControlling, @unchecked Sendable {
     var launchFailure: ServiceFailure?
     var pidToReturn: Int32 = 4242
 
-    /// What `liveness` reports. Changing it between calls models a process dying, or a PID
-    /// being recycled by something else.
-    var livenessResult: ProcessLiveness = .runningAsExpected
+    /// Forces `liveness` to a fixed answer, whatever the PID.
+    ///
+    /// Used to model a process dying immediately, or a PID being recycled by something else.
+    /// When unset, liveness is answered from what this fake actually launched — which is how a
+    /// real controller behaves, and is what lets one test exercise recovery from a dead session
+    /// followed by a successful new start.
+    var livenessOverride: ProcessLiveness?
 
     /// Set to fail `terminate`, modelling a process that will not die.
     var terminateFailure: ServiceFailure?
+
+    private var launchedPIDs: Set<Int32> = []
 
     private(set) var launchCount = 0
     private(set) var terminateCount = 0
@@ -277,6 +283,7 @@ final class FakeProcessController: ProcessControlling, @unchecked Sendable {
         lock.withLock {
             launchCount += 1
             lastConfigurationPath = configurationPath
+            launchedPIDs.insert(pidToReturn)
         }
         return LaunchedProcess(processIdentifier: pidToReturn)
     }
@@ -285,7 +292,10 @@ final class FakeProcessController: ProcessControlling, @unchecked Sendable {
         of processIdentifier: Int32,
         expectedExecutableSHA256: String
     ) -> ProcessLiveness {
-        livenessResult
+        if let livenessOverride { return livenessOverride }
+        return lock.withLock {
+            launchedPIDs.contains(processIdentifier) ? .runningAsExpected : .notRunning
+        }
     }
 
     func terminate(
@@ -295,7 +305,7 @@ final class FakeProcessController: ProcessControlling, @unchecked Sendable {
     ) async throws(ServiceFailure) {
         lock.withLock { terminateCount += 1 }
         if let terminateFailure { throw terminateFailure }
-        livenessResult = .notRunning
+        lock.withLock { _ = launchedPIDs.remove(processIdentifier) }
     }
 }
 

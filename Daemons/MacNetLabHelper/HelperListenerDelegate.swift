@@ -25,8 +25,11 @@ final class HelperListenerDelegate: NSObject, NSXPCListenerDelegate {
     /// process would be strictly worse than being unavailable.
     private let isRequirementEnforced: Bool
 
-    init(isRequirementEnforced: Bool) {
+    private let coordinator: SessionCoordinator
+
+    init(isRequirementEnforced: Bool, coordinator: SessionCoordinator) {
         self.isRequirementEnforced = isRequirementEnforced
+        self.coordinator = coordinator
         super.init()
     }
 
@@ -40,7 +43,7 @@ final class HelperListenerDelegate: NSObject, NSXPCListenerDelegate {
         }
 
         newConnection.exportedInterface = HelperInterface.makeServiceInterface()
-        newConnection.exportedObject = HelperRequestHandler()
+        newConnection.exportedObject = HelperRequestHandler(coordinator: coordinator)
 
         // The app also exports an object, so the helper can push events without polling.
         newConnection.remoteObjectInterface = HelperInterface.makeClientInterface()

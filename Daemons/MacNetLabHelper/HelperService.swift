@@ -1,5 +1,6 @@
 import Foundation
 import MacNetModels
+import MacNetInterfaces
 import MacNetXPC
 import OSLog
 
@@ -99,6 +100,42 @@ final class HelperService: @unchecked Sendable {
             exit(EXIT_FAILURE)
         }
 
+        // Assemble the real dependencies once. Every one of them is behind a protocol, which
+        // is what lets the lifecycle be tested against fakes (ticket §24.2) — but here they are
+        // the genuine implementations, and this is the only place that decides so.
+        let runtimeFiles = RuntimeFileManager()
+        let commandRunner = SystemCommandRunner()
+        let coordinator = SessionCoordinator(
+            runtimeFiles: runtimeFiles,
+            journalStore: SessionJournalStore(fileManager: runtimeFiles),
+            fileLock: RuntimeFileLock(path: runtimeFiles.lockPath),
+            enumerator: SystemInterfaceEnumerator(),
+            aliasManager: InterfaceAliasManager(
+                commandRunner: commandRunner, enumerator: SystemInterfaceEnumerator()
+            ),
+            portProbe: SocketPortProbe(),
+            processController: DnsmasqProcessController(fileManager: runtimeFiles),
+            executableVerifier: ExecutableVerifier(
+                commandRunner: commandRunner, fileManager: runtimeFiles
+            ),
+            commandRunner: commandRunner
+        )
+
+        // Ticket §17.3: reconcile the journal with reality before serving anything. A helper
+        // that was killed mid-session may have left an alias behind, and the next Start must
+        // not stack a second one on top of it.
+        Task {
+            let report = await coordinator.recoverStaleState()
+            if report.outcome != .nothingToRecover {
+                self.logger.log(
+                    "startup recovery: \(report.outcome.rawValue, privacy: .public)"
+                )
+                for warning in report.warnings {
+                    self.logger.error("recovery warning: \(warning, privacy: .public)")
+                }
+            }
+        }
+
         let listener = NSXPCListener(machServiceName: machServiceName)
 
         // The system evaluates this against each peer's audit token before the delegate is
@@ -106,7 +143,9 @@ final class HelperService: @unchecked Sendable {
         listener.setConnectionCodeSigningRequirement(requirement)
         logger.log("client requirement in force: \(requirement, privacy: .public)")
 
-        let delegate = HelperListenerDelegate(isRequirementEnforced: true)
+        let delegate = HelperListenerDelegate(
+            isRequirementEnforced: true, coordinator: coordinator
+        )
         listener.delegate = delegate
         listener.resume()
 

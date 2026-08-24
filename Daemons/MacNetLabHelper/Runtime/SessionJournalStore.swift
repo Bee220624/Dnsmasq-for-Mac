@@ -155,7 +155,12 @@ struct RuntimeFileLock: Sendable {
     }
 
     /// Runs `body` while holding the lock, or throws if another holder has it.
-    func withLock<T>(_ body: () async throws -> T) async throws -> T {
+    ///
+    /// The body is `@Sendable` because its only caller is an actor: the closure captures the
+    /// actor reference and Sendable request values, then hops back in with `await`. Marking it
+    /// is what lets the lock be acquired from inside actor isolation without the closure
+    /// smuggling isolated state across the boundary.
+    func withLock<T: Sendable>(_ body: @Sendable () async throws -> T) async throws -> T {
         let descriptor = open(path, O_RDWR | O_CREAT, 0o600)
         guard descriptor >= 0 else {
             throw ServiceFailure.internalError(

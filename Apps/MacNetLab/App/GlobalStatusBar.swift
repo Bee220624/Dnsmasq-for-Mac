@@ -49,7 +49,10 @@ extension RuntimeStatePhase {
 
 /// Always-visible summary strip at the top of the main window (ticket §5.2).
 struct GlobalStatusBar: View {
-    @Environment(AppState.self) private var appState
+    @Environment(SessionController.self) private var session
+    @Environment(ProfileLibrary.self) private var library
+    @Environment(InterfaceMonitor.self) private var interfaces
+    @Environment(HelperStatusModel.self) private var helper
 
     var body: some View {
         HStack(spacing: 16) {
@@ -59,8 +62,14 @@ struct GlobalStatusBar: View {
 
             // Profile and interface become live in their own phases. Showing the fields now
             // with an explicit em dash keeps the layout honest rather than hiding them.
-            summaryField(title: "Profile", value: Text(verbatim: "—"))
-            summaryField(title: "Interface", value: Text(verbatim: "—"))
+            summaryField(
+                title: "Profile",
+                value: Text(verbatim: library.draft?.working.name ?? "—")
+            )
+            summaryField(
+                title: "Interface",
+                value: Text(verbatim: interfaces.selected?.bsdName ?? "—")
+            )
             summaryField(title: "Started", value: startedAtText)
 
             Spacer(minLength: 12)
@@ -74,20 +83,20 @@ struct GlobalStatusBar: View {
 
     private var statusChip: some View {
         Label {
-            Text(appState.runtimePhase.displayName)
+            Text(session.phase.displayName)
                 .font(.headline)
         } icon: {
-            Image(systemName: appState.runtimePhase.systemImage)
-                .foregroundStyle(appState.runtimePhase.tint)
+            Image(systemName: session.phase.systemImage)
+                .foregroundStyle(session.phase.tint)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("Service status"))
-        .accessibilityValue(Text(appState.runtimePhase.displayName))
+        .accessibilityValue(Text(session.phase.displayName))
         .accessibilityIdentifier("status.phase")
     }
 
     private var startedAtText: Text {
-        guard let startedAt = appState.sessionStartedAt else { return Text(verbatim: "—") }
+        guard let startedAt = session.activeSession?.startedAt else { return Text(verbatim: "—") }
         return Text(startedAt, style: .time)
     }
 
@@ -105,18 +114,77 @@ struct GlobalStatusBar: View {
 
     @ViewBuilder
     private var startStopButton: some View {
-        // Start is gated on preflight and the isolation confirmation, neither of which exists
-        // yet. Disabled is the correct and safe Phase 1 state: the ticket forbids ever
-        // starting a service automatically or without confirmation.
-        Button {
-            // Wired to the session coordinator in Phase 8.
-        } label: {
-            Label("Start", systemImage: "play.fill")
-                .frame(minWidth: 64)
+        if session.isRunning {
+            Button {
+                Task { await session.stop() }
+            } label: {
+                Label("Stop", systemImage: "stop.fill")
+                    .frame(minWidth: 64)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            .disabled(session.isBusy)
+            .keyboardShortcut(".", modifiers: .command)
+            .accessibilityIdentifier("overview.stopButton")
+            .accessibilityValue(Text("Running"))
+        } else {
+            Button {
+                Task { await start() }
+            } label: {
+                Label("Start", systemImage: "play.fill")
+                    .frame(minWidth: 64)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!canStart)
+            .accessibilityIdentifier("overview.startButton")
+            .accessibilityValue(Text(canStart ? "Ready" : "Not ready"))
+            .help(startHelp)
         }
-        .buttonStyle(.borderedProminent)
-        .disabled(true)
-        .accessibilityIdentifier("overview.startButton")
-        .help(Text("Service control becomes available once the privileged helper is installed."))
+    }
+
+    /// Whether Start is offered.
+    ///
+    /// The helper refuses anything unsafe regardless — this only decides whether to present an
+    /// action that would certainly fail. Both layers matter (ticket §21.6).
+    private var canStart: Bool {
+        session.canStart(
+            profile: library.draft?.working,
+            hasInterface: interfaces.selected != nil,
+            helperReady: isHelperReady
+        )
+    }
+
+    private var isHelperReady: Bool {
+        if case .ready = helper.readiness { return true }
+        return false
+    }
+
+    /// Explains a disabled Start, so the user is never left guessing which of several
+    /// preconditions is missing.
+    private var startHelp: Text {
+        if !isHelperReady {
+            return Text("Install the privileged helper in Settings first.")
+        }
+        if interfaces.selected == nil {
+            return Text("Choose a network interface.")
+        }
+        if let profile = library.draft?.working,
+           session.requiresIsolationConfirmation(for: profile),
+           !session.isolationConfirmed {
+            return Text("Confirm the interface is on an isolated network.")
+        }
+        if session.preflightReport?.hasBlockingIssues == true {
+            return Text("Fix the problems listed under Preflight.")
+        }
+        return Text("Start the DHCP and DNS service.")
+    }
+
+    private func start() async {
+        guard let request = SessionRequestBuilder.make(
+            draft: library.draft,
+            interface: interfaces.selected,
+            isolationConfirmed: session.isolationConfirmed
+        ) else { return }
+        await session.start(request)
     }
 }

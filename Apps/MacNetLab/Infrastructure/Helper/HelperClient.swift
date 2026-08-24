@@ -183,16 +183,72 @@ actor HelperClient {
                 box.resume(with: HelperClient.result(data: data, error: error))
             }
         }
-        do {
-            return try XPCPayload.decodeResponse(HelperServiceInfo.self, from: data)
-        } catch let failure as ServiceFailure {
-            throw failure
-        } catch {
-            throw ServiceFailure.internalError("could not decode HelperServiceInfo: \(error)")
+        // Typed throws: the failure is already structured, so there is nothing to translate.
+        return try XPCPayload.decodeResponse(HelperServiceInfo.self, from: data)
+    }
+
+    // MARK: - Session lifecycle
+
+    func runtimeStatus() async throws(ServiceFailure) -> RuntimeState {
+        try await call(RuntimeState.self) { proxy, box in
+            proxy.getRuntimeStatus { data, error in
+                box.resume(with: HelperClient.result(data: data, error: error))
+            }
+        }
+    }
+
+    func preflight(
+        _ request: SessionStartRequest
+    ) async throws(ServiceFailure) -> PreflightReport {
+        let payload = try XPCPayload.encodeRequest(request)
+        return try await call(PreflightReport.self) { proxy, box in
+            proxy.runPreflight(requestData: payload) { data, error in
+                box.resume(with: HelperClient.result(data: data, error: error))
+            }
+        }
+    }
+
+    func startSession(
+        _ request: SessionStartRequest
+    ) async throws(ServiceFailure) -> ActiveSession {
+        let payload = try XPCPayload.encodeRequest(request)
+        return try await call(ActiveSession.self) { proxy, box in
+            proxy.startSession(requestData: payload) { data, error in
+                box.resume(with: HelperClient.result(data: data, error: error))
+            }
+        }
+    }
+
+    func stopSession(id: UUID) async throws(ServiceFailure) {
+        _ = try await call(EmptyHelperReply.self) { proxy, box in
+            proxy.stopSession(sessionID: id.uuidString) { data, error in
+                box.resume(with: HelperClient.result(data: data, error: error))
+            }
+        }
+    }
+
+    func recoverStaleState() async throws(ServiceFailure) -> RecoveryReport {
+        try await call(RecoveryReport.self) { proxy, box in
+            proxy.recoverStaleState { data, error in
+                box.resume(with: HelperClient.result(data: data, error: error))
+            }
         }
     }
 
     // MARK: - Call plumbing
+
+    /// Runs one XPC call and decodes its reply.
+    ///
+    /// Wraps `withProxy` so that every call site is one expression rather than a repeated
+    /// encode–call–decode dance, and so decoding failures are classified once.
+    private func call<T: Decodable>(
+        _ type: T.Type,
+        _ body: @escaping @Sendable (any MacNetLabHelperProtocol, ContinuationBox) -> Void
+    ) async throws(ServiceFailure) -> T {
+        let data = try await withProxy(body)
+        return try XPCPayload.decodeResponse(type, from: data)
+    }
+
 
     /// Bridges one `(Data?, NSError?)` XPC callback into an `async` call.
     ///
@@ -292,3 +348,10 @@ private final class HelperEventReceiver: NSObject, MacNetLabHelperClientProtocol
         logger.debug("received helper event, \(eventData.count, privacy: .public) bytes")
     }
 }
+
+/// Mirrors the helper's empty-reply payload.
+///
+/// The XPC interface always answers with `(Data?, NSError?)`, so "succeeded with nothing to
+/// say" needs a shape. Decoding it — rather than ignoring the data — keeps a malformed reply
+/// from being read as success.
+struct EmptyHelperReply: Codable, Sendable {}

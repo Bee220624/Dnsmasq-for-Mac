@@ -15,7 +15,12 @@ final class HelperStatusModel {
     /// instead of letting the user queue up duplicate registrations.
     private(set) var isBusy = false
 
-    private let client: HelperClient
+    /// Shared with `SessionController` so both speak to the same connection.
+    ///
+    /// One client, not two: a second `NSXPCConnection` would mean the helper serving two peers
+    /// that each believe they own the session state.
+    let client: HelperClient
+
     private let logger = Logger(subsystem: "com.bee.macnetlab", category: "helper-status")
 
     /// Polls while the user is away approving the daemon in System Settings.
