@@ -79,14 +79,20 @@ and uninstall, is in `Docs/PRIVILEGED_HELPER.md`.
 
 ### UI tests
 
-`make test` deliberately excludes the UI suites. XCUITest needs a macOS automation
-authorization that only a human at the keyboard can grant; see `Docs/RISKS.md` R-11. With a
-user present:
+`make test` deliberately excludes the UI suites, because XCUITest needs Accessibility
+permission for **the process that runs the tests** — Terminal, iTerm, or Xcode, depending on
+how you launch them.
+
+Grant it once in **System Settings → Privacy & Security → Accessibility**, then:
 
 ```bash
-make test-ui       # answer the authorization prompt once
-make test-all      # everything, thereafter unattended
+make test-ui       # UI suites only
+make test-all      # everything
 ```
+
+Without the grant the failures read as `Not authorized for performing UI testing actions` and
+`exists but never became hittable`. Both are the same missing permission. See
+`Docs/RISKS.md` R-11.
 
 ## Third-party software
 

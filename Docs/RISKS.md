@@ -198,39 +198,62 @@ gate recorded in `Docs/MANUAL_TEST_PLAN.md`.
 
 ---
 
-## R-11 — UI tests require an interactive macOS authorization
+## R-11 — UI tests need Accessibility permission for the process that runs them
 
 **Severity:** S3 · **Status:** `blocked-on-owner` · **Phase:** 1 (affects every phase with UI tests)
 
-XCUITest must ask macOS for permission to drive another application. On this machine the
-runner fails immediately with:
+XCUITest drives another application, which macOS gates behind Accessibility permission. The
+grant belongs to **whichever process runs the tests** — not to MacNetLab, and not to the test
+bundle.
+
+Confirmed on this machine:
 
 ```
-Failed to initialize for UI testing: Error Domain=com.apple.LocalAuthentication Code=-4
-"System authentication is running." BiometryType=1
+AXIsProcessTrusted() = false
 ```
 
-and `xcodebuild` then waits indefinitely. The prompt is a LocalAuthentication challenge
-(Touch ID or password) that only a human at the keyboard can answer; there is no API or flag
-to grant it. Reproduced twice, from a clean process state.
-
-*Impact.* UI tests cannot be executed in a non-interactive session. They are written and
-compile as part of every build, but their assertions are unverified here.
-
-*Mitigation.* `make test` runs the package suites and the integration suites only, so
-automation and CI stay green and meaningful. The UI suites are their own target,
-`make test-ui`, run by `make test-all`. Nothing is deleted, skipped, or weakened — ticket
-§0.1 forbids resolving a failing test by removing it, and this is an environment
-authorization gap rather than a failing assertion.
-
-*Owner action required.* On a machine with a logged-in user present, run:
+and the resulting failures:
 
 ```
-make test-ui
+Failed to load AX for com.bee.macnetlab (pid:…): Not authorized for performing UI testing actions.
+"sidebar.overview" Button exists but never became hittable
 ```
 
-and answer the authorization prompt once. Thereafter the grant persists for that machine,
-and `make test-all` runs the complete suite unattended.
+Both are the same cause. Without the grant, XCUITest can see elements in the accessibility tree
+but cannot hit-test them, so `isHittable` never becomes true and clicks fail.
+
+### Owner action required
+
+**System Settings → Privacy & Security → Accessibility**, then enable the app you launch the
+tests from:
+
+| How you run them | What to enable |
+|---|---|
+| `make test-ui` in Terminal | **Terminal** |
+| `make test-ui` in iTerm | **iTerm** |
+| Test navigator in Xcode | **Xcode** |
+
+The grant persists once given. Then:
+
+```bash
+make test-ui      # or make test-all for everything
+```
+
+### What was already fixed
+
+The first real run surfaced three defects **in the tests**, all since corrected:
+
+1. **Locale dependence.** Assertions compared against English while the app ran in Simplified
+   Chinese, so `"已停止"` failed against `"Stopped"`. Tests now launch with
+   `-AppleLanguages "(en)"`, so they test the product rather than the tester's system language.
+2. **Restored window geometry.** macOS had persisted a split-view 2174 pt tall on a 944 pt
+   screen, putting the sidebar above the visible area. Tests now launch with
+   `-ApplePersistenceIgnoreState YES`, and the stale defaults were cleared.
+3. **Asserting before async state settled.** Helper status begins as "checking"; tests asserted
+   on the action buttons before it resolved. They now wait.
+
+Tests that depend on the helper being installed now `XCTSkipUnless` rather than failing, so a
+machine without the helper reports them as skipped — which is true — instead of broken.
 
 ---
 
