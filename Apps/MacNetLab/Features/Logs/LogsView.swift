@@ -111,7 +111,7 @@ struct LogsView: View {
             Divider()
             ForEach(LogCategory.allCases) { category in
                 Toggle(isOn: categoryBinding(category)) {
-                    Label(category.displayName, systemImage: category.systemImage)
+                    Label(category.localizedName, systemImage: category.systemImage)
                 }
             }
         } label: {
@@ -125,7 +125,9 @@ struct LogsView: View {
     private var categoryLabel: String {
         let selected = monitor.filter.categories
         if selected.isEmpty { return String(localized: "All Categories") }
-        if selected.count == 1, let only = selected.first { return only.displayName }
+        if selected.count == 1, let only = selected.first {
+            return String(localized: String.LocalizationValue(only.displayName))
+        }
         return String(localized: "\(selected.count) Categories")
     }
 
@@ -177,11 +179,11 @@ struct LogsView: View {
                 .frame(width: 68, alignment: .leading)
 
             // Text and symbol, never colour alone (ticket §26.2).
-            Label(event.category.displayName, systemImage: event.category.systemImage)
+            Label(event.category.localizedName, systemImage: event.category.systemImage)
                 .labelStyle(.iconOnly)
                 .foregroundStyle(tint(for: event.category))
                 .frame(width: 16)
-                .accessibilityLabel(Text(event.category.displayName))
+                .accessibilityLabel(Text(event.category.localizedName))
 
             Text(verbatim: event.message)
                 .font(.caption.monospaced())

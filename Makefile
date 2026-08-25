@@ -22,6 +22,7 @@ XCB_FILTER := | grep -E "error:|Test run with|Executed .* test|\*\* (BUILD|TEST)
 XCPRETTY := | tail -40
 
 .PHONY: help bootstrap generate build test test-all test-package test-xcode test-ui \
+        check-localization \
         screenshots \
         vendor-dnsmasq verify-bundle install-dev clean
 
@@ -34,7 +35,8 @@ help:
 	@echo "  test            run package tests and integration tests (no human input needed)"
 	@echo "  test-ui         run UI tests (needs a one-time macOS automation authorization)"
 	@echo "  test-all        test + test-ui"
-	@echo "  screenshots     render each page to build/Screenshots (no permissions needed)"
+	@echo "  screenshots     render each page, in every shipped language"
+	@echo "  check-localization  assert every localizable string is translated"
 	@echo "  vendor-dnsmasq  fetch, verify, build, and stage dnsmasq 2.x as Universal 2"
 	@echo "  verify-bundle   assert the built bundle meets the security checklist"
 	@echo "  install-dev     stage a development build into /Applications"
@@ -80,14 +82,29 @@ test: test-package test-xcode
 
 test-all: test test-ui
 
-# Renders the pages off-screen with ImageRenderer. Needs no window server and no Screen
-# Recording permission, so it works headless and in CI.
+# Renders every page to build/Screenshots/<language>/, in each language the app ships in.
+#
+# Off-screen via NSHostingView, so it needs no window server and no Screen Recording
+# permission and works headless. The language is chosen through AppleLanguages — the same
+# mechanism macOS uses for any app — so the output is localized exactly as the app would be.
+SCREENSHOT_TOOL := $(DERIVED_DATA)/Build/Products/Debug/MacNetLabScreenshots.app/Contents/MacOS/MacNetLabScreenshots
+SCREENSHOT_LANGUAGES := en zh-Hans
+
+# Uses the compiler's own list of localizable strings, so it catches literals a grep over the
+# sources would miss.
+check-localization: build
+	@Scripts/check-localization.sh
+
 screenshots: generate
-	@echo "==> rendering pages to build/Screenshots"
-	@$(XCB) -configuration Debug \
-		-only-testing:MacNetLabScreenshots test $(XCB_FILTER)
-	@echo "==> wrote:"
-	@ls -1 build/Screenshots/*.png 2>/dev/null | sed 's|^|    |' || echo "    (none)"
+	@echo "==> building the screenshot tool"
+	@xcodebuild -project $(PROJECT) -scheme MacNetLabScreenshots \
+		-derivedDataPath $(DERIVED_DATA) -configuration Debug build $(XCB_FILTER)
+	@for lang in $(SCREENSHOT_LANGUAGES); do \
+		echo "==> rendering $$lang"; \
+		rm -rf build/Screenshots/$$lang; \
+		"$(SCREENSHOT_TOOL)" --output "$(PWD)/build/Screenshots/$$lang" \
+			-AppleLanguages "($$lang)" -AppleLocale "$$lang" || exit 1; \
+	done
 
 vendor-dnsmasq:
 	@Scripts/build-dnsmasq.sh

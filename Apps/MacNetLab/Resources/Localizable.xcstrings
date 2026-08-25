@@ -156,6 +156,17 @@
         }
       }
     },
+    "Bridge": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网桥"
+          }
+        }
+      }
+    },
     "Broadcast": {
       "extractionState": "manual",
       "localizations": {
@@ -640,6 +651,17 @@
         }
       }
     },
+    "Editable DHCP and DNS forms are added in a later phase. The values from the selected profile are used as-is.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可编辑的 DHCP 与 DNS 表单将在后续阶段加入。当前直接使用所选配置中的值。"
+          }
+        }
+      }
+    },
     "Empty the view. The log file on disk is not changed.": {
       "extractionState": "manual",
       "localizations": {
@@ -669,6 +691,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "错误"
+          }
+        }
+      }
+    },
+    "Ethernet": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以太网"
           }
         }
       }
@@ -1025,6 +1058,17 @@
         }
       }
     },
+    "Loopback": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回环"
+          }
+        }
+      }
+    },
     "MAC Address": {
       "extractionState": "manual",
       "localizations": {
@@ -1098,17 +1142,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "请先将另一个配置设为默认"
-          }
-        }
-      }
-    },
-    "More settings": {
-      "extractionState": "manual",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更多设置"
           }
         }
       }
@@ -1190,6 +1223,17 @@
         }
       }
     },
+    "No link": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无链路"
+          }
+        }
+      }
+    },
     "No link detected": {
       "extractionState": "manual",
       "localizations": {
@@ -1252,6 +1296,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "未安装"
+          }
+        }
+      }
+    },
+    "Not ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未就绪"
           }
         }
       }
@@ -1450,6 +1505,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新扫描网络接口"
+          }
+        }
+      }
+    },
+    "Ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就绪"
           }
         }
       }
@@ -1806,6 +1872,17 @@
         }
       }
     },
+    "Started": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动于"
+          }
+        }
+      }
+    },
     "Starting": {
       "extractionState": "manual",
       "localizations": {
@@ -2103,6 +2180,17 @@
         }
       }
     },
+    "Unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知"
+          }
+        }
+      }
+    },
     "Unknown state (%lld)": {
       "extractionState": "manual",
       "localizations": {
@@ -2158,6 +2246,17 @@
         }
       }
     },
+    "VPN": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPN"
+          }
+        }
+      }
+    },
     "Validate Configuration": {
       "extractionState": "manual",
       "localizations": {
@@ -2202,6 +2301,17 @@
         }
       }
     },
+    "Virtual": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "虚拟"
+          }
+        }
+      }
+    },
     "Waiting for DHCP clients…": {
       "extractionState": "manual",
       "localizations": {
@@ -2231,6 +2341,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "警告"
+          }
+        }
+      }
+    },
+    "Wi-Fi": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wi-Fi"
+          }
+        }
+      }
+    },
+    "dnsmasq": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dnsmasq"
           }
         }
       }

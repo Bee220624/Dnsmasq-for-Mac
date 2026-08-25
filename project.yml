@@ -191,10 +191,12 @@ targets:
   # is excluded because a bundle cannot contain a second `@main`.
   # ---------------------------------------------------------------------------------------
   MacNetLabScreenshots:
-    type: bundle.unit-test
+    type: application
     platform: macOS
     sources:
-      - path: Tests/ScreenshotRenderer
+      - path: Tools/ScreenshotTool
+        excludes:
+          - "Info.plist"
       - path: Apps/MacNetLab
         excludes:
           - "App/MacNetLabApp.swift"
@@ -202,8 +204,11 @@ targets:
           - "MacNetLab.entitlements"
     settings:
       base:
+        PRODUCT_NAME: MacNetLabScreenshots
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).screenshots
-        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Tools/ScreenshotTool/Info.plist
+        SWIFT_EMIT_LOC_STRINGS: YES
+        SKIP_INSTALL: YES
     dependencies:
       - package: MacNetCore
         product: MacNetModels
@@ -237,11 +242,21 @@ targets:
       - target: MacNetLab
 
 schemes:
+  # Its own scheme so `make screenshots` can build just the tool. xcodebuild refuses -target
+  # together with -scheme, and requires a scheme whenever -derivedDataPath is given.
+  MacNetLabScreenshots:
+    build:
+      targets:
+        MacNetLabScreenshots: [run]
+    run:
+      config: Debug
+
   MacNetLab:
     build:
       targets:
         MacNetLab: all
         MacNetLabHelper: all
+        MacNetLabScreenshots: [run]
     run:
       config: Debug
     test:
@@ -251,9 +266,6 @@ schemes:
         - HelperIntegrationTests
         - MacNetLabTests
         - MacNetLabUITests
-        # Present so `make screenshots` can select it. It is not part of `make test`, which
-        # only invokes the two suites above.
-        - MacNetLabScreenshots
     profile:
       config: Release
     analyze:

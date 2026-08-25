@@ -1,6 +1,5 @@
 import AppKit
 import SwiftUI
-import Testing
 import MacNetModels
 
 /// Renders each page to a PNG, off-screen.
@@ -17,25 +16,31 @@ import MacNetModels
 /// renders as it actually looks. The window is never ordered front, so this still needs no
 /// Screen Recording permission and still works headless.
 ///
-/// Output goes to `build/Screenshots/`. Run with:
+/// ## Why an app bundle rather than a test bundle
+///
+/// SwiftUI resolves `Text(LocalizedStringKey)` against `Bundle.main`. Run from a test bundle,
+/// `Bundle.main` is the `xctest` tool — which carries no localizations for our keys — so every
+/// string fell back to its English key no matter which language was requested. An app bundle
+/// owns its own resources, so the rendered pages are localized exactly as the shipping app is.
+///
+/// Output goes to `build/Screenshots/<language>/`. Run with:
 ///
 /// ```
 /// make screenshots
 /// ```
-@Suite("Page screenshots", .serialized)
 @MainActor
-struct PageScreenshots {
+struct PageRenderer {
+
+    private let outputRoot: URL
+
+    init(outputRoot: URL) {
+        self.outputRoot = outputRoot
+    }
 
     /// Ticket §5.1's default window size, so the output matches what a user sees on launch.
     private static let size = CGSize(width: 1180, height: 760)
 
-    private var outputDirectory: URL {
-        // Walks up from this file to the repository root, so the output lands beside the
-        // project rather than somewhere inside DerivedData.
-        var url = URL(fileURLWithPath: #filePath)
-        for _ in 0..<3 { url.deleteLastPathComponent() }
-        return url.appending(path: "build/Screenshots")
-    }
+    private var outputDirectory: URL { outputRoot }
 
     // MARK: - Environment
 
@@ -143,14 +148,14 @@ struct PageScreenshots {
 
         guard let representation = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds)
         else {
-            Issue.record("could not allocate a bitmap for \(name)")
-            return url
+            FileHandle.standardError.write(Data("could not allocate a bitmap for \(name)\n".utf8))
+            exit(EXIT_FAILURE)
         }
         hosting.cacheDisplay(in: hosting.bounds, to: representation)
 
         guard let png = representation.representation(using: .png, properties: [:]) else {
-            Issue.record("could not encode \(name)")
-            return url
+            FileHandle.standardError.write(Data("could not encode \(name)\n".utf8))
+            exit(EXIT_FAILURE)
         }
         try png.write(to: url)
         return url
@@ -173,7 +178,6 @@ struct PageScreenshots {
 
     // MARK: - Pages
 
-    @Test("renders every page")
     func renderPages() async throws {
         let fixture = makeEnvironment()
         defer { try? FileManager.default.removeItem(at: fixture.profileDirectory) }
@@ -210,7 +214,15 @@ struct PageScreenshots {
         let written = try FileManager.default
             .contentsOfDirectory(atPath: outputDirectory.path)
             .filter { $0.hasSuffix(".png") }
-        #expect(written.count == 6, "expected six pages, wrote \(written.sorted())")
+            .sorted()
+        for name in written {
+            print("    \(outputDirectory.appending(path: name).path)")
+        }
+        guard written.count == 6 else {
+            FileHandle.standardError.write(
+                Data("expected six pages, wrote \(written)\n".utf8))
+            exit(EXIT_FAILURE)
+        }
     }
 }
 

@@ -88,16 +88,20 @@ struct InterfaceCard: View {
         }
     }
 
+    /// The picker row composes one line out of several values, so this resolves the phrase
+    /// itself rather than returning a key the surrounding `Text(verbatim:)` would not look up.
     private func linkText(_ interface: NetworkInterfaceDescriptor) -> String {
-        guard interface.isSupported else { return "Unavailable" }
-        return interface.isLinkActive ? "Connected" : "No link"
+        guard interface.isSupported else { return String(localized: "Unavailable") }
+        return interface.isLinkActive
+            ? String(localized: "Connected")
+            : String(localized: "No link")
     }
 
     private func secondaryLine(_ interface: NetworkInterfaceDescriptor) -> String {
         var parts: [String] = []
         if let mac = interface.macAddress { parts.append(mac) }
         if let first = interface.ipv4Addresses.first { parts.append(first.address.description) }
-        parts.append(interface.kind.displayName)
+        parts.append(interface.kind.localizedNameString)
         return parts.joined(separator: " · ")
     }
 
@@ -109,7 +113,7 @@ struct InterfaceCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 field("Hardware Port", interface.hardwarePortName ?? interface.displayName)
                 field("BSD Name", interface.bsdName)
-                field("Type", interface.kind.displayName)
+                localizedField("Type", interface.kind.localizedName)
                 field("MAC Address", interface.macAddress ?? "—")
                 linkField(interface)
                 addressField(interface)
@@ -118,6 +122,22 @@ struct InterfaceCard: View {
             .accessibilityIdentifier("overview.interfaceDetail")
         } else {
             unselectedExplanation
+        }
+    }
+
+    /// A field whose value is itself a localized key rather than data.
+    private func localizedField(
+        _ label: LocalizedStringKey,
+        _ value: LocalizedStringKey
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .frame(width: 140, alignment: .leading)
+            Text(value)
+                .font(.callout)
+            Spacer()
         }
     }
 
