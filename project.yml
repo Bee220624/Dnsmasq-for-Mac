@@ -181,6 +181,46 @@ targets:
         product: MacNetValidation
 
   # ---------------------------------------------------------------------------------------
+  # Renders the SwiftUI pages to PNG files, off-screen.
+  #
+  # `ImageRenderer` draws a view hierarchy without a window, so this needs neither Screen
+  # Recording permission nor a visible display — which is what makes it usable for
+  # documentation and for reviewing a layout change without running the app.
+  #
+  # It compiles the app's own sources rather than duplicating any view. `MacNetLabApp.swift`
+  # is excluded because a bundle cannot contain a second `@main`.
+  # ---------------------------------------------------------------------------------------
+  MacNetLabScreenshots:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/ScreenshotRenderer
+      - path: Apps/MacNetLab
+        excludes:
+          - "App/MacNetLabApp.swift"
+          - "Info.plist"
+          - "MacNetLab.entitlements"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).screenshots
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - package: MacNetCore
+        product: MacNetModels
+      - package: MacNetCore
+        product: MacNetValidation
+      - package: MacNetCore
+        product: MacNetDnsmasq
+      - package: MacNetCore
+        product: MacNetLeases
+      - package: MacNetCore
+        product: MacNetLogging
+      - package: MacNetCore
+        product: MacNetXPC
+      - package: MacNetCore
+        product: MacNetInterfaces
+
+  # ---------------------------------------------------------------------------------------
   # UI tests (ticket §24.3).
   # ---------------------------------------------------------------------------------------
   MacNetLabUITests:
@@ -211,6 +251,9 @@ schemes:
         - HelperIntegrationTests
         - MacNetLabTests
         - MacNetLabUITests
+        # Present so `make screenshots` can select it. It is not part of `make test`, which
+        # only invokes the two suites above.
+        - MacNetLabScreenshots
     profile:
       config: Release
     analyze:

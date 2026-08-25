@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// Read-only facts about this build and this machine, resolved once at launch.
 ///
@@ -53,5 +54,23 @@ struct AppEnvironment: Sendable {
         #else
         "unknown"
         #endif
+    }
+}
+
+// MARK: - Environment
+
+/// Makes `AppEnvironment` reachable from any view.
+///
+/// Declared beside the type rather than in the `@main` entry point, so that anything compiling
+/// these views — the app, and the off-screen screenshot renderer — gets the key. An
+/// environment key living in the entry point is only available to targets that include it.
+private struct AppEnvironmentKey: EnvironmentKey {
+    static let defaultValue = AppEnvironment.resolve()
+}
+
+extension EnvironmentValues {
+    var appEnvironment: AppEnvironment {
+        get { self[AppEnvironmentKey.self] }
+        set { self[AppEnvironmentKey.self] = newValue }
     }
 }

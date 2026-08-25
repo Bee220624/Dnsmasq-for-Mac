@@ -22,6 +22,7 @@ XCB_FILTER := | grep -E "error:|Test run with|Executed .* test|\*\* (BUILD|TEST)
 XCPRETTY := | tail -40
 
 .PHONY: help bootstrap generate build test test-all test-package test-xcode test-ui \
+        screenshots \
         vendor-dnsmasq verify-bundle install-dev clean
 
 help:
@@ -33,6 +34,7 @@ help:
 	@echo "  test            run package tests and integration tests (no human input needed)"
 	@echo "  test-ui         run UI tests (needs a one-time macOS automation authorization)"
 	@echo "  test-all        test + test-ui"
+	@echo "  screenshots     render each page to build/Screenshots (no permissions needed)"
 	@echo "  vendor-dnsmasq  fetch, verify, build, and stage dnsmasq 2.x as Universal 2"
 	@echo "  verify-bundle   assert the built bundle meets the security checklist"
 	@echo "  install-dev     stage a development build into /Applications"
@@ -77,6 +79,15 @@ test-ui: generate
 test: test-package test-xcode
 
 test-all: test test-ui
+
+# Renders the pages off-screen with ImageRenderer. Needs no window server and no Screen
+# Recording permission, so it works headless and in CI.
+screenshots: generate
+	@echo "==> rendering pages to build/Screenshots"
+	@$(XCB) -configuration Debug \
+		-only-testing:MacNetLabScreenshots test $(XCB_FILTER)
+	@echo "==> wrote:"
+	@ls -1 build/Screenshots/*.png 2>/dev/null | sed 's|^|    |' || echo "    (none)"
 
 vendor-dnsmasq:
 	@Scripts/build-dnsmasq.sh
