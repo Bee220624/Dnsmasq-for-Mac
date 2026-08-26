@@ -65,6 +65,12 @@ Certificate details:
 | Team ID (OU) | `MDUMXF88CA` |
 | Valid | 2026-04-08 → 2027-04-08 |
 
+The Apple ID and per-developer certificate identifier are redacted here, matching the
+convention `Scripts/package-release.sh` and `Docs/RELEASE.md` already use for the same values.
+The Team ID is not redacted: it is embedded in the designated requirement that authenticates
+the XPC peer, is declared in `Config/Identifiers.xcconfig`, and is visible in the signature of
+any app signed with it — so it is public by design rather than by accident.
+
 ### Consequences
 
 - **Apple Development signing is available.** This is sufficient to register and approve a

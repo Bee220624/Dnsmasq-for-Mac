@@ -12,6 +12,16 @@ xcuserdata/
 # macOS
 .DS_Store
 
+# Coverage artifacts
+*.profraw
+*.profdata
+
+# Agent/editor local state — never published
+.claude/
+.cursor/
+.vscode/
+.idea/
+
 # Vendored dnsmasq build artifacts (source tarball is fetched, never committed)
 Resources/ThirdParty/dnsmasq/source/
 Resources/ThirdParty/dnsmasq/build/
