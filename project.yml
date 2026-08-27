@@ -3,7 +3,7 @@
 # This file is the source of truth for the Xcode project (ticket §4.1). project.pbxproj is
 # generated output and must never be hand-edited; run `make generate` after changing this.
 
-name: MacNetLab
+name: DnsmasqForMac
 
 options:
   bundleIdPrefix: com.bee
@@ -28,22 +28,23 @@ targets:
   # ---------------------------------------------------------------------------------------
   # The SwiftUI application. Runs as the logged-in user and is never root.
   # ---------------------------------------------------------------------------------------
-  MacNetLab:
+  DnsmasqForMac:
     type: application
     platform: macOS
     sources:
-      - path: Apps/MacNetLab
+      - path: Apps/DnsmasqForMac
         excludes:
           - "Info.plist"
-          - "MacNetLab.entitlements"
+          - "DnsmasqForMac.entitlements"
     settings:
       base:
         PRODUCT_NAME: $(PRODUCT_NAME_BASE)
+        PRODUCT_DISPLAY_NAME: $(PRODUCT_DISPLAY_NAME)
         # Ticket §26.1: English and Simplified Chinese in v0.1.
         SWIFT_EMIT_LOC_STRINGS: YES
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
-        INFOPLIST_FILE: Apps/MacNetLab/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Apps/MacNetLab/MacNetLab.entitlements
+        INFOPLIST_FILE: Apps/DnsmasqForMac/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Apps/DnsmasqForMac/DnsmasqForMac.entitlements
         ENABLE_PREVIEWS: YES
         SWIFT_EMIT_LOC_STRINGS: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -68,7 +69,7 @@ targets:
       # bundle, so it must be copied — never embedded as a framework — and re-signed.
       # `embed` must stay true: XcodeGen only emits a Copy Files phase for an embedded
       # dependency, and `copy` merely redirects where that phase puts it.
-      - target: MacNetLabHelper
+      - target: DnsmasqForMacHelper
         embed: true
         codeSign: true
         copy:
@@ -88,11 +89,11 @@ targets:
   # Privileged helper. Runs as root under launchd; started on demand via its Mach service.
   # Product name must equal the LaunchDaemon label so BundleProgram resolves.
   # ---------------------------------------------------------------------------------------
-  MacNetLabHelper:
+  DnsmasqForMacHelper:
     type: tool
     platform: macOS
     sources:
-      - path: Daemons/MacNetLabHelper
+      - path: Daemons/DnsmasqForMacHelper
         excludes:
           - "Info.plist"
     settings:
@@ -101,7 +102,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: $(HELPER_BUNDLE_ID)
         # A tool has no bundle, so its Info.plist is linked into the binary as a __TEXT
         # section. Bundle.main.infoDictionary reads it back at runtime.
-        INFOPLIST_FILE: Daemons/MacNetLabHelper/Info.plist
+        INFOPLIST_FILE: Daemons/DnsmasqForMacHelper/Info.plist
         CREATE_INFOPLIST_SECTION_IN_BINARY: YES
         SKIP_INSTALL: YES
         # Ticket §10: the helper links only the shared core. No AppKit, no SwiftUI.
@@ -134,7 +135,7 @@ targets:
       # The helper's own sources are compiled into the test bundle so its runtime logic can be
       # driven against fakes. main.swift is excluded because top-level executable code cannot
       # live in a bundle, and Info.plist is not source.
-      - path: Daemons/MacNetLabHelper
+      - path: Daemons/DnsmasqForMacHelper
         excludes:
           - "main.swift"
           - "Info.plist"
@@ -166,12 +167,12 @@ targets:
   # specific files it exercises rather than taking the app as a test host: a hosted test
   # bundle launches the app, and these tests should not need a window on screen.
   # ---------------------------------------------------------------------------------------
-  MacNetLabTests:
+  DnsmasqForMacTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: Tests/MacNetLabTests
-      - path: Apps/MacNetLab/Infrastructure/Profiles
+      - path: Tests/DnsmasqForMacTests
+      - path: Apps/DnsmasqForMac/Infrastructure/Profiles
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).unit-tests
@@ -189,24 +190,24 @@ targets:
   # Recording permission nor a visible display — which is what makes it usable for
   # documentation and for reviewing a layout change without running the app.
   #
-  # It compiles the app's own sources rather than duplicating any view. `MacNetLabApp.swift`
+  # It compiles the app's own sources rather than duplicating any view. `DnsmasqForMacApp.swift`
   # is excluded because a bundle cannot contain a second `@main`.
   # ---------------------------------------------------------------------------------------
-  MacNetLabScreenshots:
+  DnsmasqForMacScreenshots:
     type: application
     platform: macOS
     sources:
       - path: Tools/ScreenshotTool
         excludes:
           - "Info.plist"
-      - path: Apps/MacNetLab
+      - path: Apps/DnsmasqForMac
         excludes:
-          - "App/MacNetLabApp.swift"
+          - "App/DnsmasqForMacApp.swift"
           - "Info.plist"
-          - "MacNetLab.entitlements"
+          - "DnsmasqForMac.entitlements"
     settings:
       base:
-        PRODUCT_NAME: MacNetLabScreenshots
+        PRODUCT_NAME: DnsmasqForMacScreenshots
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).screenshots
         INFOPLIST_FILE: Tools/ScreenshotTool/Info.plist
         SWIFT_EMIT_LOC_STRINGS: YES
@@ -230,35 +231,35 @@ targets:
   # ---------------------------------------------------------------------------------------
   # UI tests (ticket §24.3).
   # ---------------------------------------------------------------------------------------
-  MacNetLabUITests:
+  DnsmasqForMacUITests:
     type: bundle.ui-testing
     platform: macOS
     sources:
-      - path: Tests/MacNetLabUITests
+      - path: Tests/DnsmasqForMacUITests
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).ui-tests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_TARGET_NAME: MacNetLab
+        TEST_TARGET_NAME: DnsmasqForMac
     dependencies:
-      - target: MacNetLab
+      - target: DnsmasqForMac
 
 schemes:
   # Its own scheme so `make screenshots` can build just the tool. xcodebuild refuses -target
   # together with -scheme, and requires a scheme whenever -derivedDataPath is given.
-  MacNetLabScreenshots:
+  DnsmasqForMacScreenshots:
     build:
       targets:
-        MacNetLabScreenshots: [run]
+        DnsmasqForMacScreenshots: [run]
     run:
       config: Debug
 
-  MacNetLab:
+  DnsmasqForMac:
     build:
       targets:
-        MacNetLab: all
-        MacNetLabHelper: all
-        MacNetLabScreenshots: [run]
+        DnsmasqForMac: all
+        DnsmasqForMacHelper: all
+        DnsmasqForMacScreenshots: [run]
     run:
       config: Debug
     test:
@@ -266,8 +267,8 @@ schemes:
       gatherCoverageData: true
       targets:
         - HelperIntegrationTests
-        - MacNetLabTests
-        - MacNetLabUITests
+        - DnsmasqForMacTests
+        - DnsmasqForMacUITests
     profile:
       config: Release
     analyze:

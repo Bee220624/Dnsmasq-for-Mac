@@ -63,7 +63,7 @@ struct ServiceFailureBridgingTests {
             code: .dnsmasqHashMismatch,
             title: "Engine Verification Failed",
             message: "The bundled dnsmasq does not match its recorded checksum.",
-            recoverySuggestion: "Reinstall MacNetLab."
+            recoverySuggestion: "Reinstall Dnsmasq for Mac."
         )
         let error = failure.asNSError
 
@@ -91,7 +91,7 @@ struct ServiceFailureBridgingTests {
         let corrupt = NSError(
             domain: ServiceFailure.errorDomain,
             code: 1,
-            userInfo: ["com.bee.macnetlab.ServiceFailure.payload": Data("not json".utf8)]
+            userInfo: ["com.bee.dnsmasqformac.ServiceFailure.payload": Data("not json".utf8)]
         )
         #expect(ServiceFailure.from(nsError: corrupt) == nil)
     }

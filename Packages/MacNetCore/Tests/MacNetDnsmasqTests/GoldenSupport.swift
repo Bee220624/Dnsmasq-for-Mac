@@ -9,7 +9,7 @@ enum Golden {
     /// Fixed session directory so golden files contain a stable path. A real session uses a
     /// UUID; substituting a constant here is what keeps the output comparable run to run.
     static let paths = RuntimePaths(
-        sessionDirectory: "/var/db/com.bee.macnetlab/sessions/SESSION_ID"
+        sessionDirectory: "/var/db/com.bee.dnsmasqformac/sessions/SESSION_ID"
     )
 
     static func address(_ text: String) -> IPv4Address {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Every way a MacNetLab operation can fail, as a closed set (ticket §6.10).
+/// Every way a Dnsmasq for Mac operation can fail, as a closed set (ticket §6.10).
 ///
 /// Closed rather than free-form because the UI maps each case to a specific recovery
 /// affordance, and because an error crossing the XPC boundary must survive encoding without
@@ -84,8 +84,8 @@ public struct ServiceFailure: Codable, Sendable, Equatable, Error {
 /// failure rides along in `userInfo` and is recovered on the far side; the localized fields
 /// are also populated so that an `NSError` logged by the system is still readable.
 extension ServiceFailure {
-    public static let errorDomain = "com.bee.macnetlab.ServiceFailure"
-    static let payloadUserInfoKey = "com.bee.macnetlab.ServiceFailure.payload"
+    public static let errorDomain = "com.bee.dnsmasqformac.ServiceFailure"
+    static let payloadUserInfoKey = "com.bee.dnsmasqformac.ServiceFailure.payload"
 
     public var asNSError: NSError {
         var userInfo: [String: Any] = [
@@ -132,7 +132,7 @@ extension ServiceFailure {
         ServiceFailure(
             code: .internalError,
             title: "Internal Error",
-            message: "MacNetLab encountered an unexpected internal error.",
+            message: "Dnsmasq for Mac encountered an unexpected internal error.",
             recoverySuggestion: "Try the operation again. If it keeps happening, restart the app.",
             technicalDetails: details,
             isRetryable: true
@@ -165,7 +165,7 @@ extension ServiceFailure {
         code: .unauthorizedClient,
         title: "Unauthorized Client",
         message: "The privileged helper rejected this connection because the caller could not be verified.",
-        recoverySuggestion: "Reinstall MacNetLab from your original download and try again.",
+        recoverySuggestion: "Reinstall Dnsmasq for Mac from your original download and try again.",
         technicalDetails: nil,
         isRetryable: false
     )

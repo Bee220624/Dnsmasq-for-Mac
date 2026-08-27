@@ -56,9 +56,9 @@ struct PageRenderer {
         let appEnvironment = AppEnvironment(
             appVersion: "0.1.0",
             buildNumber: "1",
-            bundleIdentifier: "com.bee.macnetlab",
-            helperLabel: "com.bee.macnetlab.helper",
-            machServiceName: "com.bee.macnetlab.helper",
+            bundleIdentifier: "com.bee.dnsmasqformac",
+            helperLabel: "com.bee.dnsmasqformac.helper",
+            machServiceName: "com.bee.dnsmasqformac.helper",
             protocolVersion: MacNetCoreInfo.protocolVersion,
             teamIdentifier: nil,
             operatingSystemVersion: {
@@ -70,7 +70,7 @@ struct PageRenderer {
         let helperStatus = HelperStatusModel(environment: appEnvironment)
 
         let profileDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appending(path: "macnetlab-screenshots-\(UUID().uuidString)")
+            .appending(path: "dnsmasqformac-screenshots-\(UUID().uuidString)")
 
         return AppEnvironmentFixture(
             appEnvironment: appEnvironment,

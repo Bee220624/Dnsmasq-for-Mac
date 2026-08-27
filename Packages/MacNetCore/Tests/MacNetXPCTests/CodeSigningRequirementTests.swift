@@ -9,14 +9,14 @@ struct CodeSigningRequirementTests {
     @Test("produces the exact expected requirement")
     func producesExpectedRequirement() throws {
         let requirement = CodeSigningRequirement.forSignedProgram(
-            bundleIdentifier: "com.bee.macnetlab",
+            bundleIdentifier: "com.bee.dnsmasqformac",
             teamIdentifier: "MDUMXF88CA"
         )
 
         // Pinned verbatim rather than checked for substrings: this exact string was validated
         // with `csreq` and against the real signed bundle, so any change to it must be a
         // deliberate edit to this expectation, not a silent drift.
-        let expected = "identifier \"com.bee.macnetlab\" and anchor apple generic "
+        let expected = "identifier \"com.bee.dnsmasqformac\" and anchor apple generic "
             + "and certificate leaf[subject.OU] = \"MDUMXF88CA\""
 
         #expect(requirement == expected)
@@ -25,13 +25,13 @@ struct CodeSigningRequirementTests {
     @Test("asserts all three conditions")
     func assertsAllThreeConditions() throws {
         let requirement = try #require(CodeSigningRequirement.forSignedProgram(
-            bundleIdentifier: "com.bee.macnetlab",
+            bundleIdentifier: "com.bee.dnsmasqformac",
             teamIdentifier: "MDUMXF88CA"
         ))
 
         // Identity alone is not enough: without the anchor, an ad-hoc signature claiming the
         // same identifier would pass. Without the team, any Apple-signed app would.
-        #expect(requirement.contains(#"identifier "com.bee.macnetlab""#))
+        #expect(requirement.contains(#"identifier "com.bee.dnsmasqformac""#))
         #expect(requirement.contains("anchor apple generic"))
         #expect(requirement.contains(#"certificate leaf[subject.OU] = "MDUMXF88CA""#))
     }
@@ -39,9 +39,9 @@ struct CodeSigningRequirementTests {
     @Test("rejects missing inputs rather than emitting a partial requirement",
           arguments: [
             (String?.none, String?.some("MDUMXF88CA")),
-            (String?.some("com.bee.macnetlab"), String?.none),
+            (String?.some("com.bee.dnsmasqformac"), String?.none),
             (String?.some(""), String?.some("MDUMXF88CA")),
-            (String?.some("com.bee.macnetlab"), String?.some("")),
+            (String?.some("com.bee.dnsmasqformac"), String?.some("")),
             (String?.none, String?.none),
           ])
     func rejectsMissingInputs(bundleIdentifier: String?, teamIdentifier: String?) {
@@ -58,17 +58,17 @@ struct CodeSigningRequirementTests {
     /// clause that matches anything, or commenting the rest away.
     @Test("rejects inputs that could alter the requirement's meaning",
           arguments: [
-            #"com.bee.macnetlab" or anchor apple"#,
-            "com.bee.macnetlab\" /* ",
-            "com.bee.macnetlab and anchor apple",
-            "com.bee.macnetlab\nidentifier \"x\"",
-            "com.bee.macnetlab\\",
-            "com.bee.macnetlab;",
-            "com.bee.macnetlab ",
-            " com.bee.macnetlab",
-            "com.bee.macnetlab\"",
-            "com.bee.macnetlab[1]",
-            "com.bee.macnetlab$(whoami)",
+            #"com.bee.dnsmasqformac" or anchor apple"#,
+            "com.bee.dnsmasqformac\" /* ",
+            "com.bee.dnsmasqformac and anchor apple",
+            "com.bee.dnsmasqformac\nidentifier \"x\"",
+            "com.bee.dnsmasqformac\\",
+            "com.bee.dnsmasqformac;",
+            "com.bee.dnsmasqformac ",
+            " com.bee.dnsmasqformac",
+            "com.bee.dnsmasqformac\"",
+            "com.bee.dnsmasqformac[1]",
+            "com.bee.dnsmasqformac$(whoami)",
           ])
     func rejectsInjectionAttempts(malicious: String) {
         #expect(CodeSigningRequirement.forSignedProgram(
@@ -77,13 +77,13 @@ struct CodeSigningRequirementTests {
         ) == nil)
 
         #expect(CodeSigningRequirement.forSignedProgram(
-            bundleIdentifier: "com.bee.macnetlab",
+            bundleIdentifier: "com.bee.dnsmasqformac",
             teamIdentifier: malicious
         ) == nil)
     }
 
     @Test("accepts the identifier characters real bundle ids and team ids use",
-          arguments: ["com.bee.macnetlab", "com.bee.macnetlab.helper", "MDUMXF88CA", "A1B2C3D4E5",
+          arguments: ["com.bee.dnsmasqformac", "com.bee.dnsmasqformac.helper", "MDUMXF88CA", "A1B2C3D4E5",
                       "com.example.my-app", "com.example.app2"])
     func acceptsLegitimateIdentifiers(identifier: String) {
         #expect(CodeSigningRequirement.sanitized(identifier) == identifier)

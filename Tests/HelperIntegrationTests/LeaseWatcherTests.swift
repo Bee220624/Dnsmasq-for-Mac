@@ -12,7 +12,7 @@ import MacNetXPC
 struct LeaseFileWatcherTests {
 
     private func makePath() -> String {
-        let directory = NSTemporaryDirectory() + "macnetlab-leases-\(UUID().uuidString)"
+        let directory = NSTemporaryDirectory() + "dnsmasqformac-leases-\(UUID().uuidString)"
         try? FileManager.default.createDirectory(
             atPath: directory, withIntermediateDirectories: true
         )

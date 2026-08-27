@@ -1,8 +1,8 @@
 # The Privileged Helper
 
-MacNetLab needs root to add an IP alias to an interface and to run dnsmasq on ports 53 and
+Dnsmasq for Mac needs root to add an IP alias to an interface and to run dnsmasq on ports 53 and
 67. The app itself never has root. Instead it ships a small LaunchDaemon,
-`com.bee.macnetlab.helper`, which runs as root and exposes a fixed set of operations over XPC.
+`com.bee.dnsmasqformac.helper`, which runs as root and exposes a fixed set of operations over XPC.
 
 This document covers how that helper is installed, approved, repaired, and removed, and what
 verification stands between a caller and root.
@@ -14,14 +14,14 @@ verification stands between a caller and root.
 The helper and its launchd description ship inside the app bundle:
 
 ```
-MacNetLab.app/
+DnsmasqForMac.app/
 └── Contents/
     └── Library/
         ├── HelperTools/
-        │   ├── com.bee.macnetlab.helper     ← the daemon executable
+        │   ├── com.bee.dnsmasqformac.helper     ← the daemon executable
         │   └── dnsmasq                       ← the bundled engine (Phase 4)
         └── LaunchDaemons/
-            └── com.bee.macnetlab.helper.plist
+            └── com.bee.dnsmasqformac.helper.plist
 ```
 
 The plist's `BundleProgram` is a path *relative to the app bundle*, which is what ties the
@@ -40,12 +40,12 @@ at boot. `Scripts/verify-bundle.sh` fails the build if any of those keys reappea
 
 ### For users
 
-1. Move **MacNetLab.app** to your Applications folder.
+1. Move **DnsmasqForMac.app** to your Applications folder.
 2. Open it. Settings shows the helper as **Not installed**.
 3. Click **Install Helper**.
 4. macOS reports that approval is required. Click **Open Login Items Settings**.
-5. In **System Settings › General › Login Items & Extensions**, enable **MacNetLab**.
-6. Return to MacNetLab. It re-checks on its own and connects — no restart needed.
+5. In **System Settings › General › Login Items & Extensions**, enable **Dnsmasq for Mac**.
+6. Return to Dnsmasq for Mac. It re-checks on its own and connects — no restart needed.
 
 Step 5 cannot be skipped or automated. macOS deliberately requires a human to approve a
 root daemon, and there is no API to grant it.
@@ -65,7 +65,7 @@ installed copy. Then follow the user steps above.
 To watch what the helper does:
 
 ```bash
-log stream --predicate 'subsystem == "com.bee.macnetlab.helper"' --level debug
+log stream --predicate 'subsystem == "com.bee.dnsmasqformac.helper"' --level debug
 ```
 
 ---
@@ -79,7 +79,7 @@ log stream --predicate 'subsystem == "com.bee.macnetlab.helper"' --level debug
 | `notRegistered` | Never installed here | **Install Helper** |
 | `requiresApproval` | Registered; waiting on the user | **Open Login Items Settings**, then polls |
 | `enabled` | Approved and reachable | Connects and handshakes |
-| `notFound` | The daemon plist is missing from the bundle | "Reinstall MacNetLab" — a build or copy problem, not a user error |
+| `notFound` | The daemon plist is missing from the bundle | "Reinstall Dnsmasq for Mac" — a build or copy problem, not a user error |
 
 When the status is `requiresApproval`, the app polls every two seconds until it changes and
 then reconnects. It does **not** call `register()` again in a loop: repeating the call cannot
@@ -93,7 +93,7 @@ surfaced as **Repair Helper** rather than being worked around.
 
 ## 4. How the helper decides who may talk to it
 
-This is the security boundary of the whole product. If it is wrong, MacNetLab is a local
+This is the security boundary of the whole product. If it is wrong, Dnsmasq for Mac is a local
 privilege escalation.
 
 The helper constrains its listener before accepting anything:
@@ -105,11 +105,11 @@ listener.setConnectionCodeSigningRequirement(requirement)
 with
 
 ```
-identifier "com.bee.macnetlab" and anchor apple generic and certificate leaf[subject.OU] = "MDUMXF88CA"
+identifier "com.bee.dnsmasqformac" and anchor apple generic and certificate leaf[subject.OU] = "MDUMXF88CA"
 ```
 
 macOS evaluates this against the **peer's audit token** inside the kernel, before our delegate
-is consulted. A connection that fails never reaches MacNetLab's code at all.
+is consulted. A connection that fails never reaches Dnsmasq for Mac's code at all.
 
 The three clauses each close a different hole:
 
@@ -179,7 +179,7 @@ Removal is refused while a session is running (ticket §5.7). Unregistering the 
 underneath a live dnsmasq would strand the process and leave the temporary IP alias in place,
 with nothing left running that knows how to clean either of them up.
 
-After removal, macOS may still list MacNetLab under Login Items & Extensions. That record is
+After removal, macOS may still list Dnsmasq for Mac under Login Items & Extensions. That record is
 kept independently of launchd's loaded state and can be removed there.
 
 ---

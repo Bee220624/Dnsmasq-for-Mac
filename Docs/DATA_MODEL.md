@@ -14,7 +14,7 @@ a value is constructed rather than requiring every call site to remember.
 
 ## Persisted documents
 
-### `~/Library/Application Support/com.bee.macnetlab/profiles-v1.json`
+### `~/Library/Application Support/com.bee.dnsmasqformac/profiles-v1.json`
 
 ```
 ProfileDatabase
@@ -34,7 +34,7 @@ current file to `backups/profiles-v1.previous.json`, replace, then read back and
 On corruption: the damaged file is moved aside (never overwritten), the previous backup is
 tried, and only if that also fails is a fresh default created.
 
-### `/var/db/com.bee.macnetlab/active-session.json`
+### `/var/db/com.bee.dnsmasqformac/active-session.json`
 
 ```
 SessionJournal

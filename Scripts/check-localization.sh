@@ -38,7 +38,7 @@ catalog_path, derived_data = sys.argv[1], sys.argv[2]
 root = pathlib.Path(derived_data)
 files = [
     path for path in root.rglob("*.stringsdata")
-    if "MacNetLab.build/Objects-normal" in str(path)
+    if "DnsmasqForMac.build/Objects-normal" in str(path)
     and "Screenshots" not in str(path)
     and "Tests" not in str(path)
 ]

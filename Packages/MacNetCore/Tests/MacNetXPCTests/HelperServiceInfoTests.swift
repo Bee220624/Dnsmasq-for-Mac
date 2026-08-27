@@ -12,7 +12,7 @@ struct HelperServiceInfoTests {
             protocolVersion: protocolVersion,
             effectiveUID: euid,
             buildType: .release,
-            bundleIdentifier: "com.bee.macnetlab.helper"
+            bundleIdentifier: "com.bee.dnsmasqformac.helper"
         )
     }
 

@@ -1,6 +1,6 @@
 # Building the bundled dnsmasq
 
-MacNetLab ships its own dnsmasq. It is never downloaded at runtime, never fetched from
+Dnsmasq for Mac ships its own dnsmasq. It is never downloaded at runtime, never fetched from
 Homebrew, and never tracks `latest` — which dnsmasq ships is a decision that gets reviewed
 (ticket §3.4).
 
@@ -143,14 +143,14 @@ place (ticket §22.1, §23).
 
 ## 8. Licence obligations
 
-dnsmasq is GPL v2 **or** GPL v3, at the distributor's choice. MacNetLab keeps it at arm's
+dnsmasq is GPL v2 **or** GPL v3, at the distributor's choice. Dnsmasq for Mac keeps it at arm's
 length: a separate, unmodified executable, controlled through a configuration file and process
-management. No dnsmasq source or object code is compiled or linked into any MacNetLab binary.
+management. No dnsmasq source or object code is compiled or linked into any Dnsmasq for Mac binary.
 
 Retained and shipped: `COPYING`, `COPYING-v3`, the exact version, the upstream source URL, the
 archive digest, and this build script. Settings › Licenses surfaces them in the app.
 
-The licence of MacNetLab itself is **not** an implementation decision and requires legal review
+The licence of Dnsmasq for Mac itself is **not** an implementation decision and requires legal review
 before commercial distribution (ticket §23, `Docs/RISKS.md` R-06).
 
 ### The source archive is not committed

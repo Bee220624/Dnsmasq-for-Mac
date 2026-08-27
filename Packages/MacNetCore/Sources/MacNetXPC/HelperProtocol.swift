@@ -17,7 +17,7 @@ import Foundation
 ///
 /// The whole protocol is declared here because it is the security boundary and is easier to
 /// reason about as one piece; individual methods are implemented in the phase that owns them.
-@objc public protocol MacNetLabHelperProtocol {
+@objc public protocol DnsmasqForMacHelperProtocol {
 
     /// Identity and capability handshake. The app calls this first and refuses to proceed on
     /// a protocol mismatch or a non-root helper.
@@ -72,11 +72,11 @@ import Foundation
 
 /// Helper-to-app push channel. Used for anything the app must learn about without polling:
 /// state transitions, batched log lines, lease updates, and unexpected process death.
-@objc public protocol MacNetLabHelperClientProtocol {
+@objc public protocol DnsmasqForMacHelperClientProtocol {
     func helperDidEmitEvent(_ eventData: Data)
 }
 
-/// Kinds of event delivered over `MacNetLabHelperClientProtocol` (ticket §10.3).
+/// Kinds of event delivered over `DnsmasqForMacHelperClientProtocol` (ticket §10.3).
 public enum HelperEventKind: String, Codable, Sendable {
     case runtimeStateChanged
     case logBatch
@@ -103,10 +103,10 @@ public struct HelperEvent: Codable, Sendable, Equatable {
 /// interface differently — a mismatch there surfaces as an opaque runtime failure.
 public enum HelperInterface {
     public static func makeServiceInterface() -> NSXPCInterface {
-        NSXPCInterface(with: MacNetLabHelperProtocol.self)
+        NSXPCInterface(with: DnsmasqForMacHelperProtocol.self)
     }
 
     public static func makeClientInterface() -> NSXPCInterface {
-        NSXPCInterface(with: MacNetLabHelperClientProtocol.self)
+        NSXPCInterface(with: DnsmasqForMacHelperClientProtocol.self)
     }
 }

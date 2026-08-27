@@ -9,13 +9,13 @@ dangerous to grant it.
 So the product is split at exactly that line.
 
 ```
-MacNetLab.app                            runs as you, never as root
+DnsmasqForMac.app                            runs as you, never as root
   │
   │   NSXPCConnection
   │   structured Codable payloads only, ≤1 MiB request / ≤4 MiB reply
   │   both ends pinned by code signature
   ▼
-com.bee.macnetlab.helper                 LaunchDaemon, root, started on demand
+com.bee.dnsmasqformac.helper                 LaunchDaemon, root, started on demand
   │
   │   fixed executable, argument array, never a shell
   ▼
@@ -33,8 +33,8 @@ bundled dnsmasq                          drops to `nobody` once its sockets are 
 | `MacNetLeases` | Lease file parsing. | no |
 | `MacNetLogging` | Log classification and the bounded buffer. | no |
 | `MacNetXPC` | Protocol declaration and payload envelopes. | no |
-| `Apps/MacNetLab` | SwiftUI, profiles, view models. | yes |
-| `Daemons/MacNetLabHelper` | Everything privileged. | no |
+| `Apps/DnsmasqForMac` | SwiftUI, profiles, view models. | yes |
+| `Daemons/DnsmasqForMacHelper` | Everything privileged. | no |
 
 Nothing in the shared package imports SwiftUI or performs privileged work. That is what makes
 the interesting logic testable without root, without a network adapter, and without a window.

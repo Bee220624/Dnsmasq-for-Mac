@@ -31,15 +31,15 @@ second rather than a full build.
 Nested code is signed before the bundle containing it:
 
 1. `Contents/Library/HelperTools/dnsmasq`
-2. `Contents/Library/HelperTools/com.bee.macnetlab.helper`
-3. `MacNetLab.app` (with entitlements)
+2. `Contents/Library/HelperTools/com.bee.dnsmasqformac.helper`
+3. `DnsmasqForMac.app` (with entitlements)
 
 Signing the outer bundle first would be invalidated by every inner signature that followed.
 
 ### Notarization
 
 ```bash
-xcrun notarytool store-credentials MacNetLab \
+xcrun notarytool store-credentials Dnsmasq for Mac \
     --apple-id <your-apple-id> --team-id MDUMXF88CA --password <app-specific-password>
 ```
 
@@ -56,7 +56,7 @@ containing the verified upstream source, both licence texts, the version and dig
 `build-dnsmasq.sh`. **Both archives must be published together.** Reproducibility is not the
 same obligation as distribution: the source has to travel with the binary, not merely be cited.
 
-> The final licence of MacNetLab itself is not an implementation decision and requires legal
+> The final licence of Dnsmasq for Mac itself is not an implementation decision and requires legal
 > review before any commercial distribution (ticket §23, `RISKS.md` R-06). `LICENSE_PENDING` is
 > intentional.
 

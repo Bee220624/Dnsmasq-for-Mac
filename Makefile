@@ -1,4 +1,4 @@
-# MacNetLab build entry points (ticket §Phase 1).
+# Dnsmasq for Mac build entry points (ticket §Phase 1).
 #
 # Every target here is a thin wrapper around a script in Scripts/, so that CI, the Makefile,
 # and a developer's shell all run exactly the same code path.
@@ -7,8 +7,8 @@ SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 
-PROJECT      := MacNetLab.xcodeproj
-SCHEME       := MacNetLab
+PROJECT      := DnsmasqForMac.xcodeproj
+SCHEME       := DnsmasqForMac
 PACKAGE_PATH := Packages/MacNetCore
 DERIVED_DATA := build/DerivedData
 XCB          := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED_DATA)
@@ -27,10 +27,10 @@ XCPRETTY := | tail -40
         vendor-dnsmasq verify-bundle install-dev clean
 
 help:
-	@echo "MacNetLab — available targets"
+	@echo "Dnsmasq for Mac — available targets"
 	@echo ""
 	@echo "  bootstrap       install development tooling and generate the Xcode project"
-	@echo "  generate        regenerate MacNetLab.xcodeproj from project.yml"
+	@echo "  generate        regenerate DnsmasqForMac.xcodeproj from project.yml"
 	@echo "  build           build app + helper (Debug)"
 	@echo "  test            run package tests and integration tests (no human input needed)"
 	@echo "  test-ui         run UI tests (needs a one-time macOS automation authorization)"
@@ -62,7 +62,7 @@ test-xcode: generate
 	@echo "==> xcodebuild test ($(SCHEME)) — integration targets"
 	@$(XCB) -configuration Debug \
 		-only-testing:HelperIntegrationTests \
-		-only-testing:MacNetLabTests test $(XCB_FILTER)
+		-only-testing:DnsmasqForMacTests test $(XCB_FILTER)
 
 # UI tests are separated from the default `test` target on purpose.
 #
@@ -76,7 +76,7 @@ test-ui: generate
 	@echo "==> xcodebuild test ($(SCHEME)) — UI targets"
 	@echo "    Requires a one-time authorization; see Docs/RISKS.md R-11."
 	@$(XCB) -configuration Debug \
-		-only-testing:MacNetLabUITests test $(XCB_FILTER)
+		-only-testing:DnsmasqForMacUITests test $(XCB_FILTER)
 
 test: test-package test-xcode
 
@@ -87,7 +87,7 @@ test-all: test test-ui
 # Off-screen via NSHostingView, so it needs no window server and no Screen Recording
 # permission and works headless. The language is chosen through AppleLanguages — the same
 # mechanism macOS uses for any app — so the output is localized exactly as the app would be.
-SCREENSHOT_TOOL := $(DERIVED_DATA)/Build/Products/Debug/MacNetLabScreenshots.app/Contents/MacOS/MacNetLabScreenshots
+SCREENSHOT_TOOL := $(DERIVED_DATA)/Build/Products/Debug/DnsmasqForMacScreenshots.app/Contents/MacOS/DnsmasqForMacScreenshots
 SCREENSHOT_LANGUAGES := en zh-Hans
 
 # Uses the compiler's own list of localizable strings, so it catches literals a grep over the
@@ -97,7 +97,7 @@ check-localization: build
 
 screenshots: generate
 	@echo "==> building the screenshot tool"
-	@xcodebuild -project $(PROJECT) -scheme MacNetLabScreenshots \
+	@xcodebuild -project $(PROJECT) -scheme DnsmasqForMacScreenshots \
 		-derivedDataPath $(DERIVED_DATA) -configuration Debug build $(XCB_FILTER)
 	@for lang in $(SCREENSHOT_LANGUAGES); do \
 		echo "==> rendering $$lang"; \

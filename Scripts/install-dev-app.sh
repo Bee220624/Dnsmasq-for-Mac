@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stage a development build of MacNetLab into /Applications.
+# Stage a development build of Dnsmasq for Mac into /Applications.
 #
 # SMAppService resolves the daemon's BundleProgram relative to the app bundle and remembers
 # the registering bundle's location. A build run straight out of DerivedData therefore breaks

@@ -3,7 +3,7 @@
 #
 # Requires a notarytool keychain profile. Create one once with:
 #
-#   xcrun notarytool store-credentials MacNetLab \
+#   xcrun notarytool store-credentials DnsmasqForMac \
 #       --apple-id you@example.com --team-id <TEAM> --password <app-specific-password>
 #
 # Neither the credentials nor the profile are stored in this repository, and nothing here
@@ -19,7 +19,7 @@ RELEASE_DIR="${REPO_ROOT}/build/Release"
 APP="${RELEASE_DIR}/${PRODUCT_NAME_BASE}.app"
 VENDOR_DIR="${REPO_ROOT}/Resources/ThirdParty/dnsmasq"
 
-NOTARY_PROFILE="${MACNETLAB_NOTARY_PROFILE:-MacNetLab}"
+NOTARY_PROFILE="${DNSMASQFORMAC_NOTARY_PROFILE:-DnsmasqForMac}"
 
 section() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 die() { printf '\033[31merror:\033[0m %s\n' "$1" >&2; exit 1; }
@@ -51,7 +51,7 @@ Create one, once, with:
 
   xcrun notarytool store-credentials ${NOTARY_PROFILE} \\
       --apple-id <your-apple-id> \\
-      --team-id ${MNL_DEVELOPMENT_TEAM} \\
+      --team-id ${DFM_DEVELOPMENT_TEAM} \\
       --password <app-specific-password>
 
 The app-specific password is generated at appleid.apple.com. It is stored in your keychain,

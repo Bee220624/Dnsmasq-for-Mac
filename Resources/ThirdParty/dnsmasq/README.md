@@ -1,7 +1,7 @@
 # Vendored dnsmasq
 
-MacNetLab ships dnsmasq as a **separate, unmodified executable**. No dnsmasq source or object
-code is compiled or linked into any MacNetLab binary; the app controls it purely by writing a
+Dnsmasq for Mac ships dnsmasq as a **separate, unmodified executable**. No dnsmasq source or object
+code is compiled or linked into any Dnsmasq for Mac binary; the app controls it purely by writing a
 configuration file and managing the process (ticket §23).
 
 ## What is in this directory

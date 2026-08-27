@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  LaunchDaemon description for the Dnsmasq for Mac privileged helper.
+
+  Placeholders of the form @TOKEN@ are substituted by Scripts/embed-helper.sh using values
+  read from Config/Identifiers.xcconfig, and the result is written to
+  DnsmasqForMac.app/Contents/Library/LaunchDaemons/. The file name must equal the Label.
+
+  Deliberately absent:
+    RunAtLoad         - ticket §10.1 forbids starting anything at boot. The helper is
+                        launched on demand when the app connects to its Mach service, and
+                        dnsmasq only ever starts from an explicit user action.
+    KeepAlive         - a crashed helper must not be resurrected into a loop; the app
+                        reconnects and the journal drives recovery (ticket §17.3).
+    StartInterval     - nothing here is periodic.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>@HELPER_LABEL@</string>
+
+	<!-- Path is relative to the containing app bundle. SMAppService resolves it, which is
+	     what keeps the helper tied to the app that registered it. -->
+	<key>BundleProgram</key>
+	<string>Contents/Library/HelperTools/@HELPER_LABEL@</string>
+
+	<key>MachServices</key>
+	<dict>
+		<key>@MACH_SERVICE_NAME@</key>
+		<true/>
+	</dict>
+
+	<key>ProcessType</key>
+	<string>Background</string>
+
+	<key>AssociatedBundleIdentifiers</key>
+	<array>
+		<string>@APP_BUNDLE_ID@</string>
+	</array>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<!-- Minimal, fixed PATH. The helper only ever executes absolute paths, so this
+		     exists to deny inherited PATH influence rather than to enable lookup. -->
+		<key>PATH</key>
+		<string>/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+</dict>
+</plist>

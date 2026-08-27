@@ -12,7 +12,7 @@ import MacNetXPC
 struct LogFileTailerTests {
 
     private func makePath() -> String {
-        let directory = NSTemporaryDirectory() + "macnetlab-log-\(UUID().uuidString)"
+        let directory = NSTemporaryDirectory() + "dnsmasqformac-log-\(UUID().uuidString)"
         try? FileManager.default.createDirectory(
             atPath: directory, withIntermediateDirectories: true
         )

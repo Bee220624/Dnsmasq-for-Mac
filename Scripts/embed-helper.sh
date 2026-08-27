@@ -1,7 +1,7 @@
 #!/bin/bash
 # Stage the helper's payload into the built app bundle.
 #
-# Runs as a post-build phase of the MacNetLab target and does two things:
+# Runs as a post-build phase of the DnsmasqForMac target and does two things:
 #
 #   1. Renders the LaunchDaemon plist template. It cannot simply be copied, because its
 #      Label, Mach service name, and BundleProgram path all come from

@@ -29,7 +29,7 @@ extension NetworkProfile {
                 rangeEnd: IPv4Address(rawValue: 0xC0A8_32C8),     // 192.168.50.200
                 leaseDurationSeconds: 43_200,                     // 12 hours
                 authoritative: true,
-                // No router by default: MacNetLab provides no NAT or IP forwarding, so
+                // No router by default: Dnsmasq for Mac provides no NAT or IP forwarding, so
                 // advertising a gateway would point clients at a route that does not exist.
                 advertiseRouter: false,
                 routerIPv4: nil,

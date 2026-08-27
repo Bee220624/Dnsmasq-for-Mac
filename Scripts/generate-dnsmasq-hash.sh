@@ -44,7 +44,7 @@ cat > "${GENERATED}" <<EOF
 
 import Foundation
 
-/// Identity of the dnsmasq build that ships with this version of MacNetLab.
+/// Identity of the dnsmasq build that ships with this version of Dnsmasq for Mac.
 ///
 /// ## What the digest describes
 ///

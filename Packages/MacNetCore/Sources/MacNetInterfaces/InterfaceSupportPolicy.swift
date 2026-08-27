@@ -7,7 +7,7 @@ import MacNetValidation
 /// ## Why this is a separate, pure type
 ///
 /// This is the safety decision the whole product turns on. Running DHCP on the wrong
-/// interface is how MacNetLab takes down an office network, and ticket §21.6 lists the cases
+/// interface is how Dnsmasq for Mac takes down an office network, and ticket §21.6 lists the cases
 /// that must be refused. Keeping the judgment in one pure function means the app and the
 /// helper cannot reach different conclusions, and means every case can be tested without a
 /// network adapter.
@@ -54,7 +54,7 @@ public enum InterfaceSupportPolicy {
                 // Reached for real hardware macOS reports as something other than Ethernet or
                 // Wi-Fi — Bluetooth PAN, FireWire, the Wi-Fi AP interface. Naming the
                 // requirement is more useful than naming what we could not classify.
-                "MacNetLab supports wired Ethernet adapters only."
+                "Dnsmasq for Mac supports wired Ethernet adapters only."
             case .kindNotPermitted(.ethernet), .kindNotPermitted(.wifi):
                 // Unreachable: Ethernet is permitted and Wi-Fi is refused earlier by its own
                 // case. Present so that adding a kind is a compile error rather than a

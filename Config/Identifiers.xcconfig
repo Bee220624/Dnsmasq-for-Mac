@@ -5,17 +5,24 @@
 // through generated build settings / Info.plist, and shell scripts read them by parsing
 // this file. Renaming the product before release is a change to this file only.
 
-PRODUCT_NAME_BASE = MacNetLab
+// The name of the product on disk, in build paths, and as the Xcode target and scheme.
+// Deliberately free of spaces: it becomes a directory name, a .xcodeproj filename, and an
+// argument to xcodebuild, and a space in any of those is a papercut in every script.
+PRODUCT_NAME_BASE = DnsmasqForMac
 
-APP_BUNDLE_ID = com.bee.macnetlab
-HELPER_LABEL = com.bee.macnetlab.helper
-MACH_SERVICE_NAME = com.bee.macnetlab.helper
+// The name a person sees — in Finder, the Dock, the menu bar, and the About box. This is the
+// one that is allowed to read like English.
+PRODUCT_DISPLAY_NAME = Dnsmasq for Mac
+
+APP_BUNDLE_ID = com.bee.dnsmasqformac
+HELPER_LABEL = com.bee.dnsmasqformac.helper
+MACH_SERVICE_NAME = com.bee.dnsmasqformac.helper
 
 // Helper bundle identifier must equal the LaunchDaemon label so that SMAppService can
 // match the embedded plist to the embedded executable.
 HELPER_BUNDLE_ID = $(HELPER_LABEL)
 
-// XPC contract version. Bump on ANY breaking change to MacNetLabHelperProtocol or to the
+// XPC contract version. Bump on ANY breaking change to DnsmasqForMacHelperProtocol or to the
 // JSON payloads exchanged across it. App refuses to talk to a helper with a different value.
 PROTOCOL_VERSION = 1
 
@@ -27,7 +34,7 @@ APP_BUILD = 1
 DEVELOPMENT_TEAM = MDUMXF88CA
 
 // Runtime state directory owned by the helper (root). Never supplied by the app.
-HELPER_RUNTIME_ROOT = /var/db/com.bee.macnetlab
+HELPER_RUNTIME_ROOT = /var/db/com.bee.dnsmasqformac
 
 // User-level data directory for profiles. Never written by the helper.
-APP_SUPPORT_DIR_NAME = com.bee.macnetlab
+APP_SUPPORT_DIR_NAME = com.bee.dnsmasqformac

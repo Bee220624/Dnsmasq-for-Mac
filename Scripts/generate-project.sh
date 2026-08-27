@@ -1,5 +1,5 @@
 #!/bin/bash
-# Regenerate MacNetLab.xcodeproj from project.yml (ticket §4.1).
+# Regenerate DnsmasqForMac.xcodeproj from project.yml (ticket §4.1).
 
 set -euo pipefail
 
@@ -10,7 +10,7 @@ if ! command -v xcodegen >/dev/null 2>&1; then
     cat >&2 <<'EOF'
 error: xcodegen not found.
 
-MacNetLab keeps project.yml as the source of truth and never commits project.pbxproj,
+Dnsmasq for Mac keeps project.yml as the source of truth and never commits project.pbxproj,
 so XcodeGen is required to build. Install it with either:
 
     brew bundle --file=Brewfile
@@ -24,4 +24,4 @@ fi
 cd "${REPO_ROOT}"
 echo "==> xcodegen $(xcodegen --version)"
 xcodegen generate --spec project.yml --project .
-echo "==> generated ${REPO_ROOT}/MacNetLab.xcodeproj"
+echo "==> generated ${REPO_ROOT}/DnsmasqForMac.xcodeproj"

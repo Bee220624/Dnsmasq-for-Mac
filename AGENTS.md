@@ -40,7 +40,7 @@ purpose.
 
 ## Project structure
 
-`project.yml` is the source of truth for the Xcode project. `MacNetLab.xcodeproj` is
+`project.yml` is the source of truth for the Xcode project. `DnsmasqForMac.xcodeproj` is
 generated and is not committed — run `make generate`, never edit `project.pbxproj`.
 
 Identifiers live only in `Config/Identifiers.xcconfig`. Swift reads them through Info.plist;

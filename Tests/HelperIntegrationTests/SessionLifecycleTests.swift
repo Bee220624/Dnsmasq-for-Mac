@@ -29,7 +29,7 @@ struct SessionLifecycleTests {
     private func makeHarness(
         interfaces: [NetworkInterfaceDescriptor] = [TestInterface.ethernet("en7")]
     ) -> Harness {
-        let root = NSTemporaryDirectory() + "macnetlab-session-\(UUID().uuidString)"
+        let root = NSTemporaryDirectory() + "dnsmasqformac-session-\(UUID().uuidString)"
         // Tests that write a journal directly need the root to exist; `start` prepares it
         // itself, so this only serves the recovery cases that bypass it.
         try? FileManager.default.createDirectory(

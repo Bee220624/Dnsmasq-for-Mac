@@ -2,12 +2,12 @@ import AppKit
 
 // Entry point for the screenshot tool.
 //
-// Renders each page of MacNetLab to a PNG and exits. It compiles the app's own view sources,
+// Renders each page of Dnsmasq for Mac to a PNG and exits. It compiles the app's own view sources,
 // so what it draws is the real UI rather than a reproduction of it.
 //
 // Usage:
 //
-//     MacNetLabScreenshots --output <directory> [-AppleLanguages "(zh-Hans)"]
+//     DnsmasqForMacScreenshots --output <directory> [-AppleLanguages "(zh-Hans)"]
 //
 // The language is selected the way macOS selects it for any app — through `AppleLanguages` —
 // so the output is localized exactly as the shipping app would be in that language.
@@ -17,7 +17,7 @@ let arguments = CommandLine.arguments
 guard let outputIndex = arguments.firstIndex(of: "--output"),
       arguments.index(after: outputIndex) < arguments.endIndex
 else {
-    FileHandle.standardError.write(Data("usage: MacNetLabScreenshots --output <directory>\n".utf8))
+    FileHandle.standardError.write(Data("usage: DnsmasqForMacScreenshots --output <directory>\n".utf8))
     exit(EXIT_FAILURE)
 }
 

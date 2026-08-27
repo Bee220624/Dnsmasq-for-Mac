@@ -61,7 +61,7 @@ struct LogClassifierTests {
             "dnsmasq[421]: started, version 2.93 cachesize 1000",
             "dnsmasq[421]: compile time options: IPv6 GNU-getopt DHCP",
             "dnsmasq-dhcp[421]: DHCP, IP range 192.168.50.10 -- 192.168.50.200, lease time 12h",
-            "dnsmasq[421]: reading /var/db/com.bee.macnetlab/.../hosts",
+            "dnsmasq[421]: reading /var/db/com.bee.dnsmasqformac/.../hosts",
           ])
     func classifiesSystem(line: String) {
         #expect(LogClassifier.category(for: line) == .system)

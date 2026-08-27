@@ -224,7 +224,7 @@ compile_options="$(printf '%s\n' "${VERSION_OUTPUT}" | sed -n 's/^Compile time o
 require_enabled() {
     case " ${compile_options} " in
         *" $1 "*) echo "    ✓ $1 is compiled in" ;;
-        *) die "$1 is NOT compiled in; MacNetLab cannot serve DHCP without it" ;;
+        *) die "$1 is NOT compiled in; Dnsmasq for Mac cannot serve DHCP without it" ;;
     esac
 }
 require_disabled() {

@@ -90,7 +90,7 @@ public struct DHCPConfiguration: Codable, Sendable, Equatable {
     /// it behind a disclosure with that warning attached (ticket §5.3.3).
     public var authoritative: Bool
 
-    /// Whether to send a default gateway to clients. Off by default: MacNetLab provides no
+    /// Whether to send a default gateway to clients. Off by default: Dnsmasq for Mac provides no
     /// NAT or IP forwarding, so a router option usually points at nothing.
     public var advertiseRouter: Bool
     public var routerIPv4: IPv4Address?

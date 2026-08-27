@@ -12,7 +12,7 @@ import MacNetModels
 struct RuntimeFileManagerTests {
 
     private func makeManager() -> (RuntimeFileManager, RecordingOwnershipApplier, String) {
-        let root = NSTemporaryDirectory() + "macnetlab-runtime-\(UUID().uuidString)"
+        let root = NSTemporaryDirectory() + "dnsmasqformac-runtime-\(UUID().uuidString)"
         let applier = RecordingOwnershipApplier()
         return (RuntimeFileManager(root: root, ownershipApplier: applier), applier, root)
     }
@@ -109,7 +109,7 @@ struct SessionJournalTests {
 
     private func makeStore()
         -> (SessionJournalStore, RuntimeFileManager, RecordingOwnershipApplier, String) {
-        let root = NSTemporaryDirectory() + "macnetlab-journal-\(UUID().uuidString)"
+        let root = NSTemporaryDirectory() + "dnsmasqformac-journal-\(UUID().uuidString)"
         try? FileManager.default.createDirectory(atPath: root, withIntermediateDirectories: true)
         let applier = RecordingOwnershipApplier()
         let fileManager = RuntimeFileManager(root: root, ownershipApplier: applier)
@@ -233,7 +233,7 @@ struct RuntimeFileLockTests {
 
     @Test("a second holder is refused rather than made to wait")
     func secondHolderIsRefused() async throws {
-        let path = NSTemporaryDirectory() + "macnetlab-lock-\(UUID().uuidString)"
+        let path = NSTemporaryDirectory() + "dnsmasqformac-lock-\(UUID().uuidString)"
         defer { try? FileManager.default.removeItem(atPath: path) }
 
         let lock = RuntimeFileLock(path: path)
@@ -262,7 +262,7 @@ struct RuntimeFileLockTests {
 
     @Test("the lock is released after the body finishes")
     func lockIsReleased() async throws {
-        let path = NSTemporaryDirectory() + "macnetlab-lock-\(UUID().uuidString)"
+        let path = NSTemporaryDirectory() + "dnsmasqformac-lock-\(UUID().uuidString)"
         defer { try? FileManager.default.removeItem(atPath: path) }
 
         let lock = RuntimeFileLock(path: path)
@@ -273,7 +273,7 @@ struct RuntimeFileLockTests {
 
     @Test("the lock is released when the body throws")
     func lockIsReleasedOnThrow() async throws {
-        let path = NSTemporaryDirectory() + "macnetlab-lock-\(UUID().uuidString)"
+        let path = NSTemporaryDirectory() + "dnsmasqformac-lock-\(UUID().uuidString)"
         defer { try? FileManager.default.removeItem(atPath: path) }
 
         let lock = RuntimeFileLock(path: path)

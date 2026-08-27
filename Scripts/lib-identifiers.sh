@@ -42,11 +42,12 @@ identifier_value() {
 }
 
 export PRODUCT_NAME_BASE="$(identifier_value PRODUCT_NAME_BASE)"
+export PRODUCT_DISPLAY_NAME="$(identifier_value PRODUCT_DISPLAY_NAME)"
 export APP_BUNDLE_ID="$(identifier_value APP_BUNDLE_ID)"
 export HELPER_LABEL="$(identifier_value HELPER_LABEL)"
 export MACH_SERVICE_NAME="$(identifier_value MACH_SERVICE_NAME)"
 export PROTOCOL_VERSION="$(identifier_value PROTOCOL_VERSION)"
 export APP_VERSION="$(identifier_value APP_VERSION)"
 export APP_BUILD="$(identifier_value APP_BUILD)"
-export MNL_DEVELOPMENT_TEAM="$(identifier_value DEVELOPMENT_TEAM)"
+export DFM_DEVELOPMENT_TEAM="$(identifier_value DEVELOPMENT_TEAM)"
 export HELPER_RUNTIME_ROOT="$(identifier_value HELPER_RUNTIME_ROOT)"

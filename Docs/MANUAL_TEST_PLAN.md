@@ -24,7 +24,7 @@ Then complete the helper approval in `Docs/PRIVILEGED_HELPER.md` §2.
 Keep this open in another window for the whole session:
 
 ```bash
-log stream --predicate 'subsystem BEGINSWITH "com.bee.macnetlab"' --level debug
+log stream --predicate 'subsystem BEGINSWITH "com.bee.dnsmasqformac"' --level debug
 ```
 
 Record the result of every step. A step that "seemed fine" is not a pass.
@@ -37,7 +37,7 @@ The main scenario. If this does not work, nothing else matters.
 
 1. Keep Wi-Fi connected. Confirm you have internet: `curl -sS -o /dev/null -w '%{http_code}\n' https://example.com`
 2. Connect the USB Ethernet adapter to the test device.
-3. Open MacNetLab. Select the USB Ethernet interface.
+3. Open Dnsmasq for Mac. Select the USB Ethernet interface.
 4. Confirm the profile shows `192.168.50.1/24` and a pool of `192.168.50.10–200`.
 5. Tick the isolation confirmation.
 6. Click **Validate Configuration**. Every check should pass. Link Down is acceptable as a
@@ -66,7 +66,7 @@ Then verify, and write down what you saw:
 |---|---|---|
 | A8 | The alias is gone | `ifconfig en7` no longer lists `192.168.50.1` |
 | A9 | dnsmasq is gone | `pgrep -f 'HelperTools/dnsmasq'` finds nothing |
-| A10 | Nothing is left in the runtime dir | `sudo ls /var/db/com.bee.macnetlab/` — no `active-session.json` |
+| A10 | Nothing is left in the runtime dir | `sudo ls /var/db/com.bee.dnsmasqformac/` — no `active-session.json` |
 | A11 | Wi-Fi is still fine | Repeat A2 and A3 |
 
 ---
@@ -101,7 +101,7 @@ nslookup bmc01.lab.test 192.168.50.1
 sudo python3 -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('0.0.0.0', 67)); input('holding UDP 67 — press return to release\n')"
 ```
 
-2. In MacNetLab, click **Validate Configuration**.
+2. In Dnsmasq for Mac, click **Validate Configuration**.
 
 | # | Expected |
 |---|---|
@@ -141,14 +141,14 @@ the UI can be bypassed, the helper cannot.
 ## Test E — App crash recovery
 
 1. Start a session. Confirm the device has an address.
-2. Force-quit the app: `pkill -9 MacNetLab`
+2. Force-quit the app: `pkill -9 Dnsmasq for Mac`
 
 | # | Expected |
 |---|---|
 | E1 | dnsmasq **keeps running** — `pgrep -f 'HelperTools/dnsmasq'` still finds it |
 | E2 | The device keeps its address; the network is undisturbed |
 
-3. Reopen MacNetLab.
+3. Reopen Dnsmasq for Mac.
 
 | # | Expected |
 |---|---|
@@ -172,7 +172,7 @@ the UI can be bypassed, the helper cannot.
 | F1 | The app notices within a few seconds and shows an error |
 | F2 | The **alias is removed automatically** — `ifconfig en7` no longer lists it |
 | F3 | dnsmasq is **not** restarted. Ticket §17.4 forbids it; a crash loop against a network the user cannot see would be worse than a stopped service |
-| F4 | The journal is cleared: `sudo ls /var/db/com.bee.macnetlab/` |
+| F4 | The journal is cleared: `sudo ls /var/db/com.bee.dnsmasqformac/` |
 | F5 | The error includes the tail of the log |
 
 ---
@@ -198,7 +198,7 @@ Confirms the journal actually drives cleanup, which is the one path Tests E–G 
 isolate.
 
 1. Start a session.
-2. Kill the helper without stopping: `sudo pkill -f com.bee.macnetlab.helper`
+2. Kill the helper without stopping: `sudo pkill -f com.bee.dnsmasqformac.helper`
 3. Confirm the alias is still on the interface, and dnsmasq may still be running.
 4. Open the app, or click Start again.
 

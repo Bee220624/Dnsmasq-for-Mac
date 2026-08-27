@@ -1,6 +1,6 @@
 # Development Environment Audit
 
-Ticket: **MNL-001** — MacNetLab v0.1
+Ticket: **MNL-001** — Dnsmasq for Mac v0.1
 Audit date: **2026-08-25**
 
 ## 1. Host

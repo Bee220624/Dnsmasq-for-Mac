@@ -1,10 +1,10 @@
 #!/bin/bash
-# Assert that a built MacNetLab.app satisfies the security checklist in ticket §22.5.
+# Assert that a built DnsmasqForMac.app satisfies the security checklist in ticket §22.5.
 #
 # This runs against the *built artefact*, not the source, because that is what ships. Every
 # check either passes, or the script exits non-zero naming exactly what failed.
 #
-# Usage: verify-bundle.sh [path-to-MacNetLab.app]
+# Usage: verify-bundle.sh [path-to-DnsmasqForMac.app]
 #        defaults to the Debug build in build/DerivedData.
 
 set -euo pipefail
@@ -93,9 +93,9 @@ if [[ -f "${HELPER}" ]]; then
     fi
 
     helper_team="$(codesign -dv "${HELPER}" 2>&1 | sed -n 's/^TeamIdentifier=//p')"
-    [[ "${helper_team}" == "${MNL_DEVELOPMENT_TEAM}" ]] \
-        && pass "helper team is ${MNL_DEVELOPMENT_TEAM}" \
-        || fail "helper team is '${helper_team}', expected '${MNL_DEVELOPMENT_TEAM}'"
+    [[ "${helper_team}" == "${DFM_DEVELOPMENT_TEAM}" ]] \
+        && pass "helper team is ${DFM_DEVELOPMENT_TEAM}" \
+        || fail "helper team is '${helper_team}', expected '${DFM_DEVELOPMENT_TEAM}'"
 
     app_team="$(codesign -dv "${APP}" 2>&1 | sed -n 's/^TeamIdentifier=//p')"
     [[ "${app_team}" == "${helper_team}" ]] \
@@ -210,9 +210,9 @@ if [[ -f "${DNSMASQ}" ]]; then
     fi
 
     # The bundled copy must satisfy the same requirement the helper will demand of it.
-    DNSMASQ_REQUIREMENT="anchor apple generic and certificate leaf[subject.OU] = \"${MNL_DEVELOPMENT_TEAM}\""
+    DNSMASQ_REQUIREMENT="anchor apple generic and certificate leaf[subject.OU] = \"${DFM_DEVELOPMENT_TEAM}\""
     if codesign --verify -R="${DNSMASQ_REQUIREMENT}" "${DNSMASQ}" 2>/dev/null; then
-        pass "bundled dnsmasq is signed by team ${MNL_DEVELOPMENT_TEAM}"
+        pass "bundled dnsmasq is signed by team ${DFM_DEVELOPMENT_TEAM}"
     else
         fail "bundled dnsmasq does not satisfy the team requirement"
     fi

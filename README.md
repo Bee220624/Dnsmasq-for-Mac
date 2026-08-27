@@ -42,7 +42,7 @@ make test
 `Config/Identifiers.xcconfig` 里的 `DEVELOPMENT_TEAM` 是我的 Team ID，**换成你自己的**才签得下来。
 项目里所有标识符都只住在这一个文件里。
 
-`MacNetLab.xcodeproj` 是生成的，不进版本库——`project.yml` 才是唯一事实来源。
+`DnsmasqForMac.xcodeproj` 是生成的，不进版本库——`project.yml` 才是唯一事实来源。
 
 ### 现在的状态
 
@@ -102,7 +102,7 @@ make test
 `DEVELOPMENT_TEAM` in `Config/Identifiers.xcconfig` is my Team ID; **replace it with yours** or
 codesign will refuse. Every identifier in the project lives in that one file.
 
-`MacNetLab.xcodeproj` is generated and not committed — `project.yml` is the source of truth.
+`DnsmasqForMac.xcodeproj` is generated and not committed — `project.yml` is the source of truth.
 
 ### Status
 
@@ -166,7 +166,7 @@ make test
 `Config/Identifiers.xcconfig` の `DEVELOPMENT_TEAM` は私の Team ID です。**自分のものに差し替えて
 ください**。差し替えないと署名に失敗します。プロジェクト内の識別子はすべてこの 1 ファイルにあります。
 
-`MacNetLab.xcodeproj` は生成物でリポジトリには含めません。`project.yml` が唯一の正です。
+`DnsmasqForMac.xcodeproj` は生成物でリポジトリには含めません。`project.yml` が唯一の正です。
 
 ### 現状
 

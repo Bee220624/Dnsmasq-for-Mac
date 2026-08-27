@@ -1,6 +1,6 @@
 # Security
 
-MacNetLab runs a network service as root on an engineer's machine. This document states what
+Dnsmasq for Mac runs a network service as root on an engineer's machine. This document states what
 is defended, how, and what is deliberately not defended.
 
 ## Threat model
@@ -20,7 +20,7 @@ is defended, how, and what is deliberately not defended.
 
 - A user who already has root. Nothing here is a barrier to someone who can already `sudo`.
 - Physical access, or a compromised macOS.
-- Malicious *content* in DHCP or DNS traffic. dnsmasq handles the protocols; MacNetLab
+- Malicious *content* in DHCP or DNS traffic. dnsmasq handles the protocols; Dnsmasq for Mac
   configures and supervises it.
 
 ## 1. Who may talk to the helper
@@ -29,7 +29,7 @@ The helper constrains its listener before accepting anything:
 
 ```swift
 listener.setConnectionCodeSigningRequirement(
-    #"identifier "com.bee.macnetlab" and anchor apple generic """#
+    #"identifier "com.bee.dnsmasqformac" and anchor apple generic """#
     + #"and certificate leaf[subject.OU] = "<TEAM>""#
 )
 ```
@@ -132,7 +132,7 @@ the save panel says so.
 ## 7. Files
 
 ```
-/var/db/com.bee.macnetlab/            root:wheel 0750
+/var/db/com.bee.dnsmasqformac/            root:wheel 0750
 ├── active-session.json               root:wheel 0600
 ├── lock                              root:wheel 0600
 └── sessions/<uuid>/                  root:nobody 0750

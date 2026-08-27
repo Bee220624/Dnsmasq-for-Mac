@@ -1,4 +1,4 @@
-# MacNetLab v0.1 — Risk Register
+# Dnsmasq for Mac v0.1 — Risk Register
 
 Ticket: **MNL-001**. Opened during Phase 0 on **2026-08-25**.
 
@@ -100,7 +100,7 @@ An alias added to an interface but not removed leaves the Mac holding an address
 not have, which can itself cause a conflict.
 
 *Mitigation.* Every side effect is recorded in an atomically-updated journal
-(`/var/db/com.bee.macnetlab/active-session.json`) before and after it happens. Start is a
+(`/var/db/com.bee.dnsmasqformac/active-session.json`) before and after it happens. Start is a
 transaction with reverse-order rollback (§15.2). Only aliases recorded with
 `aliasAddedByApp = true` are ever removed, so a user's own addresses are never touched.
 Removal is verified with `getifaddrs`. On helper restart the journal drives recovery.
@@ -130,7 +130,7 @@ reproducibility is not the same as the distribution obligation: `Scripts/package
 must ship the verified `dnsmasq-<VERSION>.tar.xz`, `Scripts/build-dnsmasq.sh`, and both
 licence texts *alongside the distributed app*, not merely cite where they came from.
 
-*Owner action required.* Ticket §23 is explicit that the final licence of MacNetLab itself is
+*Owner action required.* Ticket §23 is explicit that the final licence of Dnsmasq for Mac itself is
 **not** an implementation decision. A legal review is required before commercial
 distribution. `LICENSE_PENDING` is intentionally left in place.
 
@@ -203,7 +203,7 @@ gate recorded in `Docs/MANUAL_TEST_PLAN.md`.
 **Severity:** S3 · **Status:** `blocked-on-owner` · **Phase:** 1 (affects every phase with UI tests)
 
 XCUITest drives another application, which macOS gates behind Accessibility permission. The
-grant belongs to **whichever process runs the tests** — not to MacNetLab, and not to the test
+grant belongs to **whichever process runs the tests** — not to Dnsmasq for Mac, and not to the test
 bundle.
 
 Confirmed on this machine:
@@ -215,7 +215,7 @@ AXIsProcessTrusted() = false
 and the resulting failures:
 
 ```
-Failed to load AX for com.bee.macnetlab (pid:…): Not authorized for performing UI testing actions.
+Failed to load AX for com.bee.dnsmasqformac (pid:…): Not authorized for performing UI testing actions.
 "sidebar.overview" Button exists but never became hittable
 ```
 

@@ -284,7 +284,7 @@ public struct SystemInterfaceEnumerator: InterfaceEnumerating {
     /// the rest of this type avoids command output.
     private static func readPrimaryIPv4Interface() -> String? {
         guard let store = SCDynamicStoreCreate(
-            nil, "com.bee.macnetlab.interfaces" as CFString, nil, nil
+            nil, "com.bee.dnsmasqformac.interfaces" as CFString, nil, nil
         ) else { return nil }
 
         let key = SCDynamicStoreKeyCreateNetworkGlobalEntity(
