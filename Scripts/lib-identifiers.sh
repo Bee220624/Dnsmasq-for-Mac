@@ -1,7 +1,7 @@
 #!/bin/bash
 # Shared helper: expose Config/Identifiers.xcconfig to shell scripts.
 #
-# Ticket §3.1 requires that identifiers live in exactly one place. Scripts therefore parse
+# The specification requires that identifiers live in exactly one place. Scripts therefore parse
 # the xcconfig rather than repeating literals, so a pre-release rename stays a one-file edit.
 
 set -euo pipefail

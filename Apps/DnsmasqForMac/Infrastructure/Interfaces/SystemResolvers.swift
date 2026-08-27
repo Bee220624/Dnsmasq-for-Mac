@@ -2,9 +2,9 @@ import Foundation
 import MacNetModels
 import SystemConfiguration
 
-/// Reads this Mac's current DNS resolvers (ticket §5.3.4).
+/// Reads this Mac's current DNS resolvers.
 ///
-/// Read from SystemConfiguration's dynamic store, not by parsing `scutil --dns`. Ticket §12.1
+/// Read from SystemConfiguration's dynamic store, not by parsing `scutil --dns`. The specification
 /// forbids parsing command output for the same reason it does elsewhere: the text is meant for
 /// people, it changes between macOS releases, and a parser that is subtly wrong produces a
 /// plausible-looking resolver list that would then be written into a dnsmasq configuration.

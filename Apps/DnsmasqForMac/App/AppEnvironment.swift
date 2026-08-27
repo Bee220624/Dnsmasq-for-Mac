@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// Everything here comes from the bundle's Info.plist, which XcodeGen populates from
 /// `Config/Identifiers.xcconfig`. Nothing is hardcoded, so renaming the product before
-/// release stays a one-file change (ticket §3.1).
+/// release stays a one-file change.
 struct AppEnvironment: Sendable {
     let appVersion: String
     let buildNumber: String

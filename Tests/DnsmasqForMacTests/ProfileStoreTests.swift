@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import MacNetModels
 
-/// Persistence coverage (ticket §24.1 "Profile Tests").
+/// Persistence coverage.
 ///
 /// Profiles are the only user data this product keeps. Losing them is not catastrophic —
 /// nothing else depends on them — but it is the kind of loss a user notices immediately and
@@ -127,7 +127,7 @@ struct ProfileStoreTests {
         let names = await reopened.database.profiles.map(\.name)
         #expect(names == ["Known Good"])
 
-        // Ticket §20.4 step 1: the damaged file is moved aside, never overwritten. The user
+        // The specification: the damaged file is moved aside, never overwritten. The user
         // keeps a chance of salvaging something from it by hand.
         #expect(FileManager.default.fileExists(atPath: quarantined.path))
         let salvage = try String(contentsOf: quarantined, encoding: .utf8)
@@ -257,7 +257,7 @@ struct ProfileStoreTests {
         await store.load()
 
         let only = try #require(await store.database.profiles.first)
-        // Ticket §5.6: at least one profile must always exist, or the app has nothing to show.
+        // The specification: at least one profile must always exist, or the app has nothing to show.
         await #expect(throws: ProfileStore.DeleteRefusal.wouldRemoveLastProfile) {
             try await store.delete(id: only.id)
         }

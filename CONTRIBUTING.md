@@ -1,8 +1,8 @@
-# Working agreements for this repository
+# Contributing
 
-Read this before changing anything. The rules below are not style preferences; most of them
-exist because this product runs privileged code on an engineer's machine and misbehaves in a
-datacenter if it is wrong.
+Patches and bug reports are welcome. Read this first — the rules below are not style
+preferences. Most of them exist because this product runs privileged code on someone's
+machine, and misbehaves in a datacenter if it is wrong.
 
 ## Non-negotiables
 
@@ -24,9 +24,13 @@ datacenter if it is wrong.
 
 ## Scope
 
-`v0.1` is defined by ticket §2.1 and bounded by §2.2. Do not add features from the deferred
-list in §29, however small they look. If something seems missing, it is probably excluded on
-purpose.
+v0.1 is deliberately small: one interface, one subnet, DHCPv4 and DNS, started and stopped
+by hand. Several obvious features are left out on purpose — IPv6, multiple simultaneous
+interfaces, PXE/TFTP, and anything that would need the app to keep running in the
+background. If something seems missing, it probably is, and probably for a reason.
+
+Open an issue before building a large feature, so the discussion happens before the work
+rather than after it.
 
 ## Code
 
@@ -37,6 +41,7 @@ purpose.
   catalog, never inline in a view.
 - Anything that can be a pure function should be: the dnsmasq config generator in particular
   must not touch the file system, so that it is exhaustively testable.
+- Comments explain *why*. What the code does is already on the screen.
 
 ## Project structure
 
@@ -47,15 +52,20 @@ Identifiers live only in `Config/Identifiers.xcconfig`. Swift reads them through
 shell scripts read them through `Scripts/lib-identifiers.sh`. Do not hardcode a bundle ID, a
 Mach service name, or a Team ID anywhere else.
 
+`DEVELOPMENT_TEAM` in that file is the author's Team ID. Replace it with your own to build a
+signed copy; the helper authenticates its caller against it, so a stale value makes the app
+unable to talk to its own helper.
+
 ## Tests
 
 - `make test` must stay green and must not require human input.
 - A failing test is fixed by fixing the cause. Deleting the test, skipping it, or weakening
   the assertion is never an acceptable resolution.
-- The malicious-input suites in ticket §24.1 are load-bearing. Add to them when you add a new
-  input path.
+- The malicious-input suites are load-bearing. Add to them when you add a new input path.
+- Anything that needs real hardware belongs in `Docs/MANUAL_TEST_PLAN.md`, not in a test
+  that quietly passes because it never ran.
 
-## Before you commit
+## Before you open a pull request
 
 ```bash
 make generate
@@ -64,3 +74,6 @@ make test
 ```
 
 and `make verify-bundle` as well if you touched the helper, the bundle layout, or dnsmasq.
+
+Known-unsettled things are recorded in `Docs/RISKS.md`. If you hit one, add to it rather
+than working around it silently.

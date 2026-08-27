@@ -3,7 +3,7 @@ import Testing
 import MacNetModels
 @testable import MacNetXPC
 
-/// Size limits are a denial-of-service control on a root process (ticket §7.10), so they are
+/// Size limits are a denial-of-service control on a root process, so they are
 /// checked before parsing, not after.
 @Suite("XPC payload")
 struct XPCPayloadTests {

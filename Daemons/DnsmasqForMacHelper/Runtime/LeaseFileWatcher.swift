@@ -5,17 +5,17 @@ import MacNetModels
 import MacNetXPC
 import OSLog
 
-/// Watches a session's lease file and publishes snapshots (ticket §18.3).
+/// Watches a session's lease file and publishes snapshots.
 ///
 /// ## Why watch rather than poll
 ///
 /// A lease file changes when a device appears, and then not again for hours. Polling would
-/// spend the whole session doing nothing at a fixed cost — ticket §25 targets under 2% CPU
+/// spend the whole session doing nothing at a fixed cost — the specification targets under 2% CPU
 /// while running — and would still be up to a second late. A file-system event is immediate
 /// and free when nothing happens.
 ///
 /// The one thing that *is* on a timer is the UI's "time remaining" column, and that ticks from
-/// the already-parsed expiry rather than re-reading the file (ticket §5.4).
+/// the already-parsed expiry rather than re-reading the file.
 ///
 /// ## Why the file has to be reopened
 ///
@@ -188,7 +188,7 @@ actor LeaseFileWatcher {
         guard let handle = FileHandle(forReadingAtPath: path) else { return nil }
         defer { try? handle.close() }
 
-        // Bounded (ticket §18.3). A pool holds at most 1024 addresses and a lease line is well
+        // Bounded. A pool holds at most 1024 addresses and a lease line is well
         // under 100 bytes, so anything approaching this cap is not a lease file any more.
         let data = (try? handle.read(upToCount: DnsmasqLeaseParser.maximumFileBytes)) ?? Data()
 

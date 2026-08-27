@@ -217,3 +217,4 @@ make screenshots
 | `Docs/DNSMASQ_BUILD.md` | How the bundled dnsmasq is fetched, verified, and built |
 | `Docs/RISKS.md` | Everything known to be unsettled |
 | `Docs/MANUAL_TEST_PLAN.md` | The tests that need real hardware |
+| `CONTRIBUTING.md` | The rules a patch has to hold to, and why they exist |

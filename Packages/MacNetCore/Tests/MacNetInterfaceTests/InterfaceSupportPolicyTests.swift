@@ -4,7 +4,7 @@ import MacNetValidation
 @testable import MacNetInterfaces
 
 /// The policy that decides where DHCP may run. Getting this wrong is how the product takes
-/// down someone's office network, so every refusal in ticket §21.6 is asserted individually.
+/// down someone's office network, so every refusal in the specification is asserted individually.
 @Suite("Interface support policy")
 struct InterfaceSupportPolicyTests {
 
@@ -18,7 +18,7 @@ struct InterfaceSupportPolicyTests {
     @Test("Wi-Fi is refused, whatever it is called")
     func refusesWiFi() {
         // Refused on the SystemConfiguration type, never on the name: en0 is Wi-Fi on a laptop
-        // and Ethernet on a Mac mini (ticket §7.9).
+        // and Ethernet on a Mac mini.
         #expect(InterfaceSupportPolicy.rejection(
             bsdName: "en0", kind: .wifi, isDefaultRoute: false
         ) == .isWiFi)
@@ -156,7 +156,7 @@ struct InterfaceSupportPolicyTests {
 
     @Test("never auto-selects Wi-Fi, even as the only interface present")
     func neverAutoSelectsWiFi() {
-        // Ticket §12.3. Preselecting Wi-Fi would put the user one confirmation away from
+        // The specification Preselecting Wi-Fi would put the user one confirmation away from
         // running DHCP on whatever network they are actually on.
         #expect(InterfaceSupportPolicy.defaultSelection(
             from: [descriptor("en0", kind: .wifi)], preferring: nil

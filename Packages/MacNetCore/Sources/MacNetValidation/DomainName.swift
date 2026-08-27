@@ -14,7 +14,7 @@ public enum DomainName {
     /// Longest a single label may be.
     public static let maximumLabelLength = 63
 
-    /// Default local domain (ticket §7.6). `.test` is reserved by RFC 2606 for exactly this,
+    /// Default local domain. `.test` is reserved by RFC 2606 for exactly this,
     /// so it can never collide with a real registration.
     public static let defaultLocalDomain = "lab.test"
 
@@ -43,7 +43,7 @@ public enum DomainName {
         guard normalized.count <= maximumLength else { return .failure(.tooLong) }
 
         // `.local` belongs to multicast DNS. Serving it from a unicast resolver breaks
-        // Bonjour discovery on every machine that believes the answer (ticket §7.6).
+        // Bonjour discovery on every machine that believes the answer.
         guard normalized != "local", !normalized.hasSuffix(".local") else {
             return .failure(.reservedForMulticastDNS)
         }
@@ -55,7 +55,7 @@ public enum DomainName {
         return .success(normalized)
     }
 
-    /// Lowercases, trims surrounding whitespace, and removes one trailing dot (ticket §7.6).
+    /// Lowercases, trims surrounding whitespace, and removes one trailing dot.
     ///
     /// Exactly one trailing dot: `lab.test.` is the same name as `lab.test`, but `lab.test..`
     /// has an empty label and must stay invalid rather than being silently repaired.

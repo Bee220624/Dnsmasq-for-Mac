@@ -7,7 +7,7 @@ import MacNetModels
 /// through here so that the size limits and the date strategy are applied uniformly, and so
 /// no call site is free to invent its own decoder.
 ///
-/// Ticket §7.10 forbids `[String: Any]` as a wire format: every payload decodes into an
+/// The specification forbids `[String: Any]` as a wire format: every payload decodes into an
 /// explicit, named model or is rejected.
 public enum XPCPayload {
 

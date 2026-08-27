@@ -3,7 +3,7 @@ import Testing
 import MacNetModels
 @testable import MacNetLeases
 
-/// Lease parsing coverage (ticket §24.1 "Lease Parser Tests").
+/// Lease parsing coverage.
 ///
 /// The file being parsed is written by another process while it is read, so malformed input is
 /// normal rather than exceptional — most of these tests are about not losing good data when
@@ -161,7 +161,7 @@ struct DnsmasqLeaseParserTests {
         ).leases.first)
 
         // Computed from a passed-in `now` so the UI can tick every second without re-reading
-        // the file (ticket §5.4), and so this is testable at all.
+        // the file, and so this is testable at all.
         #expect(lease.remaining(asOf: now) == 600)
         #expect(lease.remaining(asOf: Date(timeIntervalSince1970: 1_700_000_700)) == nil)
     }

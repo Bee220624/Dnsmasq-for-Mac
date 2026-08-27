@@ -1,21 +1,22 @@
 # Dnsmasq for Mac v0.1 — Risk Register
 
-Ticket: **MNL-001**. Opened during Phase 0 on **2026-08-25**.
+Opened **2026-08-25**, before any code was written.
 
 Severity: **S1** blocks release · **S2** blocks a feature · **S3** degrades quality.
-Status: `open` · `mitigated` · `accepted` · `blocked-on-owner`.
+Status: `open` · `mitigated` · `accepted` · `open`.
 
 ---
 
 ## R-01 — No Developer ID certificate; release signing and notarization cannot be completed
 
-**Severity:** S1 · **Status:** `blocked-on-owner` · **Phases:** 2, 12
+**Severity:** S1 · **Status:** `open`
 
 The only codesigning identity on this machine is `Apple Development` (Team `MDUMXF88CA`).
-Phase 12 requires a `Developer ID Application` certificate plus notarization credentials
-for stapled, off-store distribution.
+Distribution outside the Mac App Store requires a `Developer ID Application` certificate
+plus notarization credentials, so that the ticket can be stapled to the app.
 
-*Impact.* Phase 12 cannot be finished here. Phase 2 is **not** blocked: `SMAppService`
+*Impact.* Signed distribution cannot be completed here. The privileged helper is **not**
+blocked: `SMAppService`
 daemon registration works with a development-signed app for local testing, with the user
 approving the daemon in System Settings → General → Login Items.
 
@@ -24,14 +25,14 @@ approving the daemon in System Settings → General → Login Items.
 and validated by `Scripts/verify-bundle.sh`, so switching identities is a one-file change
 plus a re-run. Everything not dependent on Developer ID is implemented and tested.
 
-*Owner action required.* Enrol/obtain a Developer ID Application certificate and configure
-a notarytool keychain profile, then run `make verify-bundle` and the Phase 12 checklist.
+*What needs doing.* Obtain a Developer ID Application certificate and configure a notarytool
+keychain profile, then run `make verify-bundle` and the release checklist in `Docs/RELEASE.md`.
 
 ---
 
 ## R-02 — `SMAppService` daemon approval is user-gated and cannot be scripted
 
-**Severity:** S2 · **Status:** `open` · **Phase:** 2
+**Severity:** S2 · **Status:** `open`
 
 `SMAppService.daemon(plistName:).register()` may return `requiresApproval`, leaving the
 daemon disabled until a human toggles it in System Settings. There is no API to grant this,
@@ -40,7 +41,7 @@ and it is deliberately not scriptable.
 *Impact.* No fully automated end-to-end test of the privileged path is possible; the first
 run on any machine needs one manual approval.
 
-*Mitigation.* Ticket §10.2 is implemented literally: never loop on `register()`, surface the
+*Mitigation.* The specification is implemented literally: never loop on `register()`, surface the
 exact status, offer **Open Login Items Settings**, and observe status changes so the app
 reconnects once approval lands. The manual step is scripted as far as it can be in
 `Scripts/install-dev-app.sh` and documented in `Docs/PRIVILEGED_HELPER.md`.
@@ -53,7 +54,7 @@ app into `/Applications`.
 
 ## R-03 — Helper caller validation is the single security boundary
 
-**Severity:** S1 · **Status:** `open` · **Phases:** 2, 7
+**Severity:** S1 · **Status:** `open`
 
 The helper runs as root and accepts XPC from the app. If caller validation is weak, any
 local process gains a root-privileged network-configuration interface.
@@ -63,9 +64,9 @@ local process gains a root-privileged network-configuration interface.
 *Mitigation.* `CallerValidator` verifies the peer via its **audit token**
 (`SecCodeCopyGuestWithAttributes` + `kSecGuestAttributeAudit`) against a designated
 requirement pinning both bundle identifier and Team ID — never UID, PID, executable name, or
-bundle path. Per ticket §10.4 the relaxed development policy is compiled out entirely under
+bundle path. Per the specification the relaxed development policy is compiled out entirely under
 `#if DEBUG`; `Scripts/verify-bundle.sh` fails the build if a release bundle carries the debug
-security flag. Malicious-input coverage lives in the security unit tests (§24.1).
+security flag. Malicious-input coverage lives in the security unit tests.
 
 *Residual.* Audit-token APIs used here are effectively required for correctness but parts are
 not formally public API. Reviewed against Apple's own sample guidance; revisit on each major
@@ -75,7 +76,7 @@ macOS release.
 
 ## R-04 — DHCP on a production network can cause an outage
 
-**Severity:** S1 · **Status:** `mitigated` · **Phases:** 5, 8
+**Severity:** S1 · **Status:** `mitigated`
 
 A rogue DHCP server on a live network hands out addresses to machines that already have
 them. In a datacenter this is a serious, visible incident.
@@ -94,14 +95,14 @@ The confirmation checkbox is the last line of defence and is deliberately unskip
 
 ## R-05 — Temporary IP alias can leak if rollback fails
 
-**Severity:** S2 · **Status:** `open` · **Phases:** 8, 13
+**Severity:** S2 · **Status:** `open`
 
 An alias added to an interface but not removed leaves the Mac holding an address it should
 not have, which can itself cause a conflict.
 
 *Mitigation.* Every side effect is recorded in an atomically-updated journal
 (`/var/db/com.bee.dnsmasqformac/active-session.json`) before and after it happens. Start is a
-transaction with reverse-order rollback (§15.2). Only aliases recorded with
+transaction with reverse-order rollback. Only aliases recorded with
 `aliasAddedByApp = true` are ever removed, so a user's own addresses are never touched.
 Removal is verified with `getifaddrs`. On helper restart the journal drives recovery.
 
@@ -113,7 +114,7 @@ A hard power loss between two journal writes is handled by the recovery path on 
 
 ## R-06 — dnsmasq is GPL; distribution obligations must be met
 
-**Severity:** S1 · **Status:** `blocked-on-owner` · **Phases:** 4, 23
+**Severity:** S1 · **Status:** `open`
 
 dnsmasq is licensed GPL v2 *or* GPL v3, at the distributor's choice. Shipping it inside a
 distributed `.app` triggers source-availability and notice obligations.
@@ -130,7 +131,7 @@ reproducibility is not the same as the distribution obligation: `Scripts/package
 must ship the verified `dnsmasq-<VERSION>.tar.xz`, `Scripts/build-dnsmasq.sh`, and both
 licence texts *alongside the distributed app*, not merely cite where they came from.
 
-*Owner action required.* Ticket §23 is explicit that the final licence of Dnsmasq for Mac itself is
+*What needs doing.* The specification is explicit that the final licence of Dnsmasq for Mac itself is
 **not** an implementation decision. A legal review is required before commercial
 distribution. `LICENSE_PENDING` is intentionally left in place.
 
@@ -138,7 +139,7 @@ distribution. `LICENSE_PENDING` is intentionally left in place.
 
 ## R-07 — Universal 2 build correctness
 
-**Severity:** S2 · **Status:** `open` · **Phase:** 4
+**Severity:** S2 · **Status:** `open`
 
 dnsmasq is a C project built via its own Makefile, not Xcode. Building two architectures in
 one tree easily produces object-file cross-contamination, and a stray Homebrew include path
@@ -157,9 +158,9 @@ executed here**. Runtime verification of the Intel slice requires an Intel Mac o
 
 ## R-08 — dnsmasq privilege drop to `nobody` is unverified on macOS
 
-**Severity:** S2 · **Status:** `open` · **Phases:** 4, 8
+**Severity:** S2 · **Status:** `open`
 
-The generated config sets `user=nobody` / `group=nobody` per ticket §9.2. On macOS `nobody`
+The generated config sets `user=nobody` / `group=nobody` per the specification On macOS `nobody`
 is uid/gid `-2` (`4294967294` unsigned), which is unusual compared with Linux. dnsmasq opens
 its DHCP, raw, and ICMP sockets before dropping privileges, so this is expected to work, but
 it is not proven on this platform.
@@ -169,17 +170,17 @@ failure, not a silent one.
 
 *Mitigation.* Runtime files (`dnsmasq.leases`, `dnsmasq.log`, `dnsmasq.pid`) are pre-created
 `nobody:nobody 0640` so dnsmasq never needs write access to the session directory itself.
-Must be confirmed by the Phase 8 integration test and Manual Test A before release.
+Must be confirmed by the session lifecycle tests and Manual Test A before release.
 
 ---
 
 ## R-09 — Preflight-to-start race on port availability
 
-**Severity:** S3 · **Status:** `mitigated` · **Phases:** 14, 15
+**Severity:** S3 · **Status:** `mitigated`
 
 Ports 53/67 can be taken by another process between preflight and start.
 
-*Mitigation.* Ticket §15 Step 12 re-probes UDP 67 and TCP/UDP 53 *after* the alias is added
+*Mitigation.* The specification Step 12 re-probes UDP 67 and TCP/UDP 53 *after* the alias is added
 and immediately before launch; a conflict at that point rolls the alias back. Preflight is
 advisory; the check inside the start transaction is authoritative.
 
@@ -187,7 +188,7 @@ advisory; the check inside the start transaction is authoritative.
 
 ## R-10 — macOS 14 deployment target is not testable on this host
 
-**Severity:** S3 · **Status:** `open` · **Phase:** 12
+**Severity:** S3 · **Status:** `open`
 
 Development happens on macOS 15.7.9. The product targets macOS 14.0. `SMAppService` approval
 flow and Login Items UI differ between the two.
@@ -200,7 +201,7 @@ gate recorded in `Docs/MANUAL_TEST_PLAN.md`.
 
 ## R-11 — UI tests need Accessibility permission for the process that runs them
 
-**Severity:** S3 · **Status:** `blocked-on-owner` · **Phase:** 1 (affects every phase with UI tests)
+**Severity:** S3 · **Status:** `open`(affects every phase with UI tests)
 
 XCUITest drives another application, which macOS gates behind Accessibility permission. The
 grant belongs to **whichever process runs the tests** — not to Dnsmasq for Mac, and not to the test
@@ -222,7 +223,7 @@ Failed to load AX for com.bee.dnsmasqformac (pid:…): Not authorized for perfor
 Both are the same cause. Without the grant, XCUITest can see elements in the accessibility tree
 but cannot hit-test them, so `isHittable` never becomes true and clicks fail.
 
-### Owner action required
+### What needs doing
 
 **System Settings → Privacy & Security → Accessibility**, then enable the app you launch the
 tests from:
@@ -259,7 +260,7 @@ machine without the helper reports them as skipped — which is true — instead
 
 ## R-12 — The dnsmasq signing key's provenance is asserted, not independently established
 
-**Severity:** S2 · **Status:** `blocked-on-owner` · **Phase:** 4
+**Severity:** S2 · **Status:** `open`
 
 `Scripts/build-dnsmasq.sh` verifies the upstream archive two ways: its SHA-256 must match
 `Resources/ThirdParty/dnsmasq/SHA256SUMS`, and its detached OpenPGP signature must verify
@@ -281,18 +282,18 @@ rather than a silent key substitution — but it is not a trust root.
 *Mitigation.* The SHA-256 pin is independent of the signature entirely, and is the check that
 actually holds the line for the specific artefact vetted here. Both must pass.
 
-*Owner action required.* Corroborate the fingerprint against a source that does not derive
+*What needs doing.* Corroborate the fingerprint against a source that does not derive
 from thekelleys.org.uk. The Debian keyring is the natural choice, since the same person
 maintains dnsmasq there. Record the result in
 `Resources/ThirdParty/dnsmasq/SIGNING_KEY_FINGERPRINT` alongside where it was confirmed.
 
 ---
 
-## R-13 — Ticket §21.3's launch-time SHA-256 check is not constructible as written
+## R-13 — The specification's launch-time SHA-256 check is not constructible as written
 
-**Severity:** S2 · **Status:** `mitigated` · **Phases:** 4, 7
+**Severity:** S2 · **Status:** `mitigated`
 
-Ticket §21.3 specifies: compute the dnsmasq digest at build time, generate a Swift constant
+The specification specifies: compute the dnsmasq digest at build time, generate a Swift constant
 from it, and have the helper recompute the digest before every launch and refuse to start on a
 mismatch.
 
@@ -318,18 +319,18 @@ is not the one we shipped:
    it against `dist/dnsmasq`. This answers a different and still useful question: did we ship
    the dnsmasq we built?
 
-*Owner action.* This is a deliberate deviation from the ticket text. Confirm the substitution
+*What needs doing.* This is a deliberate deviation from the specification. Confirm the substitution
 is acceptable, or specify a two-pass build that signs dnsmasq, digests the signed file, then
 rebuilds the helper with that value — at the cost of a build that must run twice and a digest
 that differs per signing identity.
 
 ---
 
-## R-14 — Log category precedence departs from the ticket's listed order
+## R-14 — Log category precedence departs from the specified order
 
-**Severity:** S3 · **Status:** `mitigated` · **Phase:** 10
+**Severity:** S3 · **Status:** `mitigated`
 
-Ticket §5.5 lists the log categories as DHCP, DNS, Warning, Error, System. Read as a
+The specification lists the log categories as DHCP, DNS, Warning, Error, System. Read as a
 precedence order, that misfiles real dnsmasq output:
 
 ```
@@ -351,5 +352,5 @@ Keywords are also matched as whole words rather than substrings, so `errors` doe
 ordinary lease traffic still classifies as DHCP — while `failed to send DHCPOFFER` now reaches
 someone filtering for failures. Covered by `LogClassifierTests.severityWinsOverProtocol`.
 
-*Owner action.* Confirm the reordering is acceptable, or say which behaviour you prefer for a
+*What needs doing.* Confirm the reordering is acceptable, or say which behaviour you prefer for a
 line that is both a protocol event and a failure.

@@ -28,7 +28,7 @@ public struct LeaseParseResult: Sendable, Equatable {
     }
 }
 
-/// Parses dnsmasq's lease file (ticket §18.1, §18.2).
+/// Parses dnsmasq's lease file.
 ///
 /// ## Format
 ///
@@ -50,7 +50,7 @@ public struct LeaseParseResult: Sendable, Equatable {
 /// to find out whether a device got an address.
 public struct DnsmasqLeaseParser: Sendable {
 
-    /// Largest lease file that will be read (ticket §18.3).
+    /// Largest lease file that will be read.
     ///
     /// A pool is capped at 1024 addresses and a lease line is well under 100 bytes, so a file
     /// anywhere near this is not a lease file any more. The cap is what stops a runaway file
@@ -79,7 +79,7 @@ public struct DnsmasqLeaseParser: Sendable {
             }
         }
 
-        // Sorted by numeric address (ticket §5.4). Sorting here rather than in the view means
+        // Sorted by numeric address. Sorting here rather than in the view means
         // the order is the same wherever the snapshot is used, and is covered by these tests.
         leases.sort { $0.ipv4Address < $1.ipv4Address }
         return LeaseParseResult(leases: leases, malformedLines: malformed)

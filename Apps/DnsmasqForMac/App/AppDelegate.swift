@@ -3,7 +3,7 @@ import OSLog
 
 /// Application delegate.
 ///
-/// Its one real job is termination: ticket §17.2 requires that quitting while services are
+/// Its one real job is termination: the specification requires that quitting while services are
 /// running asks the user rather than silently leaving dnsmasq and a temporary IP alias behind.
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -23,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         true
     }
 
-    /// Asks before quitting with a session running (ticket §17.2).
+    /// Asks before quitting with a session running.
     ///
     /// Returns `.terminateLater` and finishes asynchronously, because stopping involves XPC to
     /// the helper, terminating dnsmasq, and removing the alias — none of which can be done from
@@ -43,7 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.informativeText = String(localized: "If you quit without stopping, DHCP and DNS keep running and the temporary IP address stays on the interface until you start Dnsmasq for Mac again.")
         alert.alertStyle = .warning
 
-        // Default first. Ticket §17.2 names this as the default because it is the option that
+        // Default first. The specification names this as the default because it is the option that
         // leaves the machine as the user found it.
         alert.addButton(withTitle: String(localized: "Stop Services and Quit"))
         alert.addButton(withTitle: String(localized: "Quit Without Stopping"))
@@ -70,7 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .alertSecondButtonReturn:
             // A deliberate choice, and a legitimate one: the engineer may want the network to
             // stay up while they reboot a device. The helper keeps running, and the next launch
-            // re-adopts the session (ticket §17.1).
+            // re-adopts the session.
             logger.log("quitting without stopping; the helper keeps the session running")
             return .terminateNow
 

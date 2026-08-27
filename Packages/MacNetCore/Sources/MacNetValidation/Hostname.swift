@@ -1,7 +1,7 @@
 import Foundation
 import MacNetModels
 
-/// Validation for host names entered as local DNS records (ticket §7.7).
+/// Validation for host names entered as local DNS records.
 public enum Hostname {
 
     public enum Failure: String, Sendable, Equatable, Error {
@@ -23,7 +23,7 @@ public enum Hostname {
         ///
         /// `bmc01` is written as both `bmc01.lab.test` and `bmc01` so either resolves. A name
         /// the user already qualified is written once, exactly as given — appending the local
-        /// domain to `bmc01.lab.test` would produce `bmc01.lab.test.lab.test` (ticket §7.7).
+        /// domain to `bmc01.lab.test` would produce `bmc01.lab.test.lab.test`.
         public let shortName: String?
 
         /// Names to emit for this record, in the order dnsmasq expects: FQDN first.

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Record the digest of the built dnsmasq binary, and emit it as a Swift constant.
 #
-# Ticket §21.3: the helper recomputes this digest before every launch and refuses to start if
+# The specification: the helper recomputes this digest before every launch and refuses to start if
 # it differs. That check is only as good as where the expected value lives — generating it
 # here means the value in the source tree always describes a binary that was actually built by
 # this script, never one typed in by hand.
@@ -67,7 +67,7 @@ import Foundation
 /// * being a regular file, not a symlink, and not group- or world-writable;
 /// * reporting \`version\` from \`--version\`.
 ///
-/// Ticket §21.3 asks for a recomputed SHA-256 at launch. That is not constructible: the
+/// The specification asks for a recomputed SHA-256 at launch. That is not constructible: the
 /// helper is compiled before dnsmasq is signed, so no compile-time constant can describe the
 /// signed file, and the signing identity differs between Debug and Release. The checks above
 /// meet the requirement's intent — refuse to execute a dnsmasq that is not the one we

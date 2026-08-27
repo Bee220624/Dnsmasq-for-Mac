@@ -4,11 +4,11 @@ import SystemConfiguration
 
 /// Notifies when the machine's network configuration changes.
 ///
-/// Watches the dynamic store keys listed in ticket §12.2 — per-interface IPv4 and link state,
+/// Watches the dynamic store keys listed in the specification — per-interface IPv4 and link state,
 /// plus the global IPv4 and IPv6 entities, which is how a change of default route shows up.
 ///
 /// If registering for notifications fails, it falls back to polling every two seconds. Ticket
-/// §12.2 requires that the two never run at the same time: doing both would double the work
+/// The two must never run at the same time: doing both would double the work
 /// and, worse, make an intermittent notification failure invisible during development.
 final class InterfaceChangeWatcher: @unchecked Sendable {
 
@@ -125,8 +125,7 @@ final class InterfaceChangeWatcher: @unchecked Sendable {
     private func startPolling() {
         let timer = DispatchSource.makeTimerSource(queue: queue)
         // Two seconds with generous leeway: this is a fallback for a case that should not
-        // happen, and it must not become a reason the app spins the CPU while idle
-        // (ticket §25 targets under 1% while stopped).
+        // happen, and it must not become a reason the app spins the CPU while idle.
         timer.schedule(deadline: .now() + .seconds(2), repeating: .seconds(2), leeway: .milliseconds(500))
         timer.setEventHandler { [onChange] in onChange() }
         timer.resume()

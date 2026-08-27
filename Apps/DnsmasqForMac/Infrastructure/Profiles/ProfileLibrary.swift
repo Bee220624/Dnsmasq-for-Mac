@@ -49,7 +49,7 @@ final class ProfileLibrary {
         await syncFromStore()
 
         // Selecting the default is the only automatic selection this app makes, and it only
-        // chooses which settings are *shown* — nothing starts on its own (ticket §0.1).
+        // chooses which settings are *shown* — nothing starts on its own.
         if let defaultProfile = profiles.first(where: { $0.id == defaultProfileID })
             ?? profiles.first {
             draft = ProfileDraft(defaultProfile)
@@ -96,7 +96,7 @@ final class ProfileLibrary {
     /// Switches the edited profile.
     ///
     /// Refuses while there are unsaved changes: the caller must resolve them first via
-    /// `resolveUnsavedChanges(_:)`. Ticket §5.3.1 requires a Save / Discard / Cancel prompt,
+    /// `resolveUnsavedChanges(_:)`. The specification requires a Save / Discard / Cancel prompt,
     /// and returning `false` here is what lets the view present one instead of silently
     /// discarding the user's work.
     @discardableResult
@@ -197,7 +197,7 @@ final class ProfileLibrary {
 
         if draft?.id == profileID {
             // The running session, if any, holds its own snapshot and is unaffected
-            // (ticket §5.6) — this only changes what is being edited.
+            // — this only changes what is being edited.
             draft = profiles.first(where: { $0.id == defaultProfileID })
                 .map(ProfileDraft.init)
                 ?? profiles.first.map(ProfileDraft.init)

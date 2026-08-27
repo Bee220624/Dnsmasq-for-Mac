@@ -5,13 +5,13 @@ import ServiceManagement
 /// What the app knows about the helper's installation, as one value.
 ///
 /// Each case maps to exactly one thing the user can do about it, which is what keeps the
-/// onboarding flow from turning into a pile of booleans (ticket §10.2).
+/// onboarding flow from turning into a pile of booleans.
 enum HelperInstallationState: Equatable, Sendable {
     /// Never registered on this machine. Offer Install.
     case notRegistered
 
     /// Registered, but macOS is waiting for the user to approve it in System Settings.
-    /// Ticket §10.2 forbids looping on `register()` here: the app shows the steps and waits.
+    /// The specification forbids looping on `register()` here: the app shows the steps and waits.
     case requiresApproval
 
     /// Registered and approved. The Mach service can be reached.

@@ -27,7 +27,7 @@ import Foundation
 /// * being a regular file, not a symlink, and not group- or world-writable;
 /// * reporting `version` from `--version`.
 ///
-/// Ticket §21.3 asks for a recomputed SHA-256 at launch. That is not constructible: the
+/// The specification asks for a recomputed SHA-256 at launch. That is not constructible: the
 /// helper is compiled before dnsmasq is signed, so no compile-time constant can describe the
 /// signed file, and the signing identity differs between Debug and Release. The checks above
 /// meet the requirement's intent — refuse to execute a dnsmasq that is not the one we

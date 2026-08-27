@@ -1,11 +1,11 @@
 import Foundation
 
-/// The exact, frozen inputs a start request is built from (ticket §6.7).
+/// The exact, frozen inputs a start request is built from.
 ///
 /// A `NetworkProfile` is deliberately *not* usable as run parameters. A profile is a saved
 /// document that the user may edit or delete at any moment, while a running session must keep
 /// referring to precisely what it was started with. Snapshotting here is also what makes it
-/// safe to delete a profile that a live session is using (ticket §5.6).
+/// safe to delete a profile that a live session is using.
 public struct SessionDraft: Codable, Sendable, Equatable {
     public let profileSnapshot: NetworkProfile
     public let selectedInterface: NetworkInterfaceDescriptor
@@ -17,7 +17,7 @@ public struct SessionDraft: Codable, Sendable, Equatable {
 
     /// The user's confirmation that the selected interface is on an isolated network.
     ///
-    /// Ticket §5.3.5: never persisted, never carried across launches, and reset on stop, on
+    /// The specification: never persisted, never carried across launches, and reset on stop, on
     /// interface change, and on any DHCP pool change. It lives here — inside the request —
     /// so the helper can refuse a start that lacks it, rather than trusting the UI to have
     /// asked.
@@ -36,7 +36,7 @@ public struct SessionDraft: Codable, Sendable, Equatable {
     }
 }
 
-/// A session the helper is actually running (ticket §6.8).
+/// A session the helper is actually running.
 public struct ActiveSession: Codable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public let profileSnapshot: NetworkProfile
@@ -48,7 +48,7 @@ public struct ActiveSession: Codable, Sendable, Equatable, Identifiable {
 
     /// Whether *this app* added the IP alias. Only an alias recorded here as `true` is ever
     /// removed on stop, so an address the user configured themselves is never touched
-    /// (ticket §13.2).
+    ///.
     public let aliasAddedByApp: Bool
 
     public init(
@@ -72,7 +72,7 @@ public struct ActiveSession: Codable, Sendable, Equatable, Identifiable {
     }
 }
 
-/// The single source of truth for what the service is doing (ticket §6.9).
+/// The single source of truth for what the service is doing.
 ///
 /// One enum rather than several booleans, because booleans admit states that cannot exist —
 /// "running and stopping", "stopped with a live PID" — and every such combination would need

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Every way a Dnsmasq for Mac operation can fail, as a closed set (ticket §6.10).
+/// Every way a Dnsmasq for Mac operation can fail, as a closed set.
 ///
 /// Closed rather than free-form because the UI maps each case to a specific recovery
 /// affordance, and because an error crossing the XPC boundary must survive encoding without

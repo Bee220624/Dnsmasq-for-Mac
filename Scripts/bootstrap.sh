@@ -1,6 +1,6 @@
 #!/bin/bash
 # One-time developer machine setup. Development tooling only; nothing installed here is a
-# runtime dependency of the shipped app (ticket §4.1).
+# runtime dependency of the shipped app.
 
 set -euo pipefail
 

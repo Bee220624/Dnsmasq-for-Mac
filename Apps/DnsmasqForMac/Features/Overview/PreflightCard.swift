@@ -1,7 +1,7 @@
 import MacNetModels
 import SwiftUI
 
-/// Overview → Preflight (ticket §5.3.6).
+/// Overview → Preflight.
 ///
 /// Shows the whole checklist, including checks that have not run — so the user can see what
 /// *will* be verified, not only what happened to fail. Warnings are displayed prominently and
@@ -75,7 +75,7 @@ struct PreflightCard: View {
         }
     }
 
-    /// Symbol and colour together — never colour alone (ticket §26.2).
+    /// Symbol and colour together — never colour alone.
     @ViewBuilder
     private func icon(for status: PreflightCheckStatus) -> some View {
         switch status {

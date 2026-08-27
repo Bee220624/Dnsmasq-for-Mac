@@ -22,7 +22,7 @@ struct ConfigurationValidatorTests {
 
     @Test("the default profile is valid")
     func defaultProfileIsValid() {
-        // Ticket §8 defines this exact configuration as what a new install starts with. If it
+        // The specification defines this exact configuration as what a new install starts with. If it
         // does not validate, every first-run experience begins with an error.
         #expect(issues(ProfileFixture.make()).isEmpty)
     }
@@ -70,7 +70,7 @@ struct ConfigurationValidatorTests {
         let found = issues(profile)
 
         #expect(found.contains { $0.id == "prefixLength.veryWide" && $0.severity == .warning })
-        // Ticket §5.3.6: warnings are shown but never prevent Start.
+        // The specification: warnings are shown but never prevent Start.
         #expect(!ConfigurationValidator.hasBlockingIssues(found))
     }
 
@@ -160,7 +160,7 @@ struct ConfigurationValidatorTests {
 
     @Test("allows the router to be this Mac, which is not required but is legitimate")
     func allowsRouterEqualToServer() {
-        // Ticket §7.4 is explicit that the router need not equal the server address — and
+        // The specification is explicit that the router need not equal the server address — and
         // equally, that it may.
         #expect(issues(ProfileFixture.make(advertiseRouter: true, routerIPv4: "192.168.50.1"))
             .isEmpty)
@@ -249,7 +249,7 @@ struct ConfigurationValidatorTests {
 
     @Test("rejects a configuration with nothing enabled")
     func rejectsNoServicesEnabled() {
-        // Ticket Manual Test D: starting with neither DHCP nor DNS would run dnsmasq with
+        // Starting with neither DHCP nor DNS would run dnsmasq with
         // nothing to do.
         #expect(ids(ProfileFixture.make(dhcpEnabled: false, dnsEnabled: false))
             .contains("services.noneEnabled"))
@@ -299,12 +299,12 @@ struct DefaultProfileTests {
     @Test("the first-launch profile validates cleanly")
     func defaultProfileValidates() {
         // A new install must not open onto an error. This is the exact configuration from
-        // ticket §8.
+        // the specification
         let profile = NetworkProfile.makeDefault(now: Date(timeIntervalSince1970: 1_700_000_000))
         #expect(ConfigurationValidator.validate(profile).isEmpty)
     }
 
-    @Test("matches the values specified in the ticket")
+    @Test("matches the specified values")
     func matchesSpecifiedValues() {
         let profile = NetworkProfile.makeDefault(now: Date(timeIntervalSince1970: 0))
 
@@ -376,7 +376,7 @@ struct PreflightReportTests {
 
     @Test("only errors block Start")
     func onlyErrorsBlock() {
-        // Ticket §5.3.6: warnings must be shown clearly but must never prevent Start. Link
+        // The specification: warnings must be shown clearly but must never prevent Start. Link
         // Down is the motivating case — the device may simply not be powered on yet.
         let warningOnly = PreflightReport(
             checks: [],

@@ -3,7 +3,7 @@ import Testing
 import MacNetModels
 @testable import MacNetLogging
 
-/// Log classification coverage (ticket §24.1 "Log Tests").
+/// Log classification coverage.
 ///
 /// The inputs are real dnsmasq output, because the whole value of the category filter is that
 /// an engineer can narrow a busy log to "just the DHCP conversation" and trust that nothing
@@ -92,7 +92,7 @@ struct LogClassifierTests {
 
     @Test("severity wins over protocol when a line is both")
     func severityWinsOverProtocol() {
-        // A failure mentioning DHCP must reach someone filtering for failures. Ticket §5.5
+        // A failure mentioning DHCP must reach someone filtering for failures. The specification
         // lists DHCP before Error; applied as precedence that would hide this line from the
         // Error filter, which is the one place it needs to appear.
         #expect(LogClassifier.category(for: "dnsmasq[421]: failed to send DHCPOFFER") == .error)

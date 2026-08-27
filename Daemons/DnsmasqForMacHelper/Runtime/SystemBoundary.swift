@@ -5,7 +5,7 @@ import MacNetModels
 ///
 /// ## Why every syscall goes through a protocol
 ///
-/// Ticket §24.2 requires the helper's system calls to be injectable, and the reason is not
+/// The specification requires the helper's system calls to be injectable, and the reason is not
 /// tidiness. The paths that matter most here are the failure paths: an alias that cannot be
 /// removed, a port taken between preflight and launch, dnsmasq exiting immediately, a PID that
 /// has been recycled. None of those can be produced reliably on a real machine, and all of
@@ -13,7 +13,7 @@ import MacNetModels
 /// engineer's Mac in a state they did not ask for.
 ///
 /// Nothing in this file takes a command, a path, or an executable from the caller. Every
-/// operation is a named verb with typed arguments (ticket §10.5, §21.1).
+/// operation is a named verb with typed arguments.
 
 // MARK: - Running fixed executables
 
@@ -32,7 +32,7 @@ public struct CommandResult: Sendable, Equatable {
     public var succeeded: Bool { exitStatus == 0 }
 }
 
-/// The only executables the helper may run (ticket §21.2).
+/// The only executables the helper may run.
 ///
 /// An enum rather than a path string. A path parameter would mean "run whatever this names",
 /// which is precisely the arbitrary-execution interface the design forbids; a closed set means
@@ -56,7 +56,7 @@ public enum FixedExecutable: Sendable, Equatable {
 
 /// Runs one of the fixed executables with an argument array.
 ///
-/// There is deliberately no way to pass a command string. Ticket §21.1 forbids
+/// There is deliberately no way to pass a command string. The specification forbids
 /// `/bin/sh -c`, string interpolation into a command, and anything else that would let a
 /// value become an instruction.
 public protocol CommandRunning: Sendable {
@@ -104,7 +104,7 @@ public enum PortAvailability: Sendable, Equatable {
 
 /// Tests whether a port can be bound.
 ///
-/// Ticket §14.3 requires an actual `bind` rather than parsing `lsof`: only a bind answers the
+/// The specification requires an actual `bind` rather than parsing `lsof`: only a bind answers the
 /// question that matters, which is whether *we* can take the port.
 public protocol PortProbing: Sendable {
     func probe(_ port: ProbedPort, boundTo address: IPv4Address) -> PortAvailability
@@ -115,7 +115,7 @@ public protocol PortProbing: Sendable {
 /// Adds and removes temporary IPv4 aliases.
 public protocol InterfaceAliasManaging: Sendable {
     /// Adds `address` to `interface`. Must be a no-op if the exact address and prefix are
-    /// already present (ticket §13.1).
+    /// already present.
     func addAlias(
         interface: String,
         address: IPv4Address,
@@ -142,7 +142,7 @@ public enum ProcessLiveness: Sendable, Equatable {
     /// Alive, and confirmed to be the executable we launched.
     case runningAsExpected
     /// Alive, but not our process — the PID was recycled. Must never be signalled
-    /// (ticket §16.2).
+    ///.
     case identityMismatch(actualPath: String?)
     case notRunning
 }
@@ -171,7 +171,7 @@ public protocol ProcessControlling: Sendable {
 
 // MARK: - Runtime files
 
-/// Ownership and permissions for a runtime file (ticket §11).
+/// Ownership and permissions for a runtime file.
 public struct FileOwnership: Sendable, Equatable {
     public let owner: String
     public let group: String
@@ -221,7 +221,7 @@ public protocol OwnershipApplying: Sendable {
 /// Creates and removes the helper's runtime files.
 ///
 /// Takes no path from the caller: everything is derived from the fixed runtime root and a
-/// session UUID the helper generated (ticket §21.4).
+/// session UUID the helper generated.
 public protocol RuntimeFileManaging: Sendable {
     func prepareRuntimeRoot() throws(ServiceFailure)
     func createSessionDirectory(sessionID: UUID) throws(ServiceFailure) -> any RuntimePathsProviding
@@ -281,7 +281,7 @@ public protocol ExecutableVerifying: Sendable {
 
 /// Where the helper finds the things it ships with.
 ///
-/// Derived from the helper's **own** location, never supplied by the app (ticket §21.2). The
+/// Derived from the helper's **own** location, never supplied by the app. The
 /// helper executable sits at `…/Contents/Library/HelperTools/<label>`, so dnsmasq is its
 /// sibling — a relationship the app cannot influence.
 public enum BundledPaths {

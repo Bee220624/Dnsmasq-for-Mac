@@ -38,7 +38,7 @@ struct IPv4AddressTests {
     @Test("rejects untrimmed whitespace rather than silently accepting it",
           arguments: [" 1.2.3.4", "1.2.3.4 ", "\t1.2.3.4", "1.2.3.4\n", "1.2. 3.4"])
     func rejectsWhitespace(text: String) {
-        // Ticket §7.1 lists uncleaned whitespace as a rejection, not something to strip. A
+        // The specification lists uncleaned whitespace as a rejection, not something to strip. A
         // field that quietly repairs its input teaches the user that spaces are fine, which
         // stops being true the moment the value reaches somewhere less forgiving.
         #expect(IPv4Address(text) == nil)

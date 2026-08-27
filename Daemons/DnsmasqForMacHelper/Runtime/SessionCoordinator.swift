@@ -6,7 +6,7 @@ import MacNetValidation
 import MacNetXPC
 import OSLog
 
-/// Owns the session lifecycle: preflight, start, stop, and recovery (ticket §15–§17).
+/// Owns the session lifecycle: preflight, start, stop, and recovery (–).
 ///
 /// ## Why an actor
 ///
@@ -18,7 +18,7 @@ import OSLog
 /// ## The rule that shapes everything here
 ///
 /// Every side effect is journalled *before* it is reported as done, and every failure unwinds
-/// in reverse order. The failure modes this exists to prevent are named in ticket §15.2:
+/// in reverse order. The failure modes this exists to prevent are named in the specification:
 /// dnsmasq failing to start but the alias staying behind; the app showing Stopped while the
 /// helper still runs dnsmasq; a journal pointing at a process that no longer exists; and not
 /// being able to tell which step failed.
@@ -46,7 +46,7 @@ actor SessionCoordinator {
 
     private var state: RuntimeState = .stopped
 
-    /// Notified when a session ends without being asked to (ticket §17.4).
+    /// Notified when a session ends without being asked to.
     private var unexpectedExitHandler: (@Sendable (UnexpectedExitReport) -> Void)?
 
     private var exitWatcher: Task<Void, Never>?
@@ -90,7 +90,7 @@ actor SessionCoordinator {
         return nil
     }
 
-    /// Verifies the bundled engine and summarises it for display (ticket §5.7).
+    /// Verifies the bundled engine and summarises it for display.
     func verifyEngine() async throws(ServiceFailure) -> HelperServiceInfo.EngineVerification {
         let verification = try await executableVerifier.verifyBundledDnsmasq()
         return HelperServiceInfo.EngineVerification(
@@ -159,7 +159,7 @@ actor SessionCoordinator {
         let draft = request.draft
         let profile = draft.profileSnapshot
 
-        // Ticket §5.3.5: the isolation confirmation travels inside the request so the helper
+        // The specification: the isolation confirmation travels inside the request so the helper
         // can refuse a start that lacks it, rather than trusting the UI to have asked.
         guard draft.safetyConfirmation || !profile.dhcpConfiguration.enabled else {
             throw ServiceFailure(
@@ -258,7 +258,7 @@ actor SessionCoordinator {
             // ---- Step 10: interface up ------------------------------------------------------
             if !live.isUp {
                 try await aliasManager.setInterfaceUp(validated.interfaceBSDName, up: true)
-                // Recorded so a session that brought it up puts it back down (ticket §15.2).
+                // Recorded so a session that brought it up puts it back down.
                 rollback.add(.setInterfaceDown(validated.interfaceBSDName))
             }
 
@@ -280,7 +280,7 @@ actor SessionCoordinator {
 
             // ---- Step 12: re-check the ports, now that the address exists -------------------
             // Preflight checked these, and that answer is already stale. This is the one that
-            // counts, and a conflict here rolls the alias straight back out (ticket §15.1).
+            // counts, and a conflict here rolls the alias straight back out.
             try await requirePortsAvailable(profile: profile, address: validated.serverIPv4)
 
             // ---- Steps 13–14: launch --------------------------------------------------------
@@ -387,7 +387,7 @@ actor SessionCoordinator {
     private func requireUsableInterface(
         named bsdName: String
     ) throws(ServiceFailure) -> NetworkInterfaceDescriptor {
-        // Ticket §12.4: re-enumerated here, never taken from the request. The adapter may have
+        // The specification: re-enumerated here, never taken from the request. The adapter may have
         // been unplugged, or the default route may have moved, since the app looked.
         guard let live = enumerator.enumerateInterfaces().first(where: { $0.bsdName == bsdName })
         else {
@@ -477,7 +477,7 @@ actor SessionCoordinator {
         }
     }
 
-    /// Waits until dnsmasq looks healthy, or gives up (ticket §15.1 step 15).
+    /// Waits until dnsmasq looks healthy, or gives up.
     private func confirmReadiness(
         pid: Int32,
         digest: String,
@@ -576,7 +576,7 @@ actor SessionCoordinator {
             logger.error("could not stop dnsmasq cleanly: \(error.message, privacy: .public)")
         }
 
-        // Step 12: remove only what this app added (ticket §13.2).
+        // Step 12: remove only what this app added.
         if session.aliasAddedByApp {
             do {
                 try await aliasManager.removeAlias(
@@ -611,7 +611,7 @@ actor SessionCoordinator {
 
     // MARK: - Recovery
 
-    /// Reconciles the journal with reality (ticket §17.3).
+    /// Reconciles the journal with reality.
     func recoverStaleState() async -> RecoveryReport {
         guard let journal = journalStore.read() else {
             return RecoveryReport(outcome: .nothingToRecover)
@@ -635,7 +635,7 @@ actor SessionCoordinator {
             )
         }
 
-        // Case D: alive, but not ours. Signal nothing (ticket §17.3).
+        // Case D: alive, but not ours. Signal nothing.
         if let pid = journal.dnsmasqPID,
            case .identityMismatch(let actualPath) = processController.liveness(
                of: pid, expectedExecutableSHA256: journal.dnsmasqExecutableSHA256
@@ -685,7 +685,7 @@ actor SessionCoordinator {
     /// Latest leases for a session, for a client that has just asked.
     ///
     /// Returns an empty snapshot rather than an error when nothing is running: "no session" is
-    /// a state the Leases page renders on purpose (ticket §5.4), not a failure.
+    /// a state the Leases page renders on purpose, not a failure.
     func leaseSnapshot(sessionID: UUID) async -> LeaseSnapshot {
         guard let watcher = leaseWatcher, activeSession?.id == sessionID else {
             return LeaseSnapshot(
@@ -711,7 +711,7 @@ actor SessionCoordinator {
 
     private func publishLeaseSnapshot(_ snapshot: LeaseSnapshot) {
         // Pushed rather than polled, so a device appearing shows up in under the two seconds
-        // ticket §25 asks for without the app asking every second.
+        // the specification asks for without the app asking every second.
         leaseSnapshotHandler?(snapshot)
     }
 
@@ -754,11 +754,11 @@ actor SessionCoordinator {
 
     // MARK: - Unexpected exit
 
-    /// Watches for dnsmasq exiting without being asked (ticket §17.4).
+    /// Watches for dnsmasq exiting without being asked.
     ///
     /// Polled rather than driven by a termination handler, because the helper may have adopted
     /// a process it did not spawn — after its own restart — and has no `Process` object for it.
-    /// A verified PID is enough to manage a session (ticket §17.3 case B).
+    /// A verified PID is enough to manage a session (case B).
     private func startWatchingForUnexpectedExit(session: ActiveSession, digest: String) {
         exitWatcher?.cancel()
         exitWatcher = Task { [weak self] in
@@ -799,7 +799,7 @@ actor SessionCoordinator {
             journalStore.clear()
             state = .stopped
 
-            // Ticket §17.4: never restart automatically. A crash loop against a network the
+            // The specification: never restart automatically. A crash loop against a network the
             // user cannot see would be far worse than a stopped service they can.
             unexpectedExitHandler?(UnexpectedExitReport(
                 sessionID: session.id,
@@ -866,7 +866,7 @@ actor SessionCoordinator {
 /// The undo steps for a start in progress.
 ///
 /// Kept as data rather than as nested `defer` blocks so that the unwind order is explicit and
-/// readable: steps run in exactly the reverse of the order they were added (ticket §15.2).
+/// readable: steps run in exactly the reverse of the order they were added.
 struct RollbackPlan {
 
     enum Step {

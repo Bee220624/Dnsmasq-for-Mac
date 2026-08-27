@@ -3,7 +3,7 @@ import MacNetModels
 
 /// Builds profiles for tests.
 ///
-/// Starts from the shipping default (ticket §8) and lets each test change only the field it
+/// Starts from the shipping default and lets each test change only the field it
 /// is about, so a test's intent is visible in its diff from a known-good configuration rather
 /// than buried in twenty lines of setup.
 enum ProfileFixture {

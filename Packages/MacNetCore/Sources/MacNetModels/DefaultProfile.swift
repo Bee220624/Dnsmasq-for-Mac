@@ -2,7 +2,7 @@ import Foundation
 
 extension NetworkProfile {
 
-    /// The profile created on first launch (ticket §8).
+    /// The profile created on first launch.
     ///
     /// Chosen to be immediately useful for the product's main scenario — a MacBook plugged
     /// straight into a BMC or a switch management port — so a new user can plug in, confirm
@@ -11,7 +11,7 @@ extension NetworkProfile {
     /// `authoritative` is true because a bench network genuinely has no other DHCP server, and
     /// without it a device with a stale lease from somewhere else takes a long time to accept
     /// an address. That is safe **only** because starting DHCP additionally requires the
-    /// explicit isolation confirmation, which is never remembered between runs (ticket §8).
+    /// explicit isolation confirmation, which is never remembered between runs.
     public static func makeDefault(id: UUID = UUID(), now: Date) -> NetworkProfile {
         NetworkProfile(
             id: id,

@@ -6,17 +6,17 @@ import MacNetModels
 /// ## Why bounded
 ///
 /// A dnsmasq serving a busy DNS cache with query logging on produces lines faster than anyone
-/// reads them. Ticket §19.2 and §5.5 cap both ends — 1,000 lines in the helper's reconnect
+/// reads them. The specification cap both ends — 1,000 lines in the helper's reconnect
 /// buffer, 5,000 in the app's view — because an unbounded log buffer is a memory leak with a
-/// friendly name, and the app is meant to stay under 150 MiB (ticket §25).
+/// friendly name, and the app is meant to stay under 150 MiB.
 ///
 /// Dropping the oldest is the right eviction: the interesting line is almost always the most
 /// recent one, and anything older is still in the log file on disk.
 public struct LogRingBuffer: Sendable {
 
-    /// The helper's reconnect buffer (ticket §19.2).
+    /// The helper's reconnect buffer.
     public static let helperCapacity = 1_000
-    /// The app's in-memory view (ticket §5.5).
+    /// The app's in-memory view.
     public static let appCapacity = 5_000
 
     public private(set) var events: [LogEvent] = []
@@ -54,7 +54,7 @@ public struct LogRingBuffer: Sendable {
 
     /// Clears the view without touching the underlying file.
     ///
-    /// Ticket §5.5 is explicit that Clear View must not truncate the running dnsmasq log: the
+    /// The specification is explicit that Clear View must not truncate the running dnsmasq log: the
     /// file is the record, and a user tidying their screen must not destroy it.
     public mutating func clear() {
         events.removeAll(keepingCapacity: true)
@@ -64,7 +64,7 @@ public struct LogRingBuffer: Sendable {
     /// The highest sequence number held, or `nil` when empty.
     ///
     /// This is what a reconnecting client sends so it receives exactly what it is missing —
-    /// no gaps, no duplicates (ticket §10.3).
+    /// no gaps, no duplicates.
     public var highestSequence: Int64? {
         events.last?.sequence
     }

@@ -1,6 +1,6 @@
 // Identifiers.xcconfig
 //
-// Single source of truth for every identifier in the project (ticket §3.1).
+// Single source of truth for every identifier in the project.
 // Nothing below may be hardcoded anywhere else in the codebase; Swift code reads these
 // through generated build settings / Info.plist, and shell scripts read them by parsing
 // this file. Renaming the product before release is a change to this file only.

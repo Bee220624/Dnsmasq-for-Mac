@@ -2,7 +2,7 @@ import MacNetInterfaces
 import MacNetModels
 import SwiftUI
 
-/// Overview → Interface (ticket §5.3.2).
+/// Overview → Interface.
 ///
 /// Shows every interface on the machine, including the ones that cannot be used. Hiding a
 /// refused interface would look exactly like the adapter not being detected, and the engineer
@@ -11,7 +11,7 @@ struct InterfaceCard: View {
     @Environment(InterfaceMonitor.self) private var monitor
 
     /// Locked while a session is running: the interface is part of what is running, and
-    /// changing it under a live dnsmasq is meaningless (ticket §Phase 8).
+    /// changing it under a live dnsmasq is meaningless.
     let isLocked: Bool
 
     var body: some View {
@@ -78,7 +78,7 @@ struct InterfaceCard: View {
     }
 
     /// One picker row: `USB 10/100/1000 LAN — en7 — Connected`, with hardware details
-    /// beneath (ticket §5.3.2).
+    /// beneath.
     private func row(for interface: NetworkInterfaceDescriptor) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(verbatim: "\(interface.displayName) — \(interface.bsdName) — \(linkText(interface))")
@@ -160,7 +160,7 @@ struct InterfaceCard: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .frame(width: 140, alignment: .leading)
-            // Text and symbol, never colour alone (ticket §26.2).
+            // Text and symbol, never colour alone.
             Label(
                 interface.isLinkActive ? "Connected" : "No link detected",
                 systemImage: interface.isLinkActive ? "cable.connector" : "cable.connector.slash"

@@ -37,7 +37,7 @@ struct PageRenderer {
         self.outputRoot = outputRoot
     }
 
-    /// Ticket §5.1's default window size, so the output matches what a user sees on launch.
+    /// The specification's default window size, so the output matches what a user sees on launch.
     private static let size = CGSize(width: 1180, height: 760)
 
     private var outputDirectory: URL { outputRoot }

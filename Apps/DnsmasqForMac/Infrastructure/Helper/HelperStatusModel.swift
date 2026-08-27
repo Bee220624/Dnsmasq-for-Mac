@@ -109,7 +109,7 @@ final class HelperStatusModel {
     /// Re-checks status on a slow timer while approval is pending.
     ///
     /// `SMAppService` publishes no change notification, so polling is the only option. Ticket
-    /// §10.2 is explicit that the app must not respond to `requiresApproval` by calling
+    /// The specification is explicit that the app must not respond to `requiresApproval` by calling
     /// `register()` again in a loop — this only reads the status and stops as soon as it
     /// changes.
     private func startWatchingForApproval() {

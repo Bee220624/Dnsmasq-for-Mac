@@ -1,8 +1,7 @@
 # Building the bundled dnsmasq
 
 Dnsmasq for Mac ships its own dnsmasq. It is never downloaded at runtime, never fetched from
-Homebrew, and never tracks `latest` — which dnsmasq ships is a decision that gets reviewed
-(ticket §3.4).
+Homebrew, and never tracks `latest` — which dnsmasq ships is a decision that gets reviewed.
 
 ```bash
 make vendor-dnsmasq
@@ -122,7 +121,7 @@ The helper checks the copy in the app bundle before every launch:
 2. **File properties**: a regular file, not a symlink, not group- or world-writable.
 3. **Version**, from `--version`.
 
-Ticket §21.3 asks instead for a recomputed SHA-256 against a compile-time constant. That is
+The specification asks instead for a recomputed SHA-256 against a compile-time constant. That is
 not constructible: `codesign` writes the signature into the Mach-O, so the bundled bytes
 differ from the compiler's output, and the helper is compiled before dnsmasq is signed. The
 checks above meet the requirement's intent. The reasoning, and what a literal implementation
@@ -137,7 +136,7 @@ There are none, and none are expected.
 If one ever becomes necessary it goes in `Resources/ThirdParty/dnsmasq/patches/` with a
 written rationale, is applied by the build script rather than by editing the extracted tree,
 and is retained for distribution alongside the source. The vendored source is never edited in
-place (ticket §22.1, §23).
+place.
 
 ---
 
@@ -151,7 +150,7 @@ Retained and shipped: `COPYING`, `COPYING-v3`, the exact version, the upstream s
 archive digest, and this build script. Settings › Licenses surfaces them in the app.
 
 The licence of Dnsmasq for Mac itself is **not** an implementation decision and requires legal review
-before commercial distribution (ticket §23, `Docs/RISKS.md` R-06).
+before commercial distribution (`Docs/RISKS.md` R-06).
 
 ### The source archive is not committed
 

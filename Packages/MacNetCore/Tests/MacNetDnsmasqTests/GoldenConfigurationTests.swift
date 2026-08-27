@@ -3,7 +3,7 @@ import Testing
 import MacNetModels
 @testable import MacNetDnsmasq
 
-/// Golden-file coverage for the configuration generator (ticket §24.1).
+/// Golden-file coverage for the configuration generator.
 ///
 /// These matter more than most tests: the generator's output is fed to a root process, and a
 /// wrong or missing directive is the difference between serving one bench interface and
@@ -20,14 +20,14 @@ struct GoldenConfigurationTests {
 
     @Test("DHCP and DNS together match the specification")
     func dhcpAndDNS() throws {
-        // The worked example from ticket §9.2, copied verbatim into the golden file.
+        // The worked example from the specification, copied verbatim into the golden file.
         let generated = try Golden.generate(Golden.profile())
         try Golden.expectMatchesGolden(generated.configurationText, "dhcp-and-dns.conf")
     }
 
     @Test("DHCP only disables DNS with port=0 and suppresses the DNS option")
     func dhcpOnly() throws {
-        // Ticket §9.5: with DNS off, no upstream, local, domain, or expand-hosts directives
+        // The specification: with DNS off, no upstream, local, domain, or expand-hosts directives
         // are emitted, and the DHCP DNS option is suppressed so clients are not pointed at a
         // closed port.
         let generated = try Golden.generate(Golden.profile(dnsEnabled: false))
@@ -36,7 +36,7 @@ struct GoldenConfigurationTests {
 
     @Test("DNS only emits no DHCP directives at all")
     func dnsOnly() throws {
-        // Ticket §9.6, including the absence of log-dhcp: logging DHCP with DHCP off would
+        // The specification, including the absence of log-dhcp: logging DHCP with DHCP off would
         // produce a log file that never receives a line.
         let generated = try Golden.generate(Golden.profile(dhcpEnabled: false))
         try Golden.expectMatchesGolden(generated.configurationText, "dns-only.conf")
@@ -62,7 +62,7 @@ struct GoldenConfigurationTests {
 
     @Test("a disabled router option is suppressed, not omitted")
     func routerSuppressed() throws {
-        // Ticket §9.3: an option written with no value tells dnsmasq to send nothing.
+        // The specification: an option written with no value tells dnsmasq to send nothing.
         // Omitting the line entirely would let dnsmasq derive and send a default instead.
         let generated = try Golden.generate(Golden.profile(advertiseRouter: false))
         let lines = generated.configurationText.components(separatedBy: "\n")
@@ -132,7 +132,7 @@ struct GoldenConfigurationTests {
 
     @Test("a record comment never reaches either generated file")
     func commentsAreNeverWritten() throws {
-        // Ticket §7.8. The comment is the one field with no character restrictions, which is
+        // The specification The comment is the one field with no character restrictions, which is
         // safe only because it has nowhere to go — this is the test that keeps it true.
         let generated = try Golden.generate(Golden.profile(records: [
             Golden.record("bmc01", "192.168.50.20", comment: "#\nserver=1.2.3.4\nmanagement"),

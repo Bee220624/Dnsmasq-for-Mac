@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// Owns enumeration, change tracking, and selection. Deliberately does **not** decide whether
 /// an interface may host a session — that judgment lives in `InterfaceSupportPolicy`, shared
-/// with the helper so the two cannot disagree (ticket §12.4).
+/// with the helper so the two cannot disagree.
 @MainActor
 @Observable
 final class InterfaceMonitor {
@@ -27,7 +27,7 @@ final class InterfaceMonitor {
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "interfaces")
     private var watcher: InterfaceChangeWatcher?
 
-    /// Ticket §6.2: the most recently used interface is remembered here and **not** in the
+    /// The specification: the most recently used interface is remembered here and **not** in the
     /// profile. A USB adapter's BSD name changes between reboots and ports, and a profile that
     /// pinned one could silently select a production port on another machine.
     private static let lastSelectedDefaultsKey = "com.bee.dnsmasqformac.lastSelectedInterface"
@@ -48,7 +48,7 @@ final class InterfaceMonitor {
     }
 
     /// Interfaces the user may choose. Refused ones are still shown in the picker, disabled
-    /// and with a reason (ticket §5.3.2).
+    /// and with a reason.
     var selectableInterfaces: [NetworkInterfaceDescriptor] {
         interfaces.filter(\.isSupported)
     }
@@ -104,7 +104,7 @@ final class InterfaceMonitor {
     /// * The selected interface is still usable — keep it, so a routine refresh does not move
     ///   the user's choice underneath them.
     /// * It disappeared, or became unusable — clear the selection rather than silently sliding
-    ///   to a neighbour. Ticket §12.3 forbids auto-selecting Wi-Fi or the default route, and
+    ///   to a neighbour. The specification forbids auto-selecting Wi-Fi or the default route, and
     ///   quietly moving a selection is how a user ends up serving the wrong port.
     /// * Nothing was selected — offer a default, which may legitimately be nothing.
     private func reconcileSelection(previouslySelected: String?) {

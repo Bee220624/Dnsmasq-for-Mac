@@ -39,11 +39,11 @@ struct DnsmasqForMacApp: App {
                 .environment(leases)
                 .environment(logs)
                 .environment(\.appEnvironment, environment)
-                // Ticket §10.2: check on launch so the user learns the helper needs
+                // The specification: check on launch so the user learns the helper needs
                 // attention immediately, rather than when Start fails.
                 .task { await helperStatus.refresh() }
                 .task { await profiles.load() }
-                // Ticket §17.1: adopt whatever the helper is already doing, so a
+                // The specification: adopt whatever the helper is already doing, so a
                 // session that survived a force-quit is visible and stoppable.
                 .task { await session.synchronize() }
                 // The delegate is created by AppKit before any SwiftUI state, so
@@ -53,10 +53,10 @@ struct DnsmasqForMacApp: App {
                 // the app is open should appear without the user hunting for a refresh.
                 .onAppear { interfaces.start() }
                 .onDisappear { interfaces.stop() }
-                // Ticket §5.1: minimum window 1000 x 680.
+                // The specification: minimum window 1000 x 680.
                 .frame(minWidth: 1000, minHeight: 680)
         }
-        // Ticket §5.1: default window 1180 x 760.
+        // The specification: default window 1180 x 760.
         .defaultSize(width: 1180, height: 760)
         .windowToolbarStyle(.unified)
         .commands {

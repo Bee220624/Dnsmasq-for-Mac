@@ -1,7 +1,7 @@
 import MacNetModels
 import SwiftUI
 
-/// The Leases page (ticket §5.4).
+/// The Leases page.
 ///
 /// The screen an engineer watches while waiting for a device to come up. Its most important
 /// property is that the three "no leases" situations look different from each other: not
@@ -114,7 +114,7 @@ struct LeasesView: View {
 
     @ViewBuilder
     private func statusLabel(_ lease: DHCPLease) -> some View {
-        // Text and symbol together, never colour alone (ticket §5.2, §26.2).
+        // Text and symbol together, never colour alone.
         switch lease.status {
         case .active:
             Label("Active", systemImage: "checkmark.circle.fill")

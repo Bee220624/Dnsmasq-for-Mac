@@ -1,6 +1,6 @@
 # XcodeGen project definition.
 #
-# This file is the source of truth for the Xcode project (ticket §4.1). project.pbxproj is
+# This file is the source of truth for the Xcode project. project.pbxproj is
 # generated output and must never be hand-edited; run `make generate` after changing this.
 
 name: DnsmasqForMac
@@ -40,7 +40,7 @@ targets:
       base:
         PRODUCT_NAME: $(PRODUCT_NAME_BASE)
         PRODUCT_DISPLAY_NAME: $(PRODUCT_DISPLAY_NAME)
-        # Ticket §26.1: English and Simplified Chinese in v0.1.
+        # The specification: English and Simplified Chinese in v0.1.
         SWIFT_EMIT_LOC_STRINGS: YES
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
         INFOPLIST_FILE: Apps/DnsmasqForMac/Info.plist
@@ -105,7 +105,7 @@ targets:
         INFOPLIST_FILE: Daemons/DnsmasqForMacHelper/Info.plist
         CREATE_INFOPLIST_SECTION_IN_BINARY: YES
         SKIP_INSTALL: YES
-        # Ticket §10: the helper links only the shared core. No AppKit, no SwiftUI.
+        # The specification: the helper links only the shared core. No AppKit, no SwiftUI.
         LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/../../../Frameworks
     dependencies:
       - package: MacNetCore
@@ -125,7 +125,7 @@ targets:
 
   # ---------------------------------------------------------------------------------------
   # Integration tests for helper runtime logic, driven entirely through injected fakes so
-  # that no test requires root (ticket §24.2).
+  # that no test requires root.
   # ---------------------------------------------------------------------------------------
   HelperIntegrationTests:
     type: bundle.unit-test
@@ -162,7 +162,7 @@ targets:
   # ---------------------------------------------------------------------------------------
   # Unit tests for app-process logic that cannot live in the shared package.
   #
-  # ProfileStore belongs to the app by design — ticket §20.1 forbids the root helper from
+  # ProfileStore belongs to the app by design — the specification forbids the root helper from
   # writing user profiles — so its tests need the app's sources. The target compiles the
   # specific files it exercises rather than taking the app as a test host: a hosted test
   # bundle launches the app, and these tests should not need a window on screen.
@@ -229,7 +229,7 @@ targets:
         product: MacNetInterfaces
 
   # ---------------------------------------------------------------------------------------
-  # UI tests (ticket §24.3).
+  # UI tests.
   # ---------------------------------------------------------------------------------------
   DnsmasqForMacUITests:
     type: bundle.ui-testing

@@ -7,13 +7,13 @@ import MacNetValidation
 /// ## Why this is a separate, pure type
 ///
 /// This is the safety decision the whole product turns on. Running DHCP on the wrong
-/// interface is how Dnsmasq for Mac takes down an office network, and ticket §21.6 lists the cases
+/// interface is how Dnsmasq for Mac takes down an office network, and the specification lists the cases
 /// that must be refused. Keeping the judgment in one pure function means the app and the
 /// helper cannot reach different conclusions, and means every case can be tested without a
 /// network adapter.
 ///
 /// The app calls this to decide what to show and what to allow selecting. The helper calls it
-/// again, on interfaces it enumerated itself, before doing anything (ticket §12.4).
+/// again, on interfaces it enumerated itself, before doing anything.
 public enum InterfaceSupportPolicy {
 
     /// Why an interface cannot host a session. Ordered by how emphatically it should be
@@ -21,9 +21,9 @@ public enum InterfaceSupportPolicy {
     public enum Rejection: Sendable, Equatable {
         /// The BSD name is not a plain identifier, or names a family macOS manages itself.
         case nameNotPermitted(InterfaceName.Failure)
-        /// Wi-Fi. Permanently barred in v0.1 (ticket §7.9).
+        /// Wi-Fi. Permanently barred in v0.1.
         case isWiFi
-        /// Carries the system's default route (ticket §21.6).
+        /// Carries the system's default route.
         case isDefaultRoute
         /// Loopback, VPN, bridge, or a virtual interface.
         case kindNotPermitted(NetworkInterfaceKind)
@@ -95,7 +95,7 @@ public enum InterfaceSupportPolicy {
         return nil
     }
 
-    /// Sort order for the interface picker (ticket §5.3.2).
+    /// Sort order for the interface picker.
     ///
     /// Active Ethernet first, then inactive Ethernet, then other permitted kinds, then
     /// everything refused. Refused interfaces stay visible so a user who plugged into the
@@ -121,7 +121,7 @@ public enum InterfaceSupportPolicy {
     }
 
     /// Picks a sensible default selection, or `nil` when nothing is safe to preselect
-    /// (ticket §12.3).
+    ///.
     ///
     /// The rules that matter are the negative ones: never auto-select Wi-Fi, never auto-select
     /// the default-route interface, and never auto-start. Preferring a previously used

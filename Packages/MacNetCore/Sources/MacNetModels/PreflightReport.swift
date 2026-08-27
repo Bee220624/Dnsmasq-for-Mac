@@ -18,7 +18,7 @@ public enum PreflightSeverity: String, Codable, Sendable, Equatable, Comparable,
     }
 }
 
-/// One finding from preflight (ticket §14.2).
+/// One finding from preflight.
 public struct PreflightIssue: Codable, Sendable, Equatable, Identifiable {
     public let id: String
     public let severity: PreflightSeverity
@@ -41,7 +41,7 @@ public struct PreflightIssue: Codable, Sendable, Equatable, Identifiable {
     }
 }
 
-/// The checks preflight runs, in the order the UI lists them (ticket §5.3.6).
+/// The checks preflight runs, in the order the UI lists them.
 ///
 /// An enum rather than free-form strings so the UI can render the full checklist — including
 /// checks that have not run yet — instead of only showing what happened to fail.
@@ -84,7 +84,7 @@ public struct PreflightCheckResult: Codable, Sendable, Equatable, Identifiable {
 
 /// Everything preflight learned about a proposed session.
 ///
-/// Preflight is strictly read-only (ticket §14): it adds no alias, starts no process, and
+/// Preflight is strictly read-only: it adds no alias, starts no process, and
 /// changes no network configuration. Its result is advisory — the same checks run again
 /// inside the start transaction, where they are authoritative — because the world can change
 /// between validating and starting.
@@ -93,7 +93,7 @@ public struct PreflightReport: Codable, Sendable, Equatable {
     public let issues: [PreflightIssue]
 
     /// Output of `dnsmasq --test`, kept for display when configuration generation fails
-    /// (ticket §9.10).
+    ///.
     public let configurationTestOutput: String?
 
     public let generatedAt: Date
@@ -110,7 +110,7 @@ public struct PreflightReport: Codable, Sendable, Equatable {
         self.generatedAt = generatedAt
     }
 
-    /// Whether anything blocks Start. Warnings never block (ticket §5.3.6).
+    /// Whether anything blocks Start. Warnings never block.
     public var hasBlockingIssues: Bool {
         issues.contains { $0.severity == .error }
     }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shown over Overview until the privileged helper is usable (ticket §Phase 11).
+/// Shown over Overview until the privileged helper is usable.
 ///
 /// ## Why this is a sheet and not a page
 ///
@@ -56,7 +56,7 @@ struct OnboardingView: View {
 
         case .notInstalled(.requiresApproval):
             // The one state where the app can do nothing further. macOS is waiting for a human,
-            // and looping on register() would not change that (ticket §10.2).
+            // and looping on register() would not change that.
             VStack(spacing: 10) {
                 Label("Waiting for your approval", systemImage: "hand.raised.fill")
                     .font(.headline)

@@ -1,6 +1,6 @@
 import Foundation
 
-/// The five destinations in the sidebar. Order here is the order shown (ticket §5.1) and is
+/// The five destinations in the sidebar. Order here is the order shown and is
 /// deliberately fixed rather than data-driven — this is a tool with a fixed workflow, not a
 /// configurable dashboard.
 enum AppSection: String, CaseIterable, Identifiable, Hashable, Sendable {
@@ -12,7 +12,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable, Sendable {
 
     var id: String { rawValue }
 
-    /// SF Symbol per ticket §5.1.
+    /// SF Symbol per the specification
     var systemImage: String {
         switch self {
         case .overview: "network"

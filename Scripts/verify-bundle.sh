@@ -1,5 +1,5 @@
 #!/bin/bash
-# Assert that a built DnsmasqForMac.app satisfies the security checklist in ticket §22.5.
+# Assert that a built DnsmasqForMac.app satisfies the security checklist in the specification
 #
 # This runs against the *built artefact*, not the source, because that is what ships. Every
 # check either passes, or the script exits non-zero naming exactly what failed.
@@ -66,7 +66,7 @@ if [[ -f "${DAEMON_PLIST}" ]]; then
         && pass "BundleProgram points at the embedded helper" \
         || fail "BundleProgram is '${program}'"
 
-    # Ticket §10.1: nothing may start at boot or on load.
+    # The specification: nothing may start at boot or on load.
     for forbidden in RunAtLoad KeepAlive StartInterval; do
         if /usr/libexec/PlistBuddy -c "Print :${forbidden}" "${DAEMON_PLIST}" >/dev/null 2>&1; then
             fail "daemon plist sets ${forbidden}; the helper must be on-demand only"
@@ -116,7 +116,7 @@ else
     fail "hardened runtime is not enabled"
 fi
 
-# Ticket §10.4 / §12: a release bundle must not carry the relaxed development policy.
+# A release bundle must not carry the relaxed development policy.
 CONFIG_NAME="$(basename "$(dirname "${APP}")")"
 if [[ "${CONFIG_NAME}" == "Release" ]]; then
     ENTITLEMENTS="$(codesign -d --entitlements - --xml "${APP}" 2>/dev/null || true)"
@@ -141,7 +141,7 @@ fi
 # ---------------------------------------------------------------------------------------
 section "Dependencies"
 # ---------------------------------------------------------------------------------------
-# Ticket §3.2: the shipped product must not depend on Homebrew or any non-system library.
+# The specification: the shipped product must not depend on Homebrew or any non-system library.
 check_linkage() {
     local binary="$1" name="$2"
     [[ -f "${binary}" ]] || return 0
@@ -217,7 +217,7 @@ if [[ -f "${DNSMASQ}" ]]; then
         fail "bundled dnsmasq does not satisfy the team requirement"
     fi
 
-    # Ticket §21.3: a binary a normal user can rewrite is a binary the root helper would
+    # The specification: a binary a normal user can rewrite is a binary the root helper would
     # happily execute.
     if [[ -L "${DNSMASQ}" ]]; then
         fail "bundled dnsmasq is a symlink"
@@ -239,7 +239,7 @@ if [[ -f "${DNSMASQ}" ]]; then
         fail "bundled dnsmasq did not report version ${EXPECTED_VERSION}"
     fi
 
-    # Ticket §3.5: features that are not compiled in cannot be reached by a configuration
+    # The specification: features that are not compiled in cannot be reached by a configuration
     # mistake and cannot carry a vulnerability. Asserted on the shipped copy, not just at
     # build time, because this is the binary that will actually run.
     for feature in TFTP DHCPv6 auth dumpfile; do
@@ -255,9 +255,9 @@ if [[ -f "${DNSMASQ}" ]]; then
         fail "bundled dnsmasq has no DHCP support"
     fi
 else
-    # Phase 4 vendors dnsmasq. Before then its absence is expected, and reporting it as a
+    # dnsmasq is vendored by a separate step. Before then its absence is expected, and reporting it as a
     # hard failure would make this script useless for the phases that come first.
-    warn "dnsmasq is not bundled yet (vendored in Phase 4; run 'make vendor-dnsmasq')"
+    warn "dnsmasq is not bundled yet (run 'make vendor-dnsmasq')"
 fi
 
 # ---------------------------------------------------------------------------------------

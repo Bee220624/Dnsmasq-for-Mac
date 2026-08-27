@@ -1,5 +1,5 @@
 #!/bin/bash
-# Regenerate DnsmasqForMac.xcodeproj from project.yml (ticket §4.1).
+# Regenerate DnsmasqForMac.xcodeproj from project.yml.
 
 set -euo pipefail
 

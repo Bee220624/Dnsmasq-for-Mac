@@ -31,7 +31,7 @@ struct HostnameTests {
     func leavesFQDNAlone() throws {
         let result = try resolved("bmc01.lab.test")
 
-        // Appending the domain again would produce bmc01.lab.test.lab.test (ticket §7.7).
+        // Appending the domain again would produce bmc01.lab.test.lab.test.
         #expect(result.fullyQualified == "bmc01.lab.test")
         #expect(result.shortName == nil)
         #expect(result.hostsFileNames == ["bmc01.lab.test"])

@@ -1,6 +1,6 @@
 import Foundation
 
-/// The persisted profile document (ticket §20.2).
+/// The persisted profile document.
 ///
 /// Carries `schemaVersion` so a future format change can be migrated rather than guessed at.
 /// A document from a newer version is refused rather than partially understood — silently
@@ -18,7 +18,7 @@ public struct ProfileDatabase: Codable, Sendable, Equatable {
         self.profiles = profiles
     }
 
-    /// A first-launch database holding the single default profile (ticket §8).
+    /// A first-launch database holding the single default profile.
     public static func initial(now: Date) -> ProfileDatabase {
         let profile = NetworkProfile.makeDefault(now: now)
         return ProfileDatabase(defaultProfileID: profile.id, profiles: [profile])
@@ -47,7 +47,7 @@ public struct ProfileDatabase: Codable, Sendable, Equatable {
     /// Checks invariants that `Codable` cannot express.
     ///
     /// Run after decoding, because the file may have been hand-edited, restored from a backup,
-    /// or written by a different version. Ticket §5.6 requires at least one profile to exist at
+    /// or written by a different version. The specification requires at least one profile to exist at
     /// all times, and that is not something the type system enforces.
     public func inconsistencies() -> [Inconsistency] {
         var found: [Inconsistency] = []

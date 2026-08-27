@@ -1,6 +1,6 @@
 import Foundation
 
-/// How a log line is classified for filtering (ticket §5.5).
+/// How a log line is classified for filtering.
 ///
 /// Five buckets rather than free-form levels, because the question a user has in front of a
 /// non-booting device is "is DHCP happening at all", and that is answered by filtering to one
@@ -36,7 +36,7 @@ public enum LogCategory: String, Codable, Sendable, Equatable, CaseIterable, Ide
     }
 }
 
-/// One line of dnsmasq output, as delivered to the app (ticket §19.3).
+/// One line of dnsmasq output, as delivered to the app.
 public struct LogEvent: Codable, Sendable, Equatable, Identifiable {
     /// Same value as `sequence`. Present because SwiftUI's `List` needs `Identifiable`, and
     /// the sequence number already is a stable identity.
@@ -46,7 +46,7 @@ public struct LogEvent: Codable, Sendable, Equatable, Identifiable {
     ///
     /// This is what makes reconnection exact rather than approximate: the app asks for
     /// everything after the highest sequence it has, so it gets no gaps and no duplicates
-    /// (ticket §10.3).
+    ///.
     public let sequence: Int64
 
     /// When the helper read the line, not when dnsmasq wrote it.

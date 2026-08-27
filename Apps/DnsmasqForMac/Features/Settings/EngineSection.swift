@@ -1,7 +1,7 @@
 import MacNetModels
 import SwiftUI
 
-/// Settings → dnsmasq Engine (ticket §5.7).
+/// Settings → dnsmasq Engine.
 ///
 /// Reports what the **helper** found, not what the app was compiled believing. That
 /// distinction is the point: the helper is the process that will run this binary as root, and
@@ -84,7 +84,7 @@ struct EngineSection: View {
     }
 }
 
-/// Settings → Licenses (ticket §5.7, §23).
+/// Settings → Licenses.
 struct LicensesSection: View {
     @State private var showingNotices = false
 

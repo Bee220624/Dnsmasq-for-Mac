@@ -66,7 +66,7 @@ NetworkProfile
                         customUpstreamServers, logQueries, records: [LocalDNSRecord] }
 ```
 
-**A profile never names an interface.** Ticket §6.2 is explicit, and the reasons are practical:
+**A profile never names an interface.** The specification is explicit, and the reasons are practical:
 a USB adapter's BSD name changes between reboots and ports, the same profile on another Mac
 would name a different interface, and an automatic binding could silently select a production
 port. The most recently used interface is remembered in `UserDefaults` as a convenience, and the
@@ -119,6 +119,6 @@ them would be guesswork.
 
 ## Wire limits
 
-Requests are capped at 1 MiB and responses at 4 MiB (ticket §7.10), checked **before** decoding
+Requests are capped at 1 MiB and responses at 4 MiB, checked **before** decoding
 so an oversized payload is never parsed. `[String: Any]` is never used as a wire format: every
 payload decodes into an explicit named type, or is rejected.

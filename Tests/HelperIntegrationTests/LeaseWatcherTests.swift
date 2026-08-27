@@ -3,7 +3,7 @@ import Testing
 import MacNetModels
 import MacNetXPC
 
-/// Lease watcher coverage (ticket §Phase 9).
+/// Lease watcher coverage.
 ///
 /// Runs against a real file in a temporary directory, because the behaviour under test *is*
 /// file-system behaviour: a file that does not exist yet, a file replaced underneath the

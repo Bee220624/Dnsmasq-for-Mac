@@ -14,7 +14,7 @@ public struct GeneratedDnsmasqConfiguration: Sendable, Equatable {
 
 /// Renders a validated request into a dnsmasq configuration file and a hosts file.
 ///
-/// ## Contract (ticket §9.1)
+/// ## Contract
 ///
 /// * **Pure.** No file system, no clock, no environment. Output depends only on the two
 ///   arguments, which is what makes it exhaustively testable against golden files.
@@ -29,7 +29,7 @@ public struct GeneratedDnsmasqConfiguration: Sendable, Equatable {
 ///
 /// No `conf-file` or `conf-dir`, so the generated file cannot pull in anything else. dnsmasq
 /// is launched with `--conf-file=` pointing here, which also stops it reading
-/// `/etc/dnsmasq.conf` (ticket §9.9). `no-hosts` stops it reading `/etc/hosts` (ticket §9.8).
+/// `/etc/dnsmasq.conf`. `no-hosts` stops it reading `/etc/hosts`.
 /// Between them, the running server's entire configuration is this one generated file.
 public struct DnsmasqConfigurationGenerator: Sendable {
 
@@ -61,7 +61,7 @@ public struct DnsmasqConfigurationGenerator: Sendable {
             if let upstream = upstreamSection(request) { sections.append(upstream) }
             sections.append(dnsBehaviourSection(request))
         } else {
-            // Ticket §9.5: port 0 disables DNS entirely while leaving DHCP running.
+            // The specification: port 0 disables DNS entirely while leaving DHCP running.
             sections.append(["port=0"])
         }
 
@@ -93,7 +93,7 @@ public struct DnsmasqConfigurationGenerator: Sendable {
 
     private func hostsSection(_ paths: RuntimePaths) -> [String] {
         [
-            // Never read the system hosts file (ticket §2.1, §9.8).
+            // Never read the system hosts file.
             "no-hosts",
             "addn-hosts=\(paths.hostsFile)",
         ]
@@ -120,7 +120,7 @@ public struct DnsmasqConfigurationGenerator: Sendable {
             // Answer for the local domain authoritatively; never forward it upstream.
             "local=/\(request.normalizedLocalDomain)/",
             "domain=\(request.normalizedLocalDomain)",
-            // Let a DHCP client's hostname resolve as name.domain (ticket §2.1).
+            // Let a DHCP client's hostname resolve as name.domain.
             "expand-hosts",
             "cache-size=1000",
         ]
@@ -149,7 +149,7 @@ public struct DnsmasqConfigurationGenerator: Sendable {
         }
 
         // An option written with no value tells dnsmasq to send that option not at all,
-        // suppressing the default it would otherwise derive (ticket §9.3, §9.4).
+        // suppressing the default it would otherwise derive.
         if request.dhcp.advertiseRouter, let router = request.dhcp.routerIPv4 {
             lines.append("dhcp-option=option:router,\(router)")
         } else {
@@ -182,7 +182,7 @@ public struct DnsmasqConfigurationGenerator: Sendable {
     ) -> [String] {
         var lines: [String] = []
         if request.dhcp.enabled {
-            // DHCP logging is always on when DHCP is (ticket §2.1): the lease exchange is the
+            // DHCP logging is always on when DHCP is: the lease exchange is the
             // single most useful thing to see when a device is not getting an address.
             lines.append("log-dhcp")
         }
@@ -205,10 +205,10 @@ public struct DnsmasqConfigurationGenerator: Sendable {
 
     // MARK: - Hosts file
 
-    /// Renders the additional hosts file (ticket §9.8).
+    /// Renders the additional hosts file.
     ///
     /// Entries arrive already sorted and de-duplicated. The record's comment is **not**
-    /// written — ticket §7.8 keeps it UI-only precisely so that a comment can never become a
+    /// written — the specification keeps it UI-only precisely so that a comment can never become a
     /// second entry or terminate the line early.
     private func makeHosts(request: ValidatedSessionRequest) -> String {
         guard request.dns.enabled, !request.hostEntries.isEmpty else {

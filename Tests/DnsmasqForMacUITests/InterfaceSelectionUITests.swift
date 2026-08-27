@@ -1,6 +1,6 @@
 import XCTest
 
-/// Interface selection coverage (ticket §Phase 5, §24.3).
+/// Interface selection coverage.
 ///
 /// These controls live on Overview's configuration view, which is only shown once the helper is
 /// usable. With no helper installed the page shows onboarding instead — so each test states

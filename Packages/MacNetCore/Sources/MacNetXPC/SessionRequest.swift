@@ -18,7 +18,7 @@ public struct SessionStartRequest: Codable, Sendable, Equatable {
     }
 }
 
-/// What the helper reports about a recovery attempt (ticket §17.3).
+/// What the helper reports about a recovery attempt.
 public struct RecoveryReport: Codable, Sendable, Equatable {
     /// What the helper found and what it did about it.
     public enum Outcome: String, Codable, Sendable {
@@ -83,7 +83,7 @@ public struct LeaseSnapshot: Codable, Sendable, Equatable {
     }
 }
 
-/// Payload for `unexpectedProcessExit` (ticket §17.4).
+/// Payload for `unexpectedProcessExit`.
 public struct UnexpectedExitReport: Codable, Sendable, Equatable {
     public let sessionID: UUID
     public let exitStatus: Int32?

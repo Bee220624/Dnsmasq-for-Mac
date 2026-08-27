@@ -1,5 +1,5 @@
 #!/bin/bash
-# Produce a signed, Universal 2 Release build (ticket §Phase 12).
+# Produce a signed, Universal 2 Release build.
 #
 # This script is complete and will run end to end on a machine that has a Developer ID
 # Application certificate. This machine does not — see Docs/RISKS.md R-01 — so it fails at the

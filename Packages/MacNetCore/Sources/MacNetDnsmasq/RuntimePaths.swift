@@ -3,13 +3,13 @@ import Foundation
 /// Absolute paths for one session's runtime files.
 ///
 /// Every path here is derived by the **helper** from its own location and a UUID the helper
-/// generated. Ticket §7.10 and §21.2 forbid the app from supplying any path, and ticket §21.4
+/// generated. The specification forbid the app from supplying any path, and the specification
 /// requires session directories to be named from a UUID rather than from a profile name,
 /// hostname, or interface name — none of which are under our control and all of which could
 /// contain a path separator.
 ///
 /// This type is passed *into* the generator so that the generator itself never touches the
-/// file system and stays a pure function (ticket §9.1).
+/// file system and stays a pure function.
 public struct RuntimePaths: Sendable, Equatable {
     /// Directory holding everything for this session.
     public let sessionDirectory: String
@@ -33,6 +33,6 @@ public struct RuntimePaths: Sendable, Equatable {
     public var logFile: String { "\(sessionDirectory)/dnsmasq.log" }
     public var pidFile: String { "\(sessionDirectory)/dnsmasq.pid" }
 
-    /// Rotated log files, oldest last (ticket §19.4 keeps three).
+    /// Rotated log files, oldest last. At most three are kept.
     public func rotatedLogFile(index: Int) -> String { "\(logFile).\(index)" }
 }

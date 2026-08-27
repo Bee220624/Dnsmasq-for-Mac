@@ -3,7 +3,7 @@ import Testing
 import MacNetModels
 import MacNetXPC
 
-/// Lifecycle coverage against fakes (ticket §24.2).
+/// Lifecycle coverage against fakes.
 ///
 /// Every test here is a failure that cannot be produced on demand against a real machine, and
 /// each one is a case where getting it wrong leaves an engineer's Mac in a state they did not
@@ -125,7 +125,7 @@ struct SessionLifecycleTests {
         _ = try await harness.coordinator.start(request: makeRequest())
 
         // Every user-chosen setting reached dnsmasq through the configuration file. Nothing the
-        // user typed becomes an argument (ticket §9.9).
+        // user typed becomes an argument.
         let configurationPath = try #require(harness.process.lastConfigurationPath)
         #expect(configurationPath.hasSuffix("/dnsmasq.conf"))
         #expect(configurationPath.hasPrefix(harness.root))
@@ -143,7 +143,7 @@ struct SessionLifecycleTests {
         let harness = makeHarness()
         defer { cleanUp(harness) }
 
-        // Ticket §5.3.5: the confirmation travels inside the request precisely so the helper
+        // The specification: the confirmation travels inside the request precisely so the helper
         // can refuse, rather than trusting the UI to have asked.
         let failure = await #expect(throws: ServiceFailure.self) {
             try await harness.coordinator.start(request: makeRequest(confirmed: false))
@@ -170,7 +170,7 @@ struct SessionLifecycleTests {
     @Test("Wi-Fi is refused even if the request claims it is Ethernet")
     func refusesWiFi() async throws {
         // The request carries a snapshot claiming Ethernet; the live enumeration says Wi-Fi.
-        // Ticket §12.4: the helper re-enumerates and never trusts what it was sent.
+        // The specification: the helper re-enumerates and never trusts what it was sent.
         let harness = makeHarness(interfaces: [TestInterface.wifi("en0")])
         defer { cleanUp(harness) }
 
@@ -200,7 +200,7 @@ struct SessionLifecycleTests {
 
         _ = try await harness.coordinator.start(request: makeRequest())
 
-        // Ticket §21.6. Two dnsmasq instances would fight over ports 53 and 67, and the
+        // The specification Two dnsmasq instances would fight over ports 53 and 67, and the
         // second's failure would be far more confusing than a refusal.
         await #expect(throws: ServiceFailure.self) {
             try await harness.coordinator.start(request: makeRequest())
@@ -261,7 +261,7 @@ struct SessionLifecycleTests {
         let harness = makeHarness()
         defer { cleanUp(harness) }
 
-        // The exact race ticket §15.1 step 12 exists to catch: free when preflight looked,
+        // The exact race the specification exists to catch: free when preflight looked,
         // taken by the time the address is on the interface. Preflight is run first so it
         // consumes the "available" answer, exactly as it would in the real flow.
         harness.ports.sequence([.available, .inUse], for: .dhcpServer)
@@ -275,7 +275,7 @@ struct SessionLifecycleTests {
         #expect(failure?.code == .portInUse)
 
         // The alias was added, then removed. Leaving it behind would be the failure named in
-        // ticket §15.2.
+        // the specification
         #expect(harness.alias.addedAliases.count == 1)
         #expect(harness.alias.isBalanced, "the alias must not survive a rolled-back start")
         #expect(harness.process.launchCount == 0)
@@ -369,7 +369,7 @@ struct SessionLifecycleTests {
             recoverySuggestion: "sudo ifconfig en7 inet 192.168.50.1 -alias"
         )
 
-        // Ticket §13.2 forbids hiding this: the user's Mac is left holding an address, and
+        // The specification forbids hiding this: the user's Mac is left holding an address, and
         // reporting success would mean they never find out.
         let failure = await #expect(throws: ServiceFailure.self) {
             try await harness.coordinator.stop(sessionID: session.id)
@@ -430,7 +430,7 @@ struct SessionLifecycleTests {
         defer { cleanUp(harness) }
 
         // Simulate the helper being killed mid-session: a journal describing an added alias
-        // and a process that no longer exists (ticket §17.3 case C).
+        // and a process that no longer exists (case C).
         let journal = SessionJournal(
             sessionID: UUID(),
             state: .running,
@@ -481,7 +481,7 @@ struct SessionLifecycleTests {
 
         let report = await harness.coordinator.recoverStaleState()
 
-        // Ticket §17.3 case D. Signalling here would kill whatever the user is running.
+        // The specification case D. Signalling here would kill whatever the user is running.
         #expect(report.outcome == .staleSessionRequiresAttention)
         #expect(harness.process.terminateCount == 0)
         #expect(!report.warnings.isEmpty)
@@ -514,7 +514,7 @@ struct SessionLifecycleTests {
 
         _ = await harness.coordinator.recoverStaleState()
 
-        // Ticket §13.2. Removing an address the user set would be a far worse bug than
+        // The specification Removing an address the user set would be a far worse bug than
         // leaving one of ours behind.
         #expect(harness.alias.removedAliases.isEmpty)
     }

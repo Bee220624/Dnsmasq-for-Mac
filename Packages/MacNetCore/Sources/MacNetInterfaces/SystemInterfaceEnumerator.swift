@@ -5,7 +5,7 @@ import SystemConfiguration
 
 /// Reads the machine's network interfaces.
 ///
-/// A protocol so that everything above it can be tested against fixtures. Ticket §24.2
+/// A protocol so that everything above it can be tested against fixtures. The specification
 /// requires the helper's system calls to be injectable; this is the interface half of that.
 public protocol InterfaceEnumerating: Sendable {
     func enumerateInterfaces() -> [NetworkInterfaceDescriptor]
@@ -15,7 +15,7 @@ public protocol InterfaceEnumerating: Sendable {
 ///
 /// ## Why not parse command output
 ///
-/// Ticket §12.1 forbids building this list by parsing `ifconfig`, `networksetup`, or `scutil`.
+/// The specification forbids building this list by parsing `ifconfig`, `networksetup`, or `scutil`.
 /// Their output is meant for people: it is localized, it changes between macOS releases, and a
 /// parser that is subtly wrong produces a plausible-looking interface list — which is exactly
 /// how you end up serving DHCP on the wrong port. The APIs used here return structured data
@@ -30,7 +30,7 @@ public protocol InterfaceEnumerating: Sendable {
 ///
 /// Deciding Wi-Fi by name would be a serious bug: `en0` is Wi-Fi on a laptop and Ethernet on a
 /// Mac mini, and guessing wrong means either blocking a valid adapter or serving DHCP over
-/// Wi-Fi (ticket §7.9).
+/// Wi-Fi.
 public struct SystemInterfaceEnumerator: InterfaceEnumerating {
 
     public init() {}
@@ -278,7 +278,7 @@ public struct SystemInterfaceEnumerator: InterfaceEnumerating {
         }
     }
 
-    /// The interface currently carrying the default IPv4 route (ticket §12.1).
+    /// The interface currently carrying the default IPv4 route.
     ///
     /// Read from the dynamic store rather than by parsing `netstat -rn`, for the same reason
     /// the rest of this type avoids command output.

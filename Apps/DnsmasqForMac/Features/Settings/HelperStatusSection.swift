@@ -1,12 +1,12 @@
 import MacNetModels
 import SwiftUI
 
-/// Settings → Privileged Helper (ticket §5.7), and the place the user is sent whenever the
+/// Settings → Privileged Helper, and the place the user is sent whenever the
 /// helper needs attention.
 struct HelperStatusSection: View {
     @Environment(HelperStatusModel.self) private var model
 
-    /// Uninstall is refused while services are running — ticket §5.7. Passed in rather than
+    /// Uninstall is refused while services are running — the specification Passed in rather than
     /// read here so this view has no opinion about where run state lives.
     let isSessionRunning: Bool
 
@@ -66,7 +66,7 @@ struct HelperStatusSection: View {
 
     @ViewBuilder
     private var statusLabel: some View {
-        // Text and symbol together, never colour alone (ticket §5.2, §26.2).
+        // Text and symbol together, never colour alone.
         switch model.readiness {
         case .checking, .connecting:
             Label("Checking…", systemImage: "ellipsis.circle")
@@ -141,7 +141,7 @@ struct HelperStatusSection: View {
         HStack {
             switch model.readiness {
             case .notInstalled(.requiresApproval):
-                // Ticket §10.2: do not re-register in a loop. Guide, then wait and re-check.
+                // The specification: do not re-register in a loop. Guide, then wait and re-check.
                 Button("Open Login Items Settings") {
                     model.openLoginItemsSettings()
                 }

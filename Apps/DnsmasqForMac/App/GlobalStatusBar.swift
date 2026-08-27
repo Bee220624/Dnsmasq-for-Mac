@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Presentation for a `RuntimeStatePhase`.
 ///
-/// Ticket §5.2 and §26.2 both insist that state is never conveyed by colour alone, so every
+/// The specification both insist that state is never conveyed by colour alone, so every
 /// phase carries a label and an SF Symbol as well as a tint. VoiceOver reads the label.
 extension RuntimeStatePhase {
     var displayName: LocalizedStringKey {
@@ -47,7 +47,7 @@ extension RuntimeStatePhase {
     }
 }
 
-/// Always-visible summary strip at the top of the main window (ticket §5.2).
+/// Always-visible summary strip at the top of the main window.
 struct GlobalStatusBar: View {
     @Environment(SessionController.self) private var session
     @Environment(ProfileLibrary.self) private var library
@@ -145,7 +145,7 @@ struct GlobalStatusBar: View {
     /// Whether Start is offered.
     ///
     /// The helper refuses anything unsafe regardless — this only decides whether to present an
-    /// action that would certainly fail. Both layers matter (ticket §21.6).
+    /// action that would certainly fail. Both layers matter.
     private var canStart: Bool {
         session.canStart(
             profile: library.draft?.working,

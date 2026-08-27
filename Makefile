@@ -1,4 +1,4 @@
-# Dnsmasq for Mac build entry points (ticket §Phase 1).
+# Dnsmasq for Mac build entry points.
 #
 # Every target here is a thin wrapper around a script in Scripts/, so that CI, the Makefile,
 # and a developer's shell all run exactly the same code path.

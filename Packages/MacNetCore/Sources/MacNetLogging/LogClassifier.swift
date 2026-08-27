@@ -1,19 +1,19 @@
 import Foundation
 import MacNetModels
 
-/// Sorts dnsmasq log lines into the five categories the Logs page filters on (ticket §5.5).
+/// Sorts dnsmasq log lines into the five categories the Logs page filters on.
 ///
 /// ## Why word boundaries, not substrings
 ///
-/// The ticket gives keyword lists. Matching them as bare substrings misclassifies real output:
+/// The specification gives keyword lists. Matching them as bare substrings misclassifies real output:
 /// `config` is a DNS keyword because dnsmasq writes `config bmc01.lab.test is 192.168.50.20`,
 /// but `cannot read config file` would then be filed under DNS rather than Error. `reply`
 /// appears inside `replying`; `error` appears inside `errors`. Whole-word matching keeps the
-/// ticket's vocabulary while making it mean what it was meant to mean.
+/// specified vocabulary while making it mean what it was meant to mean.
 ///
-/// ## Order, and one deliberate departure from the ticket
+/// ## Order, and one deliberate departure from it
 ///
-/// Ticket §5.5 lists the categories as DHCP, DNS, Warning, Error, System. Applied as a
+/// The specification lists the categories as DHCP, DNS, Warning, Error, System. Applied as a
 /// precedence order that produces a wrong answer for real output:
 ///
 /// ```
@@ -33,7 +33,7 @@ import MacNetModels
 /// `failed to send DHCPOFFER` now correctly reaches someone filtering for failures.
 public enum LogClassifier {
 
-    /// The DHCP message types dnsmasq logs (ticket §5.5).
+    /// The DHCP message types dnsmasq logs.
     static let dhcpKeywords: Set<String> = [
         "dhcpdiscover", "dhcpoffer", "dhcprequest",
         "dhcpack", "dhcpnak", "dhcpdecline", "dhcprelease", "dhcpinform",
@@ -62,7 +62,7 @@ public enum LogClassifier {
         let words = tokenize(lowercased)
 
         // Severity first, so nothing that went wrong can be hidden behind a protocol
-        // category. See the note above for why this departs from the ticket's listed order.
+        // category. See the note above for why this departs from the listed order.
         if !words.isDisjoint(with: warningKeywords) { return .warning }
         if !words.isDisjoint(with: errorKeywords) { return .error }
         if errorPhrases.contains(where: lowercased.contains) { return .error }

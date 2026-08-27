@@ -3,7 +3,7 @@ import Testing
 import MacNetDnsmasq
 import MacNetModels
 
-/// Coverage for the helper's runtime primitives (ticket §Phase 7).
+/// Coverage for the helper's runtime primitives.
 ///
 /// These run against a temporary root rather than `/var/db`, so they need no privilege — but
 /// they exercise the real implementations, not stand-ins for them.
@@ -29,7 +29,7 @@ struct RuntimeFileManagerTests {
         let sessionID = UUID()
         let paths = RuntimePaths(runtimeRoot: root, sessionID: sessionID)
 
-        // Ticket §21.4: never a profile name, hostname, or interface name — none of which are
+        // The specification: never a profile name, hostname, or interface name — none of which are
         // ours, and any of which could contain a separator.
         #expect(paths.sessionDirectory == "\(root)/sessions/\(sessionID.uuidString)")
         #expect(paths.configurationFile.hasSuffix("/dnsmasq.conf"))
@@ -73,7 +73,7 @@ struct RuntimeFileManagerTests {
             .write(to: URL(fileURLWithPath: path))
 
         // A lease or log file that has grown unexpectedly must not make the root helper
-        // allocate without limit (ticket §18.3).
+        // allocate without limit.
         let text = try manager.readFile(at: path, maximumBytes: 100)
         #expect(text.count == 100)
     }
@@ -151,7 +151,7 @@ struct SessionJournalTests {
         #expect(recovered.updatedAt == Date(timeIntervalSince1970: 1_700_000_100))
 
         // The journal records what the helper has done to the machine. Nothing running as a
-        // normal user has any business reading or altering it (ticket §11).
+        // normal user has any business reading or altering it.
         let ownership = applier.ownership(forPathEndingIn: "active-session.json")
         #expect(ownership?.owner == "root")
         #expect(ownership?.group == "wheel")

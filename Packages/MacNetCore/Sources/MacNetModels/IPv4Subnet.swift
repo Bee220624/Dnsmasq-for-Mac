@@ -7,14 +7,14 @@ import Foundation
 /// ad-hoc shifts at each call site.
 public struct IPv4Subnet: Sendable, Hashable {
 
-    /// Prefix lengths v0.1 permits (ticket §7.3).
+    /// Prefix lengths v0.1 permits.
     ///
     /// `/31` and `/32` are excluded because neither leaves room for a server address plus a
     /// DHCP pool, so accepting them would only produce a confusing failure later.
     public static let allowedPrefixLengths: ClosedRange<Int> = 8...30
 
     /// Below this, the subnet is enormous and almost certainly a typo. Allowed, but the UI
-    /// warns (ticket §7.3).
+    /// warns.
     public static let warnBelowPrefixLength = 16
 
     public let prefixLength: Int

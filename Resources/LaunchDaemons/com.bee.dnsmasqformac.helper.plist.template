@@ -8,11 +8,11 @@
   DnsmasqForMac.app/Contents/Library/LaunchDaemons/. The file name must equal the Label.
 
   Deliberately absent:
-    RunAtLoad         - ticket §10.1 forbids starting anything at boot. The helper is
+    RunAtLoad         - the specification forbids starting anything at boot. The helper is
                         launched on demand when the app connects to its Mach service, and
                         dnsmasq only ever starts from an explicit user action.
     KeepAlive         - a crashed helper must not be resurrected into a loop; the app
-                        reconnects and the journal drives recovery (ticket §17.3).
+                        reconnects and the journal drives recovery.
     StartInterval     - nothing here is periodic.
 -->
 <plist version="1.0">

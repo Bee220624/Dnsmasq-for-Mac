@@ -12,7 +12,7 @@ import SwiftUI
 /// helper, which is watching the file and only has something new when there genuinely is.
 ///
 /// The *time remaining* column changes every second, and is recomputed locally from expiry
-/// timestamps already in hand. Ticket §5.4 is explicit about this split: re-reading the file
+/// timestamps already in hand. The specification is explicit about this split: re-reading the file
 /// once a second to animate a countdown would spend the whole session doing work that changes
 /// nothing.
 @MainActor
@@ -47,7 +47,7 @@ final class LeaseMonitor {
         stop()
         self.sessionID = sessionID
 
-        // Two seconds is the target in ticket §25 for a lease appearing on screen. The helper
+        // Two seconds is the target in the specification for a lease appearing on screen. The helper
         // does the actual watching; this only asks whether its snapshot has moved on.
         pollTask = Task { [weak self] in
             while !Task.isCancelled {

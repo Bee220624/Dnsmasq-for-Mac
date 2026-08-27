@@ -1,6 +1,6 @@
 import Foundation
 
-/// A saved, reusable configuration (ticket §6.1).
+/// A saved, reusable configuration.
 ///
 /// A profile describes *what* to serve, never *where*: it carries no interface identity. That
 /// is deliberate — see `InterfaceConfiguration`.
@@ -50,9 +50,9 @@ public struct NetworkProfile: Codable, Sendable, Equatable, Identifiable {
     }
 }
 
-/// Addressing for the Mac itself while a session runs (ticket §6.2).
+/// Addressing for the Mac itself while a session runs.
 ///
-/// Note what is **not** here: any reference to `en7` or any other BSD name. Ticket §6.2 is
+/// Note what is **not** here: any reference to `en7` or any other BSD name. The specification is
 /// explicit that a profile must not bind to an interface, for three reasons — a USB adapter's
 /// BSD name changes between reboots and ports, the same profile on another Mac would name a
 /// different interface, and an automatic binding could silently select a production port. The
@@ -78,7 +78,7 @@ public struct InterfaceConfiguration: Codable, Sendable, Equatable {
     }
 }
 
-/// DHCPv4 server settings (ticket §6.3).
+/// DHCPv4 server settings.
 public struct DHCPConfiguration: Codable, Sendable, Equatable {
     public var enabled: Bool
     public var rangeStart: IPv4Address
@@ -87,7 +87,7 @@ public struct DHCPConfiguration: Codable, Sendable, Equatable {
 
     /// Answer requests this server has no lease for. dnsmasq's own documentation warns this
     /// is only safe when it is the sole DHCP server on the network, which is why the UI keeps
-    /// it behind a disclosure with that warning attached (ticket §5.3.3).
+    /// it behind a disclosure with that warning attached.
     public var authoritative: Bool
 
     /// Whether to send a default gateway to clients. Off by default: Dnsmasq for Mac provides no
@@ -118,7 +118,7 @@ public struct DHCPConfiguration: Codable, Sendable, Equatable {
         self.advertiseLocalDNSServer = advertiseLocalDNSServer
     }
 
-    /// Lease durations offered in the UI (ticket §5.3.3). Stored as seconds.
+    /// Lease durations offered in the UI. Stored as seconds.
     public static let leaseDurationPresets: [Int] = [
         600,      // 10 minutes
         3_600,    // 1 hour
@@ -128,10 +128,10 @@ public struct DHCPConfiguration: Codable, Sendable, Equatable {
         604_800,  // 7 days
     ]
 
-    /// Permitted lease duration range (ticket §7.5): 2 minutes to 7 days.
+    /// Permitted lease duration range: 2 minutes to 7 days.
     public static let allowedLeaseDurationSeconds: ClosedRange<Int> = 120...604_800
 
-    /// Largest pool v0.1 will serve (ticket §7.4). A bench network needs nothing near this,
+    /// Largest pool v0.1 will serve. A bench network needs nothing near this,
     /// and an unbounded pool on a mistyped prefix would be a very effective way to disrupt a
     /// real network.
     public static let maximumPoolSize: UInt32 = 1024
@@ -142,7 +142,7 @@ public struct DHCPConfiguration: Codable, Sendable, Equatable {
     }
 }
 
-/// Where DNS queries that are not answered locally should go (ticket §6.4).
+/// Where DNS queries that are not answered locally should go.
 public enum DNSUpstreamMode: String, Codable, Sendable, CaseIterable {
     /// Snapshot the Mac's own resolvers at start.
     case system
@@ -153,7 +153,7 @@ public enum DNSUpstreamMode: String, Codable, Sendable, CaseIterable {
     case localOnly
 }
 
-/// DNS server settings (ticket §6.4).
+/// DNS server settings.
 public struct DNSConfiguration: Codable, Sendable, Equatable {
     public var enabled: Bool
     public var localDomain: String
@@ -178,7 +178,7 @@ public struct DNSConfiguration: Codable, Sendable, Equatable {
         self.records = records
     }
 
-    /// dnsmasq is configured with at most this many upstream servers (ticket §5.3.4).
+    /// dnsmasq is configured with at most this many upstream servers.
     public static let maximumUpstreamServers = 4
 
     public var enabledRecords: [LocalDNSRecord] {
@@ -186,14 +186,14 @@ public struct DNSConfiguration: Codable, Sendable, Equatable {
     }
 }
 
-/// A local A record (ticket §6.5).
+/// A local A record.
 public struct LocalDNSRecord: Codable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public var enabled: Bool
     public var hostname: String
     public var ipv4Address: IPv4Address
 
-    /// User's note. Ticket §7.8: never written to the dnsmasq config or the hosts file, so a
+    /// User's note. The specification: never written to the dnsmasq config or the hosts file, so a
     /// comment can never become configuration.
     public var comment: String
 

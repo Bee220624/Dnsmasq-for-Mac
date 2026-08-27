@@ -1,5 +1,5 @@
 #!/bin/bash
-# Fetch, verify, and build dnsmasq as a Universal 2 binary (ticket §22).
+# Fetch, verify, and build dnsmasq as a Universal 2 binary.
 #
 # Everything about which dnsmasq ships is data in Resources/ThirdParty/dnsmasq/: the version,
 # the URL, the archive digest, and the signing key fingerprint. Nothing is hardcoded here, so
@@ -26,7 +26,7 @@ ARCHIVE="dnsmasq-${VERSION}.tar.xz"
 ARCHIVE_PATH="${SOURCE_DIR}/${ARCHIVE}"
 SIGNATURE_PATH="${ARCHIVE_PATH}.asc"
 
-# Ticket §3.5. Each of these removes a whole subsystem from the shipped binary: code that is
+# The specification Each of these removes a whole subsystem from the shipped binary: code that is
 # not compiled in cannot be reached by a configuration mistake, and cannot carry a
 # vulnerability. v0.1 serves DNS and DHCPv4 and nothing else.
 #
@@ -126,7 +126,7 @@ rm -rf "${EXTRACTED}"
 tar -xJf "${ARCHIVE_PATH}" -C "${SOURCE_DIR}"
 [[ -d "${EXTRACTED}" ]] || die "archive did not contain dnsmasq-${VERSION}/"
 
-# Ticket §22.1: never edit the vendored source in place. A patch, if one is ever needed, is
+# The specification: never edit the vendored source in place. A patch, if one is ever needed, is
 # applied here from patches/ so that what ships is always source + recorded patches.
 if compgen -G "${VENDOR_DIR}/patches/*.patch" >/dev/null 2>&1; then
     section "Applying patches"
@@ -190,7 +190,7 @@ echo "    architectures: ${ARCHS}"
 # ---------------------------------------------------------------------------------------
 section "Checking linkage"
 # ---------------------------------------------------------------------------------------
-# Ticket §3.2 and §22.3: the shipped binary must run on a clean Mac. A stray Homebrew include
+# The specification: the shipped binary must run on a clean Mac. A stray Homebrew include
 # path is the usual way this breaks, and it fails only on the user's machine, never on ours.
 # For a universal binary, otool -L prints a "<path> (architecture <arch>):" header before
 # each slice's list. Only the indented dylib lines are dependencies; the headers are not.
@@ -229,7 +229,7 @@ require_enabled() {
 }
 require_disabled() {
     case " ${compile_options} " in
-        *" $1 "*) die "$1 is compiled in but must not be (ticket §3.5)" ;;
+        *" $1 "*) die "$1 is compiled in but must not be" ;;
         *) echo "    ✓ $1 is not compiled in" ;;
     esac
 }
@@ -244,7 +244,7 @@ require_disabled dumpfile
 section "Smoke-testing configuration parsing"
 # ---------------------------------------------------------------------------------------
 # `--test` reads and validates a configuration without starting anything, which is the same
-# mechanism preflight uses before every start (ticket §9.10).
+# mechanism preflight uses before every start.
 SMOKE_CONF="$(mktemp -t mnl-dnsmasq-smoke)"
 cat > "${SMOKE_CONF}" <<'CONF'
 port=0

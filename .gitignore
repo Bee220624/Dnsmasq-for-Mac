@@ -16,7 +16,7 @@ xcuserdata/
 *.profraw
 *.profdata
 
-# Agent/editor local state — never published
+# Editor and tool local state — never published
 .claude/
 .cursor/
 .vscode/

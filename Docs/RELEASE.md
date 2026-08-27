@@ -57,7 +57,7 @@ containing the verified upstream source, both licence texts, the version and dig
 same obligation as distribution: the source has to travel with the binary, not merely be cited.
 
 > The final licence of Dnsmasq for Mac itself is not an implementation decision and requires legal
-> review before any commercial distribution (ticket §23, `RISKS.md` R-06). `LICENSE_PENDING` is
+> review before any commercial distribution (`RISKS.md` R-06). `LICENSE_PENDING` is
 > intentional.
 
 ## Before publishing

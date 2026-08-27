@@ -2,7 +2,7 @@ import MacNetModels
 import MacNetXPC
 import SwiftUI
 
-/// Overview — where a session is configured and started (ticket §5.3).
+/// Overview — where a session is configured and started.
 struct OverviewView: View {
     @Environment(AppState.self) private var appState
     @Environment(ProfileLibrary.self) private var library
@@ -65,7 +65,7 @@ struct OverviewView: View {
             .frame(maxWidth: .infinity)
         }
         .accessibilityIdentifier("overview.page")
-        // Ticket §5.3.5: a confirmation given about one interface must never carry over to
+        // The specification: a confirmation given about one interface must never carry over to
         // another, and changing the pool changes what "this network" means.
         .onChange(of: interfaces.selectedBSDName) { session.resetIsolationConfirmation() }
         .onChange(of: library.draft?.working.dhcpConfiguration) {
@@ -137,7 +137,7 @@ enum SessionRequestBuilder {
 
         return SessionStartRequest(draft: SessionDraft(
             // The *working* copy, not the saved profile: the user pressed Start looking at
-            // these values, so these are the values that must run (ticket §5.3.1).
+            // these values, so these are the values that must run.
             profileSnapshot: draft.working,
             selectedInterface: interface,
             resolvedSystemDNSServers: SystemResolvers.current(),

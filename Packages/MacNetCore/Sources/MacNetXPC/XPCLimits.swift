@@ -1,6 +1,6 @@
 import Foundation
 
-/// Hard size limits on anything crossing the XPC boundary (ticket §7.10).
+/// Hard size limits on anything crossing the XPC boundary.
 ///
 /// These are enforced by the receiver, not merely respected by the sender: an oversized
 /// payload is refused before it is decoded, so a hostile client cannot make the root helper

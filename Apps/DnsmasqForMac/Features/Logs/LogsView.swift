@@ -4,7 +4,7 @@ import MacNetModels
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The Logs page (ticket §5.5).
+/// The Logs page.
 struct LogsView: View {
     @Environment(LogMonitor.self) private var monitor
     @Environment(SessionController.self) private var session
@@ -87,7 +87,7 @@ struct LogsView: View {
             Button("Clear View") {
                 monitor.clearView()
             }
-            // Ticket §5.5: this empties the view only. The dnsmasq log file on disk is the
+            // The specification: this empties the view only. The dnsmasq log file on disk is the
             // record and is never truncated by a user tidying their screen.
             .help(Text("Empty the view. The log file on disk is not changed."))
             .accessibilityIdentifier("logs.clearButton")
@@ -178,7 +178,7 @@ struct LogsView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 68, alignment: .leading)
 
-            // Text and symbol, never colour alone (ticket §26.2).
+            // Text and symbol, never colour alone.
             Label(event.category.localizedName, systemImage: event.category.systemImage)
                 .labelStyle(.iconOnly)
                 .foregroundStyle(tint(for: event.category))
@@ -230,7 +230,7 @@ struct LogsView: View {
 
     /// Saves the log through a save panel.
     ///
-    /// Ticket §21.5: the destination is chosen by the user. Nothing is written anywhere they
+    /// The specification: the destination is chosen by the user. Nothing is written anywhere they
     /// did not pick, and nothing is ever uploaded.
     private func export() {
         let panel = NSSavePanel()

@@ -3,7 +3,7 @@ import Testing
 import MacNetModels
 import MacNetXPC
 
-/// Log tailer coverage (ticket §24.1 "Log Tests", §Phase 10).
+/// Log tailer coverage.
 ///
 /// Runs against a real file being appended to, because the behaviour under test *is*
 /// file behaviour: a read landing mid-line, a file rotated underneath the reader, and bytes
@@ -232,7 +232,7 @@ struct LogFileTailerTests {
 
         let arrived = await collector.waitFor { $0.count == 1 }
         // Replacement characters, not a dropped line. A malformed byte must not cost the user
-        // their log (ticket §19.2).
+        // their log.
         #expect(arrived)
         #expect(collector.events.first?.category == .dhcp)
     }

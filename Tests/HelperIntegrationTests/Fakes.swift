@@ -187,7 +187,7 @@ final class FakePortProbe: PortProbing, @unchecked Sendable {
     /// Sets answers consumed in order — the last one repeats.
     ///
     /// This is how "available at preflight, taken by the time we launch" is modelled, which is
-    /// the race ticket §15.1 step 12 exists to catch.
+    /// the race the specification exists to catch.
     func sequence(_ availabilities: [PortAvailability], for port: ProbedPort) {
         lock.withLock { results[port] = availabilities }
     }

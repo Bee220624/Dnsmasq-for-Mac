@@ -1,6 +1,6 @@
 import Foundation
 
-/// Validation for BSD interface names (ticket §7.9).
+/// Validation for BSD interface names.
 ///
 /// The helper receives an interface name from the app and passes it to `/sbin/ifconfig` as an
 /// argument and into a dnsmasq configuration file. Even though it is never interpreted by a
@@ -13,7 +13,7 @@ public enum InterfaceName {
         case blockedByPolicy
     }
 
-    /// Prefixes that may never host a session (ticket §7.9).
+    /// Prefixes that may never host a session.
     ///
     /// Every one of these is either not a real network, or is one macOS manages itself:
     /// loopback, Apple Wireless Direct Link, low-latency WLAN, VPN tunnels, bridges, and the
@@ -27,11 +27,11 @@ public enum InterfaceName {
     ///
     /// Shape only — whether the interface exists, what type it is, and whether it carries the
     /// default route are separate questions the helper answers by re-enumerating the system
-    /// (ticket §12.4). A name passing here is not yet permission to use it.
+    ///. A name passing here is not yet permission to use it.
     public static func validate(_ input: String) -> Result<String, Failure> {
         guard !input.isEmpty else { return .failure(.empty) }
 
-        // ^[a-z][a-z0-9]{0,15}$ from ticket §7.9, checked directly rather than by regular
+        // ^[a-z][a-z0-9]{0,15}$ from the specification, checked directly rather than by regular
         // expression so the rule is readable and cannot be defeated by a pattern subtlety.
         guard input.count <= 16 else { return .failure(.malformed) }
         guard let first = input.first, first.isASCII, first.isLowercase, first.isLetter else {

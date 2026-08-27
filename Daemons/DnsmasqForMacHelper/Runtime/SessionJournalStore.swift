@@ -3,7 +3,7 @@ import Foundation
 import MacNetModels
 import OSLog
 
-/// Reads and writes the session journal (ticket §11.1).
+/// Reads and writes the session journal.
 ///
 /// The journal is what makes recovery possible. Every side effect the helper causes is
 /// recorded immediately after it happens, so a helper that starts up and finds a journal knows
@@ -66,7 +66,7 @@ struct SessionJournalStore: Sendable {
 
     /// Persists the journal, stamping the update time.
     ///
-    /// Called after *every* step with a side effect (ticket §11.1). The cost of an extra write
+    /// Called after *every* step with a side effect. The cost of an extra write
     /// is nothing next to the cost of not knowing whether an alias exists.
     func write(_ journal: SessionJournal, now: Date = Date()) throws(ServiceFailure) {
         var updated = journal
@@ -117,7 +117,7 @@ struct SessionJournalStore: Sendable {
         }
     }
 
-    /// Keeps a copy of a journal that could not be acted on safely (ticket §17.3 case D).
+    /// Keeps a copy of a journal that could not be acted on safely (case D).
     func archiveForDiagnosis(_ journal: SessionJournal, reason: String) {
         let destination = "\(fileManager.journalPath).stale-\(journal.sessionID.uuidString)"
         logger.fault("archiving stale journal: \(reason, privacy: .public)")
@@ -133,7 +133,7 @@ struct SessionJournalStore: Sendable {
     }
 }
 
-/// A whole-file advisory lock over `/var/db/com.bee.dnsmasqformac/lock` (ticket §15.1 step 1).
+/// A whole-file advisory lock over `/var/db/com.bee.dnsmasqformac/lock`.
 ///
 /// ## Why a file lock as well as an actor
 ///

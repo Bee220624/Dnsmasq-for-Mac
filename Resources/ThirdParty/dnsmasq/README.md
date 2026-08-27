@@ -2,7 +2,7 @@
 
 Dnsmasq for Mac ships dnsmasq as a **separate, unmodified executable**. No dnsmasq source or object
 code is compiled or linked into any Dnsmasq for Mac binary; the app controls it purely by writing a
-configuration file and managing the process (ticket §23).
+configuration file and managing the process.
 
 ## What is in this directory
 
@@ -19,7 +19,7 @@ configuration file and managing the process (ticket §23).
 
 ## Why the version is pinned
 
-Ticket §3.4 forbids tracking `latest` and forbids downloading anything at app runtime. dnsmasq
+The specification forbids tracking `latest` and forbids downloading anything at app runtime. dnsmasq
 is a network service running as root on an engineer's machine; which exact build ships is a
 decision that gets reviewed, not one that drifts. Upgrading is its own ticket.
 
@@ -36,7 +36,7 @@ The fingerprint check is the part that matters. Fetching a key from a keyserver 
 it because it signed the file would be circular; pinning the fingerprint means a compromised
 keyserver produces a build failure rather than a silent substitution.
 
-> **Owner action.** The fingerprint recorded here was taken from the signature on the 2.93
+> **Unverified.** The fingerprint recorded here was taken from the signature on the 2.93
 > archive and corresponds to `Simon Kelley <simon@thekelleys.org.uk>` /
 > `<srk@debian.org>`. Before any public release, corroborate it against an independent source
 > — the Debian keyring is the natural one, since the same person maintains dnsmasq there. See
@@ -55,4 +55,4 @@ The procedure, the compile options, and what is verified afterwards are document
 
 None. If one ever becomes necessary it goes in `patches/` with a written rationale, is applied
 by the build script rather than by editing the extracted tree, and is retained for
-distribution alongside the source (ticket §22.1, §23).
+distribution alongside the source.

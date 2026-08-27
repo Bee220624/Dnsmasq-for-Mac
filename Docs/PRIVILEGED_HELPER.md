@@ -19,7 +19,7 @@ DnsmasqForMac.app/
     └── Library/
         ├── HelperTools/
         │   ├── com.bee.dnsmasqformac.helper     ← the daemon executable
-        │   └── dnsmasq                       ← the bundled engine (Phase 4)
+        │   └── dnsmasq                       ← the bundled engine
         └── LaunchDaemons/
             └── com.bee.dnsmasqformac.helper.plist
 ```
@@ -123,13 +123,13 @@ The three clauses each close a different hole:
 
 UID, PID, executable file name, and bundle path are all rejected as evidence. A PID can be
 recycled between the check and the use, and a path says nothing about what is actually
-executing there. Ticket §10.4 forbids relying on any of them, and
+executing there. The specification forbids relying on any of them, and
 `setConnectionCodeSigningRequirement` exists precisely because those patterns were widespread
 and wrong.
 
 ### There is no relaxed development mode
 
-The ticket permits a weaker `#if DEBUG` policy. This build does not have one. The requirement
+The specification permits a weaker `#if DEBUG` policy. This build does not have one. The requirement
 above is satisfied by a locally development-signed build, because the Team ID appears in the
 leaf certificate's OU for Apple Development certificates just as it does for Developer ID. A
 security check that only runs in release is a security check that is never exercised.
@@ -175,7 +175,7 @@ script's output as a last resort for the user to decide on, never run automatica
 
 In Settings, choose **Remove Helper**. This calls `SMAppService.unregister()`.
 
-Removal is refused while a session is running (ticket §5.7). Unregistering the helper
+Removal is refused while a session is running. Unregistering the helper
 underneath a live dnsmasq would strand the process and leave the temporary IP alias in place,
 with nothing left running that knows how to clean either of them up.
 

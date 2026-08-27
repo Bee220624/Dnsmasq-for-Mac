@@ -1,13 +1,13 @@
 import Foundation
 
-/// The complete XPC contract between the app and the privileged helper (ticket §10.3).
+/// The complete XPC contract between the app and the privileged helper.
 ///
 /// Design constraints this shape exists to satisfy:
 ///
 /// * **Objective-C compatible.** NSXPCConnection requires an `@objc` protocol, so every
 ///   parameter is a plain `Data`, `String`, or `Int64`.
 /// * **No free-form dictionaries.** Structured models are JSON-encoded into `Data` and
-///   decoded into named types on the far side. Ticket §7.10 forbids `[String: Any]` as the
+///   decoded into named types on the far side. The specification forbids `[String: Any]` as the
 ///   core protocol precisely because it invites "just one more key" and defeats validation.
 /// * **No paths, no executables, no commands.** Nothing in this interface lets a caller name
 ///   a file to read, a binary to run, or a command to execute. Every path the helper touches
@@ -26,7 +26,7 @@ import Foundation
     )
 
     /// Current runtime state, including any session already running — which is how the app
-    /// recovers after being force-quit while services were up (ticket §17.1).
+    /// recovers after being force-quit while services were up.
     func getRuntimeStatus(
         withReply reply: @escaping @Sendable (Data?, NSError?) -> Void
     )
@@ -64,7 +64,7 @@ import Foundation
     )
 
     /// Inspect the journal and clean up after a crash, without ever signalling a process
-    /// whose identity cannot be confirmed (ticket §17.3).
+    /// whose identity cannot be confirmed.
     func recoverStaleState(
         withReply reply: @escaping @Sendable (Data?, NSError?) -> Void
     )
@@ -76,7 +76,7 @@ import Foundation
     func helperDidEmitEvent(_ eventData: Data)
 }
 
-/// Kinds of event delivered over `DnsmasqForMacHelperClientProtocol` (ticket §10.3).
+/// Kinds of event delivered over `DnsmasqForMacHelperClientProtocol`.
 public enum HelperEventKind: String, Codable, Sendable {
     case runtimeStateChanged
     case logBatch

@@ -52,7 +52,7 @@ struct InterfaceNameTests {
     @Test("shape validation is not permission to use the interface")
     func shapeIsNotPermission() {
         // A name passing here says nothing about whether the interface exists, what type it
-        // is, or whether it carries the default route. Ticket §12.4 requires the helper to
+        // is, or whether it carries the default route. The specification requires the helper to
         // re-enumerate and decide those separately, so this must not be mistaken for a grant.
         #expect(rejection("en0") == nil)
     }

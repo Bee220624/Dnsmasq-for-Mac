@@ -10,12 +10,12 @@ ARCHS = $(ARCHS_STANDARD)
 
 // ---- Swift ----------------------------------------------------------------------------
 SWIFT_VERSION = 6.0
-// Ticket §3.2: strict concurrency checking is mandatory.
+// The specification: strict concurrency checking is mandatory.
 SWIFT_STRICT_CONCURRENCY = complete
 SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = YES
 
 // ---- Warnings -------------------------------------------------------------------------
-// Ticket §Phase 1: warnings are errors for project source. dnsmasq is built entirely
+// The specification: warnings are errors for project source. dnsmasq is built entirely
 // outside Xcode by Scripts/build-dnsmasq.sh, so no third-party C is affected by this.
 SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
 GCC_TREAT_WARNINGS_AS_ERRORS = YES

@@ -18,7 +18,7 @@ public struct IPv4Address: Sendable, Hashable, Comparable, CustomStringConvertib
     ///
     /// Parsing is delegated to `inet_pton`, which correctly rejects short forms, extra
     /// octets, out-of-range octets, negatives, embedded whitespace, CIDR suffixes, hex
-    /// literals, hostnames, IPv6, and trailing dots. Ticket §7.1 requires exactly that
+    /// literals, hostnames, IPv6, and trailing dots. The specification requires exactly that
     /// instead of splitting on "." and hoping.
     ///
     /// One case is rejected *beyond* what `inet_pton` does: **leading zeros**. macOS's
@@ -90,7 +90,7 @@ extension IPv4Address {
     public static let broadcast = IPv4Address(rawValue: 0xFFFF_FFFF)
 
     /// RFC 1918 private space — the only ranges v0.1 allows for a server address
-    /// (ticket §7.2). A lab network should never be numbered out of public space.
+    ///. A lab network should never be numbered out of public space.
     public var isPrivateUse: Bool {
         let octet1 = (rawValue >> 24) & 0xFF
         let octet2 = (rawValue >> 16) & 0xFF

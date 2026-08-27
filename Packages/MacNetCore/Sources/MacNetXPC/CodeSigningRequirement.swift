@@ -20,7 +20,7 @@ import Foundation
 /// The three together hold for Apple Development *and* Developer ID signing, because the Team
 /// ID appears in the leaf certificate's OU in both. That is what lets development builds run
 /// under exactly the same verification as release builds, with no relaxed branch anywhere
-/// (ticket §10.4).
+///.
 public enum CodeSigningRequirement {
 
     /// Builds a requirement pinning a program by identifier and signing team.

@@ -1,9 +1,9 @@
 import Foundation
 import MacNetModels
 
-/// Coarse lifecycle of the one service session the app may run (ticket §6.9).
+/// Coarse lifecycle of the one service session the app may run.
 ///
-/// Modelled as a single enum on purpose: the ticket forbids representing run state with
+/// Modelled as a single enum on purpose: the specification forbids representing run state with
 /// several independent booleans, because that admits contradictory combinations such as
 /// "starting and stopped". Payload-carrying cases arrive with the session work in a later
 /// phase.
@@ -19,7 +19,7 @@ enum RuntimeStatePhase: String, Sendable, Equatable, CaseIterable {
 
 /// Root observable state for the app process.
 ///
-/// Phase 1 carries only what the shell needs to render. Profile, interface, and session
+/// This carries only what the shell needs to render. Profile, interface, and session
 /// ownership are added by their own phases rather than accumulating here.
 @MainActor
 @Observable

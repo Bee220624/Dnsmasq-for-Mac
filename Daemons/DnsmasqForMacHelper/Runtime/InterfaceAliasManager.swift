@@ -9,12 +9,12 @@ import OSLog
 /// ## What this is allowed to do, and what it is not
 ///
 /// Exactly two operations on exactly one interface: add an alias, and remove an alias it
-/// added. Ticket §13.3 forbids `networksetup`, `ipconfig set`, and `route` — anything that
+/// added. The specification forbids `networksetup`, `ipconfig set`, and `route` — anything that
 /// would make a *permanent* change to a macOS network service. When a session stops, the Mac
 /// must be indistinguishable from before it started.
 ///
 /// Every argument is a separate array element and every value has already been validated. No
-/// shell is involved at any point (ticket §21.1).
+/// shell is involved at any point.
 struct InterfaceAliasManager: InterfaceAliasManaging {
 
     let commandRunner: any CommandRunning
@@ -42,7 +42,7 @@ struct InterfaceAliasManager: InterfaceAliasManaging {
         let existing = try Self.requireInterface(name, in: enumerator.enumerateInterfaces())
 
         // Already present with the same prefix: nothing to do, and nothing to undo later
-        // (ticket §13.1). Adding it again would make the stop path remove an address that was
+        //. Adding it again would make the stop path remove an address that was
         // not ours to remove.
         if let entry = existing.existingEntry(for: address) {
             guard entry.prefixLength == prefixLength else {
@@ -69,7 +69,7 @@ struct InterfaceAliasManager: InterfaceAliasManaging {
         )
         _ = result
 
-        // Ticket §13.1: confirm through getifaddrs rather than trusting a zero exit status.
+        // The specification: confirm through getifaddrs rather than trusting a zero exit status.
         // ifconfig can succeed and still not produce the address one expects.
         let after = try Self.requireInterface(name, in: enumerator.enumerateInterfaces())
         guard after.hasAddress(address) else {
@@ -91,7 +91,7 @@ struct InterfaceAliasManager: InterfaceAliasManaging {
     func removeAlias(interface: String, address: IPv4Address) async throws(ServiceFailure) {
         let name = try Self.validatedInterfaceName(interface)
 
-        // An interface that has disappeared is not an error (ticket §13.2). Unplugging the
+        // An interface that has disappeared is not an error. Unplugging the
         // adapter takes the alias with it, and there is nothing left to clean up.
         guard let current = enumerator.enumerateInterfaces().first(where: { $0.bsdName == name })
         else {
@@ -114,7 +114,7 @@ struct InterfaceAliasManager: InterfaceAliasManaging {
 
         let after = enumerator.enumerateInterfaces().first { $0.bsdName == name }
         if after?.hasAddress(address) == true {
-            // Reported, never hidden (ticket §13.2). The message has to carry enough for the
+            // Reported, never hidden. The message has to carry enough for the
             // user to finish the job by hand.
             throw ServiceFailure(
                 code: .cleanupFailed,
@@ -147,7 +147,7 @@ struct InterfaceAliasManager: InterfaceAliasManaging {
 
     /// Re-validates a name the helper was handed.
     ///
-    /// The app validated it too, and that is irrelevant here: ticket §7 makes helper-side
+    /// The app validated it too, and that is irrelevant here: the specification makes helper-side
     /// validation the security boundary, and this value is about to become an argument to a
     /// root-privileged program.
     private static func validatedInterfaceName(_ interface: String) throws(ServiceFailure) -> String {

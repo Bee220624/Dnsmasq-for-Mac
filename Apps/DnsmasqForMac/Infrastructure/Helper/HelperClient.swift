@@ -8,7 +8,7 @@ import ServiceManagement
 /// `SMAppService`, the XPC connection, and the identity handshake.
 ///
 /// An `actor` because the connection and its state are shared mutable state touched from
-/// several places — status polling, user-initiated install, and request calls (ticket §3.2).
+/// several places — status polling, user-initiated install, and request calls.
 actor HelperClient {
 
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "helper-client")
@@ -46,7 +46,7 @@ actor HelperClient {
     /// Registers the daemon with the system.
     ///
     /// A `requiresApproval` outcome is a normal, expected result, not an error: macOS is
-    /// waiting for the user to enable the item in System Settings. Ticket §10.2 forbids
+    /// waiting for the user to enable the item in System Settings. The specification forbids
     /// retrying `register()` in a loop to force it through.
     func install() throws(ServiceFailure) -> HelperInstallationState {
         do {
@@ -75,7 +75,7 @@ actor HelperClient {
         return installationState()
     }
 
-    /// Unregisters the daemon. Callers must ensure no session is running first — ticket §5.7
+    /// Unregisters the daemon. Callers must ensure no session is running first — the specification
     /// forbids uninstalling the helper while services are up.
     func uninstall() async throws(ServiceFailure) {
         closeConnection()
@@ -361,7 +361,7 @@ final class ContinuationBox: @unchecked Sendable {
 }
 
 /// Receives pushed events from the helper. Wired up now so the bidirectional channel is
-/// proven end to end; the events themselves are consumed from Phase 8 onward.
+/// proven end to end; the events themselves are consumed by the lease and log monitors.
 private final class HelperEventReceiver: NSObject, DnsmasqForMacHelperClientProtocol {
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "helper-events")
 

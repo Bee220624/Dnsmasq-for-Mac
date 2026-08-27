@@ -8,7 +8,7 @@ import PackageDescription
 //
 // Layering rule (enforced by the dependency graph below): nothing in this package may
 // import AppKit/SwiftUI, and nothing may perform privileged work. The config generator in
-// particular is a pure function — ticket §9.1 forbids it from touching the file system.
+// particular is a pure function — the specification forbids it from touching the file system.
 
 let package = Package(
     name: "MacNetCore",
@@ -45,7 +45,7 @@ let package = Package(
         // Network interface enumeration and the policy deciding which may host a
         // session.
         //
-        // Shared rather than duplicated in the app and the helper: ticket §12.4 requires
+        // Shared rather than duplicated in the app and the helper: the specification requires
         // the helper to re-enumerate and re-decide rather than trusting what the app
         // sent, and two implementations of "is this interface safe to serve DHCP on"
         // would eventually disagree. The one that mattered would be whichever was wrong.

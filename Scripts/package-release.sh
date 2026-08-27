@@ -1,5 +1,5 @@
 #!/bin/bash
-# Notarize, staple, and package a release (ticket §Phase 12).
+# Notarize, staple, and package a release.
 #
 # Requires a notarytool keychain profile. Create one once with:
 #
@@ -88,7 +88,7 @@ section "Packaging the GPL source materials"
 # ---------------------------------------------------------------------------------------
 # Distributing the app distributes dnsmasq, and recipients are entitled to the corresponding
 # source. Reproducibility is not the same obligation: the archive itself has to travel with
-# the binary, not merely be cited (ticket §23, Docs/RISKS.md R-06).
+# the binary, not merely be cited (Docs/RISKS.md R-06).
 SOURCE_BUNDLE="${RELEASE_DIR}/${PRODUCT_NAME_BASE}-${VERSION}-dnsmasq-source"
 rm -rf "${SOURCE_BUNDLE}"
 mkdir -p "${SOURCE_BUNDLE}"
@@ -140,7 +140,7 @@ Release packaged.
   Source: ${SOURCE_ZIP}
 
 Both must be published together: distributing the app distributes dnsmasq, and the
-corresponding source has to accompany it (ticket §23).
+corresponding source has to accompany it.
 
 Before publishing, complete Docs/MANUAL_TEST_PLAN.md on a clean macOS 14 machine.
 EOF

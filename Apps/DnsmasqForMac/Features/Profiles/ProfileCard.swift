@@ -1,7 +1,7 @@
 import MacNetModels
 import SwiftUI
 
-/// Overview → Profile (ticket §5.3.1).
+/// Overview → Profile.
 ///
 /// The card that decides which settings the rest of Overview is editing, and the only place
 /// those edits get written to disk.
@@ -36,7 +36,7 @@ struct ProfileCard: View {
                 set: { if !$0 { pendingSelection = nil } }
             )
         ) {
-            // All three options, and Cancel genuinely cancels (ticket §5.3.1). A prompt that
+            // All three options, and Cancel genuinely cancels. A prompt that
             // quietly discards is worse than no prompt, because the user believes they chose.
             Button("Save") { resolve(.save) }
             Button("Discard Changes", role: .destructive) { resolve(.discard) }

@@ -2,11 +2,11 @@ import Foundation
 import MacNetModels
 import OSLog
 
-/// Persists network profiles to disk (ticket §20).
+/// Persists network profiles to disk.
 ///
 /// ## Where this runs
 ///
-/// In the app process, as the logged-in user, and nowhere else. Ticket §20.1 is explicit that
+/// In the app process, as the logged-in user, and nowhere else. The specification is explicit that
 /// the root helper must never write user profiles: a root process writing into a user's
 /// Application Support directory is both unnecessary and a way to create files the user cannot
 /// then manage.
@@ -49,7 +49,7 @@ actor ProfileStore {
         backupDirectory.appending(path: "profiles-v1.migration.json")
     }
 
-    /// Default location: `~/Library/Application Support/com.bee.dnsmasqformac/` (ticket §20.1).
+    /// Default location: `~/Library/Application Support/com.bee.dnsmasqformac/`.
     static func defaultDirectory(
         appSupportDirectoryName: String = "com.bee.dnsmasqformac"
     ) -> URL {
@@ -72,7 +72,7 @@ actor ProfileStore {
 
     // MARK: - Loading
 
-    /// Reads profiles from disk, recovering from a damaged file if necessary (ticket §20.4).
+    /// Reads profiles from disk, recovering from a damaged file if necessary.
     @discardableResult
     func load(now: Date = Date()) -> LoadOutcome {
         do {
@@ -98,7 +98,7 @@ actor ProfileStore {
             return lastOutcome
         }
 
-        // Ticket §20.4 step 1: never overwrite the damaged file. It is moved aside, so the
+        // The specification: never overwrite the damaged file. It is moved aside, so the
         // user keeps a chance of recovering something from it by hand.
         let quarantined = quarantine(primaryFile, now: now)
         logger.error("primary profile database unusable; moved to \(quarantined?.lastPathComponent ?? "?", privacy: .public)")
@@ -169,12 +169,12 @@ actor ProfileStore {
         case verificationFailed
     }
 
-    /// Persists the current database (ticket §20.3).
+    /// Persists the current database.
     func save() throws {
         try writeAtomically(database)
     }
 
-    /// The write sequence from ticket §20.3, in order and for a reason.
+    /// The write sequence from the specification, in order and for a reason.
     ///
     /// 1. Encode first. If encoding fails nothing on disk has been touched.
     /// 2. Write to a temporary file in the *same directory*, so the later replace is a rename
@@ -249,7 +249,7 @@ actor ProfileStore {
 
     /// Removes a profile.
     ///
-    /// Refuses two cases (ticket §5.6): removing the last profile, which would leave the app
+    /// Refuses two cases: removing the last profile, which would leave the app
     /// with nothing to show, and removing the default, which must be reassigned first so that
     /// "default" never dangles.
     enum DeleteRefusal: Error, Sendable, Equatable {

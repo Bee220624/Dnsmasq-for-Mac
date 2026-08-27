@@ -1,6 +1,6 @@
 import XCTest
 
-/// Onboarding, Settings, and accessibility coverage (ticket §Phase 11, §24.3).
+/// Onboarding, Settings, and accessibility coverage.
 final class OnboardingUITests: XCTestCase {
 
     @MainActor
@@ -41,7 +41,7 @@ final class OnboardingUITests: XCTestCase {
 
     @MainActor
     func testThirdPartyNoticesAreReachable() throws {
-        // Ticket §23 requires the licences to be visible in the app, not merely shipped in the
+        // The specification requires the licences to be visible in the app, not merely shipped in the
         // bundle where nobody would find them.
         let app = XCUIApplication.launchForUITesting()
         selectSidebar("settings", in: app)
@@ -54,7 +54,7 @@ final class OnboardingUITests: XCTestCase {
 
     @MainActor
     func testEverySidebarItemHasAnAccessibilityLabel() throws {
-        // VoiceOver must be able to name every destination (ticket §26.2).
+        // VoiceOver must be able to name every destination.
         let app = XCUIApplication.launchForUITesting()
 
         for section in ["overview", "leases", "logs", "profiles", "settings"] {
@@ -71,7 +71,7 @@ final class OnboardingUITests: XCTestCase {
     func testServiceStatusExposesAValueNotJustAColour() throws {
         let app = XCUIApplication.launchForUITesting()
 
-        // Ticket §5.2 and §26.2: state is never conveyed by colour alone, so the status element
+        // The specification: state is never conveyed by colour alone, so the status element
         // must carry a readable value.
         let status = app.element("status.phase")
         waitForElement(status, "the status chip should exist")

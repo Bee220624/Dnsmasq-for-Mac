@@ -1,8 +1,8 @@
 import Foundation
 
-/// Broad classification of a network interface (ticket §6.6).
+/// Broad classification of a network interface.
 ///
-/// Derived from SystemConfiguration's interface type, never from the BSD name. Ticket §7.9 is
+/// Derived from SystemConfiguration's interface type, never from the BSD name. The specification is
 /// explicit that `en0` must not be assumed to be Wi-Fi — on a Mac mini it is Ethernet, and
 /// guessing wrong here means either blocking a valid interface or, far worse, running DHCP on
 /// Wi-Fi.
@@ -39,10 +39,10 @@ public struct InterfaceIPv4Address: Codable, Sendable, Equatable, Hashable {
     }
 }
 
-/// Everything the app and helper know about one interface (ticket §6.6).
+/// Everything the app and helper know about one interface.
 ///
 /// Captured as a snapshot and carried in the session request, but the helper never trusts it:
-/// ticket §12.4 requires re-enumeration at preflight and again at start, because an interface
+/// the specification requires re-enumeration at preflight and again at start, because an interface
 /// can be unplugged between the user choosing it and the service starting.
 public struct NetworkInterfaceDescriptor: Codable, Sendable, Equatable, Identifiable {
     public var id: String { bsdName }
@@ -63,7 +63,7 @@ public struct NetworkInterfaceDescriptor: Codable, Sendable, Equatable, Identifi
     /// Carrier detected — something is plugged in and powered.
     public let isLinkActive: Bool
     /// Carries the system's default route. Serving DHCP here would disrupt the network this
-    /// Mac depends on, so it is refused outright (ticket §21.6).
+    /// Mac depends on, so it is refused outright.
     public let isDefaultRoute: Bool
 
     /// Whether a session may run on this interface at all.
@@ -105,7 +105,7 @@ public struct NetworkInterfaceDescriptor: Codable, Sendable, Equatable, Identifi
 
     /// The configured entry for `address`, if the interface already has it. Used to tell
     /// "already present, leave it alone" apart from "present with a different prefix", which
-    /// is a conflict rather than a no-op (ticket §13.1).
+    /// is a conflict rather than a no-op.
     public func existingEntry(for address: IPv4Address) -> InterfaceIPv4Address? {
         ipv4Addresses.first { $0.address == address }
     }

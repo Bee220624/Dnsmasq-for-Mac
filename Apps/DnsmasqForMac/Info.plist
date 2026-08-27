@@ -4,7 +4,7 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
-	<!-- Ticket §26.1: English and Simplified Chinese in v0.1. Japanese is deferred. -->
+	<!-- The specification: English and Simplified Chinese in v0.1. Japanese is deferred. -->
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

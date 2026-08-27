@@ -1,6 +1,6 @@
 # Manual Test Plan
 
-Ticket §24.4. These are the tests that cannot be automated, because they need real hardware
+The specification These are the tests that cannot be automated, because they need real hardware
 on the other end of a real cable — a device that asks for an address, a plug that gets pulled,
 a network that must be observed not to break.
 
@@ -52,8 +52,8 @@ Then verify, and write down what you saw:
 | A2 | **Wi-Fi is untouched** | `netstat -rn -f inet \| grep default` still names the Wi-Fi interface |
 | A3 | Internet still works | `curl -sS -o /dev/null -w '%{http_code}\n' https://example.com` returns 200 |
 | A4 | The device gets an address | It reports something in `192.168.50.10–200` |
-| A5 | The lease appears within 2 seconds | Leases page (Phase 9) |
-| A6 | The exchange is logged | Logs page shows DISCOVER, OFFER, REQUEST, ACK (Phase 10) |
+| A5 | The lease appears within 2 seconds | Leases page |
+| A6 | The exchange is logged | Logs page shows DISCOVER, OFFER, REQUEST, ACK |
 | A7 | dnsmasq runs as `nobody` | `ps -o user,pid,comm -p $(pgrep -f 'HelperTools/dnsmasq')` |
 
 > **A7 matters more than it looks.** The generated config sets `user=nobody`, and macOS's
@@ -108,7 +108,7 @@ sudo python3 -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRA
 | C1 | Preflight reports a UDP 67 conflict as an **error** |
 | C2 | The message names the holding process |
 | C3 | **Start** is unavailable |
-| C4 | **No alias was added** — `ifconfig en7` is unchanged. Preflight is read-only (§14) |
+| C4 | **No alias was added** — `ifconfig en7` is unchanged. Preflight is read-only |
 
 3. Release the port. Validate again; it should pass.
 
@@ -116,7 +116,7 @@ sudo python3 -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRA
 
 Harder, and worth doing once: validate successfully, then take port 67 *before* clicking
 Start. Start must fail with a port conflict **and roll the alias back out** — `ifconfig en7`
-must not show `192.168.50.1` afterwards. This is ticket §15.1 step 12.
+must not show `192.168.50.1` afterwards. This is the specification.
 
 ---
 
@@ -171,7 +171,7 @@ the UI can be bypassed, the helper cannot.
 |---|---|
 | F1 | The app notices within a few seconds and shows an error |
 | F2 | The **alias is removed automatically** — `ifconfig en7` no longer lists it |
-| F3 | dnsmasq is **not** restarted. Ticket §17.4 forbids it; a crash loop against a network the user cannot see would be worse than a stopped service |
+| F3 | dnsmasq is **not** restarted. The specification forbids it; a crash loop against a network the user cannot see would be worse than a stopped service |
 | F4 | The journal is cleared: `sudo ls /var/db/com.bee.dnsmasqformac/` |
 | F5 | The error includes the tail of the log |
 
@@ -187,7 +187,7 @@ the UI can be bypassed, the helper cannot.
 | G1 | The app reports the interface is gone |
 | G2 | The session ends or moves to a failure state — it does not sit claiming Running |
 | G3 | The journal is eventually cleared |
-| G4 | Replugging does **not** start anything automatically (ticket §0.1) |
+| G4 | Replugging does **not** start anything automatically |
 | G5 | A fresh Start afterwards works normally |
 
 ---
@@ -214,5 +214,5 @@ isolate.
 ## Result
 
 Record for each test: **pass**, **fail**, or **not run**, with the macOS version and adapter
-model. A test that was not run is reported as not run — ticket §30 §7 is explicit that
+model. A test that was not run is reported as not run — the specification is explicit that
 untested items must not be presented as passing.

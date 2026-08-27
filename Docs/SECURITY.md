@@ -43,11 +43,10 @@ is rejected; the leaf certificate's OU means another developer cannot ship an ap
 identifier and be trusted.
 
 **Deliberately not used:** UID, PID, executable file name, bundle path. A PID can be recycled
-between the check and the use, and a path says nothing about what is executing there. Ticket
-§10.4 forbids all four, and `setConnectionCodeSigningRequirement` exists precisely because
+between the check and the use, and a path says nothing about what is executing there. The specification forbids all four, and `setConnectionCodeSigningRequirement` exists precisely because
 those patterns were widespread and wrong.
 
-**There is no relaxed development mode.** The ticket permits a weaker `#if DEBUG` policy; this
+**There is no relaxed development mode.** The specification permits a weaker `#if DEBUG` policy; this
 build does not have one, because the strict requirement is satisfied by a locally
 development-signed build. A security check that only runs in release is one that is never
 exercised.
@@ -57,7 +56,7 @@ The app pins the helper the same way. Both requirements come from one shared imp
 
 ## 2. What the helper will do
 
-A closed list (ticket §10.5): report status, run preflight, add an alias, remove an alias it
+A closed list: report status, run preflight, add an alias, remove an alias it
 added, launch the bundled dnsmasq, stop it, read this session's lease and log files, recover
 stale state, and verify the engine.
 
@@ -83,7 +82,7 @@ Before launching dnsmasq the helper checks:
 lease event, inside a process that started as root. Compiling it out closes that permanently
 rather than relying on the generator never emitting the directive.
 
-Ticket §21.3 asks instead for a SHA-256 recomputed against a compile-time constant. That is not
+The specification asks instead for a SHA-256 recomputed against a compile-time constant. That is not
 constructible — `codesign` writes the signature into the Mach-O, and the helper is compiled
 before dnsmasq is signed. `RISKS.md` R-13 records the substitution and why it is stronger.
 
@@ -103,7 +102,7 @@ an allow-list only has to name the safe ones.
 - **Record comments**: unrestricted, and safe precisely because they are written to neither the
   config nor the hosts file. A golden test keeps that true.
 
-The malicious inputs named in ticket §24.1 are covered in `SecurityInputTests`.
+The malicious inputs named in the specification are covered in `SecurityInputTests`.
 
 ## 5. Not damaging the wrong network
 
@@ -147,7 +146,7 @@ The three files dnsmasq writes are **pre-created** owned by `nobody`, inside a d
 stays unwritable by it. The dropped-privilege process can therefore write its own files and
 create nothing.
 
-Profiles live in `~/Library/Application Support/` and are written by the app only. Ticket §20.1
+Profiles live in `~/Library/Application Support/` and are written by the app only. The specification
 forbids the root helper from writing user data.
 
 ## 8. Signalling a process

@@ -4,11 +4,11 @@ import MacNetModels
 import OSLog
 import Security
 
-/// Verifies the bundled dnsmasq before the helper executes it as root (ticket §21.3).
+/// Verifies the bundled dnsmasq before the helper executes it as root.
 ///
 /// ## What is checked, and why it is not a digest comparison
 ///
-/// The ticket asks for a SHA-256 recomputed at launch against a compile-time constant. That is
+/// The specification asks for a SHA-256 recomputed at launch against a compile-time constant. That is
 /// not constructible: `codesign` writes the signature *into* the Mach-O, so the bytes in the
 /// bundle differ from the compiler's output, and the helper is compiled before dnsmasq is
 /// signed. No constant compiled into this binary can describe the signed file, and the signing
@@ -181,7 +181,7 @@ struct ExecutableVerifier: ExecutableVerifying {
         }
 
         // Features that were compiled out must stay out. Asserted on the shipped binary
-        // because this is the one that will actually run (ticket §3.5).
+        // because this is the one that will actually run.
         let options = " \(output.replacingOccurrences(of: "\n", with: " ")) "
         guard options.contains(" DHCP ") else {
             throw Self.rejected(path, "has no DHCP support", "DHCP is not in the compile options")
@@ -207,7 +207,7 @@ struct ExecutableVerifier: ExecutableVerifying {
     /// Reads the architecture list straight from the Mach-O header.
     ///
     /// Done in-process rather than by shelling out to `lipo`: the helper's executable set is
-    /// closed by design (ticket §21.2), and adding a tool to it for a cosmetic field would be
+    /// closed by design, and adding a tool to it for a cosmetic field would be
     /// a poor trade.
     private static func machOArchitectures(at path: String) -> String {
         guard let handle = FileHandle(forReadingAtPath: path),

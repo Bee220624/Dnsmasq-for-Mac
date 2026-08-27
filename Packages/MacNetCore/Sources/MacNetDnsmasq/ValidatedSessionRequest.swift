@@ -120,7 +120,7 @@ public struct ValidatedSessionRequest: Sendable, Equatable {
         }
     }
 
-    /// Filters a system resolver snapshot down to what is safe to forward to (ticket §5.3.4).
+    /// Filters a system resolver snapshot down to what is safe to forward to.
     ///
     /// The exclusions are not cosmetic. Forwarding to our own listen address would make
     /// dnsmasq query itself, and a loopback entry points at whatever resolver is running on
@@ -165,7 +165,7 @@ public struct ValidatedSessionRequest: Sendable, Equatable {
             byName[resolved.fullyQualified] = (record.ipv4Address, resolved.hostsFileNames)
         }
 
-        // Sorted by lowercase hostname (ticket §9.8) so the same input always produces
+        // Sorted by lowercase hostname so the same input always produces
         // byte-identical output.
         return byName.keys.sorted().compactMap { name in
             byName[name].map { HostEntry(address: $0.address, names: $0.names) }

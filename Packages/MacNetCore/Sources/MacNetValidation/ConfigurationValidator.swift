@@ -2,8 +2,7 @@ import Foundation
 import MacNetModels
 
 /// Which field an issue belongs to, so the UI can attach the message to the right control
-/// (ticket §26.2 requires form errors to be associated with their field, not floated
-/// somewhere generic).
+/// (requires form errors to be associated with their field not floated /// somewhere generic).
 public enum ValidationField: String, Sendable, Equatable, CaseIterable {
     case profileName
     case serverIPv4
@@ -44,7 +43,7 @@ public struct ValidationIssue: Sendable, Equatable, Identifiable {
     }
 }
 
-/// Validates a complete profile against every rule in ticket §7.
+/// Validates a complete profile against every rule in the specification
 ///
 /// ## Why this returns a list instead of throwing
 ///
@@ -55,7 +54,7 @@ public struct ValidationIssue: Sendable, Equatable, Identifiable {
 /// ## Why this lives in the shared core
 ///
 /// The app runs it for live feedback, and the helper runs the *same code* on the request it
-/// receives. Ticket §7 is explicit that helper-side validation is the real security boundary
+/// receives. The specification is explicit that helper-side validation is the real security boundary
 /// and that app-side results must never be trusted — sharing the implementation means the two
 /// cannot disagree about what "valid" means, while the helper still re-derives the answer
 /// itself rather than accepting the app's word for it.
@@ -98,7 +97,7 @@ public enum ConfigurationValidator {
         return issues
     }
 
-    /// Convenience for gating Start: warnings are shown but never block (ticket §5.3.6).
+    /// Convenience for gating Start: warnings are shown but never block.
     public static func hasBlockingIssues(_ issues: [ValidationIssue]) -> Bool {
         issues.contains { $0.severity == .error }
     }
@@ -168,7 +167,7 @@ public enum ConfigurationValidator {
             reject("serverIPv4.broadcast", "255.255.255.255 is not a usable server address.")
         } else if !address.isPrivateUse {
             // Refusing public space is a guardrail against numbering a lab out of an address
-            // block that belongs to someone else (ticket §7.2).
+            // block that belongs to someone else.
             reject("serverIPv4.notPrivate",
                    "Use a private address: 10.x.x.x, 172.16–31.x.x, or 192.168.x.x.")
         }
@@ -398,7 +397,7 @@ public enum ConfigurationValidator {
 
             case .success(let resolved):
                 // The same name mapping to two addresses is not a preference dnsmasq can
-                // resolve — it would answer inconsistently (ticket §9.8).
+                // resolve — it would answer inconsistently.
                 if let existing = addressByName[resolved.fullyQualified],
                    existing != record.ipv4Address {
                     issues.append(ValidationIssue(

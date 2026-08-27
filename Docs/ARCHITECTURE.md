@@ -41,7 +41,7 @@ the interesting logic testable without root, without a network adapter, and with
 
 ## Why so much is shared rather than duplicated
 
-Ticket §12.4 requires the helper to re-enumerate interfaces and re-validate everything rather
+The specification requires the helper to re-enumerate interfaces and re-validate everything rather
 than trusting what the app sent. The obvious reading — write it twice — is wrong: two
 implementations of *"may DHCP run on this interface"* will eventually disagree, and the one
 that matters is whichever is wrong.
@@ -67,8 +67,7 @@ one thing the user can do, which is what keeps onboarding from becoming a pile o
 ## Start is a transaction
 
 Every side effect is journalled before it is reported as done, and every failure unwinds in
-reverse order (`RollbackPlan`). The failure modes this exists to prevent are named in ticket
-§15.2, and each has a test:
+reverse order (`RollbackPlan`). The failure modes this exists to prevent are named in the specification, and each has a test:
 
 - dnsmasq fails to start but the alias stays behind
 - the app shows Stopped while the helper still runs dnsmasq

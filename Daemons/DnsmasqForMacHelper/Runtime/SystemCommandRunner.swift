@@ -6,7 +6,7 @@ import OSLog
 ///
 /// ## The environment is built, never inherited
 ///
-/// Ticket §15.1 step 13 requires a minimal environment with the dynamic-linker injection
+/// The specification requires a minimal environment with the dynamic-linker injection
 /// variables cleared. That is not a formality: `DYLD_INSERT_LIBRARIES` in the environment of a
 /// root process means an attacker who can set it gets their code loaded into that process.
 /// Rather than removing known-dangerous names from an inherited environment — a blocklist that
@@ -112,7 +112,7 @@ struct SystemCommandRunner: CommandRunning {
             DispatchQueue.global(qos: .userInitiated).async {
                 let data = (try? pipe.fileHandleForReading.readToEnd()) ?? Data()
                 // Replacement characters rather than a failure: a program emitting invalid
-                // UTF-8 should not make the operation fail (ticket §19.2).
+                // UTF-8 should not make the operation fail.
                 continuation.resume(returning: String(decoding: data, as: UTF8.self))
             }
         }

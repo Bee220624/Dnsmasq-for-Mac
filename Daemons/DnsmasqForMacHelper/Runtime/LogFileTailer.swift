@@ -5,12 +5,12 @@ import MacNetModels
 import MacNetXPC
 import OSLog
 
-/// Follows a session's dnsmasq log file and publishes batches of parsed lines (ticket §19.2).
+/// Follows a session's dnsmasq log file and publishes batches of parsed lines.
 ///
 /// ## Why the file, not the pipe
 ///
 /// dnsmasq is configured with `log-facility=<session>/dnsmasq.log`, and this reads that file
-/// rather than the process's stdout. Ticket §19.1 requires it, and the reason is recovery: a
+/// rather than the process's stdout. The specification requires it, and the reason is recovery: a
 /// helper that restarts, or one that adopted a dnsmasq it did not spawn, has no pipe — but the
 /// file is still there, and the log is still readable from wherever it left off.
 ///
@@ -42,7 +42,7 @@ actor LogFileTailer {
     private var partialLine = ""
 
     /// Monotonic within the session. Never reset, so a reconnecting client's "everything after
-    /// N" is always unambiguous (ticket §10.3).
+    /// N" is always unambiguous.
     private var nextSequence: Int64 = 1
 
     /// Recent history for a client that connects after the fact.
@@ -54,7 +54,7 @@ actor LogFileTailer {
     /// allocate without limit.
     private static let maximumReadBytes = 1 << 20
 
-    /// Lines per batch (ticket §19.3).
+    /// Lines per batch.
     ///
     /// Batching exists so a busy DNS cache does not mean one XPC round trip per line, which
     /// would cost far more than the logging is worth.
@@ -81,7 +81,7 @@ actor LogFileTailer {
         // `log-async` writes in bursts, and a poll of a held descriptor is a single cheap
         // `read` returning zero bytes — meaningfully less work than a dispatch source waking
         // for each of a hundred appends. It also keeps the log-to-screen latency inside the
-        // 500 ms ticket §25 asks for.
+        // 500 ms the specification asks for.
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(100))
@@ -97,7 +97,7 @@ actor LogFileTailer {
         closeFile()
     }
 
-    /// History for a client that has just connected, or reconnected (ticket §17.1).
+    /// History for a client that has just connected, or reconnected.
     func snapshot(after sequence: Int64) -> LogBatch {
         let events = buffer.events(after: sequence)
         return LogBatch(
@@ -149,7 +149,7 @@ actor LogFileTailer {
 
         // Replacement characters rather than a failure: a read can land mid-character on a
         // file that is being appended to, and losing the log over one byte would not be a
-        // trade worth making (ticket §19.2).
+        // trade worth making.
         let text = String(decoding: data, as: UTF8.self)
         emit(parseLines(from: text))
     }

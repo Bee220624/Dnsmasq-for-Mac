@@ -81,7 +81,7 @@ struct LogRingBufferTests {
         (1...10).forEach { buffer.append(event(Int64($0))) }
 
         // A reconnecting client sends the highest sequence it has and receives exactly what it
-        // is missing — no gaps, no duplicates (ticket §10.3).
+        // is missing — no gaps, no duplicates.
         #expect(buffer.highestSequence == 10)
         #expect(buffer.events(after: 7).map(\.sequence) == [8, 9, 10])
         #expect(buffer.events(after: 10).isEmpty)

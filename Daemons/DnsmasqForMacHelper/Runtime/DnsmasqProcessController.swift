@@ -9,7 +9,7 @@ import OSLog
 ///
 /// A PID is not an identity. Between recording one and using it, the process can exit and the
 /// number can be reused by something else entirely — and this code runs as root, so a signal
-/// sent to the wrong PID goes wherever it is aimed. Ticket §16.2 therefore requires that
+/// sent to the wrong PID goes wherever it is aimed. The specification therefore requires that
 /// before *any* signal, the PID is confirmed to still be the process we launched.
 ///
 /// `liveness(of:expectedExecutableSHA256:)` is that confirmation, and `terminate` will not
@@ -21,7 +21,7 @@ struct DnsmasqProcessController: ProcessControlling {
 
     private let logger = Logger(subsystem: HelperIdentity.bundleIdentifier, category: "process")
 
-    /// Environment handed to dnsmasq. Built, never inherited (ticket §15.1 step 13).
+    /// Environment handed to dnsmasq. Built, never inherited.
     ///
     /// The `DYLD_*` variables are absent because the environment starts empty, not because
     /// they were removed. A blocklist has to anticipate every dangerous name forever; an
@@ -43,7 +43,7 @@ struct DnsmasqProcessController: ProcessControlling {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: BundledPaths.dnsmasq)
 
-        // Fixed arguments (ticket §9.9). The user contributes nothing here: every setting they
+        // Fixed arguments. The user contributes nothing here: every setting they
         // chose reached dnsmasq through the generated configuration file, which is the only
         // thing that varies.
         //
@@ -157,7 +157,7 @@ struct DnsmasqProcessController: ProcessControlling {
             return
 
         case .identityMismatch(let actualPath):
-            // Ticket §16.2: send nothing. The PID has been recycled, and whatever holds it now
+            // The specification: send nothing. The PID has been recycled, and whatever holds it now
             // is some other program the user is running.
             logger.fault(
                 """

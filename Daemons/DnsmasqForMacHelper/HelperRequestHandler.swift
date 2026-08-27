@@ -5,7 +5,7 @@ import MacNetXPC
 import OSLog
 
 /// The object exported to a verified client — the helper's entire externally reachable
-/// surface (ticket §10.5).
+/// surface.
 ///
 /// Every method here is a fixed, named operation. There is deliberately no way for a caller to
 /// name a command, an executable, or a path: the operations that need them derive them from the

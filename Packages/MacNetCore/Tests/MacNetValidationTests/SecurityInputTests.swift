@@ -3,7 +3,7 @@ import Testing
 import MacNetModels
 import MacNetValidation
 
-/// The malicious inputs named in ticket §24.1, verified to be rejected or safely contained.
+/// The malicious inputs named in the specification, verified to be rejected or safely contained.
 ///
 /// These are the inputs an attacker — or an unlucky copy-paste — would use to turn a text
 /// field into a command, a path, or an extra line of configuration. They are collected here,
@@ -103,7 +103,7 @@ struct SecurityInputTests {
 
     @Test("a record comment cannot reach the generated configuration")
     func commentIsNeverConfiguration() throws {
-        // Ticket §7.8: the comment field is UI-only and is written to neither the dnsmasq
+        // The specification: the comment field is UI-only and is written to neither the dnsmasq
         // config nor the hosts file. That is why it is the one field with no character
         // restrictions — it has nowhere dangerous to go. The rule is enforced by the config
         // generator's golden tests; recorded here so the reason is not lost.

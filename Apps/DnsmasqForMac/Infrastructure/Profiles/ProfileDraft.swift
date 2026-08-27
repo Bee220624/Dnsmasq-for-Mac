@@ -1,7 +1,7 @@
 import Foundation
 import MacNetModels
 
-/// An editable copy of a saved profile (ticket §5.3.1).
+/// An editable copy of a saved profile.
 ///
 /// ## Why editing goes through a draft
 ///
@@ -11,7 +11,7 @@ import MacNetModels
 /// copies it, edits apply to the copy, and nothing is written until the user says so.
 ///
 /// Start uses the **draft**, not the stored profile: the user pressed Start looking at these
-/// values, so these are the values that must run. Starting does not save (ticket §5.3.1) —
+/// values, so these are the values that must run. Starting does not save —
 /// trying a setting once should not overwrite a preset.
 struct ProfileDraft: Sendable, Equatable {
 
@@ -38,7 +38,7 @@ struct ProfileDraft: Sendable, Equatable {
         return comparable != original
     }
 
-    /// Discards edits (ticket §5.3.1 "Revert").
+    /// Discards edits ("Revert").
     mutating func revert() {
         working = original
     }
@@ -57,7 +57,7 @@ struct ProfileDraft: Sendable, Equatable {
     }
 }
 
-/// What to do about unsaved edits when the user switches profiles (ticket §5.3.1).
+/// What to do about unsaved edits when the user switches profiles.
 ///
 /// Modelled explicitly because the wrong default here loses work: the prompt must offer all
 /// three, and Cancel must genuinely cancel the switch rather than switching anyway.

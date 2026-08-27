@@ -1,7 +1,7 @@
 import Foundation
 
 /// How the helper was compiled. Surfaced in the UI because a helper built with the relaxed
-/// development security policy must never be mistaken for a release one (ticket §10.4).
+/// development security policy must never be mistaken for a release one.
 public enum HelperBuildType: String, Codable, Sendable {
     case release
     case debug
@@ -36,7 +36,7 @@ public struct HelperServiceInfo: Codable, Sendable, Equatable {
     /// believing. A `nil` here means the engine did not verify, and no session can start.
     public let engineVerification: EngineVerification?
 
-    /// A summary of the bundled dnsmasq (ticket §5.7).
+    /// A summary of the bundled dnsmasq.
     public struct EngineVerification: Codable, Sendable, Equatable {
         public let version: String
         public let sha256: String

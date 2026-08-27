@@ -6,7 +6,7 @@ import OSLog
 
 /// Build-time identity of the helper, read from the Info.plist section embedded in the
 /// executable. Nothing here is hardcoded; the values originate in
-/// `Config/Identifiers.xcconfig` (ticket §3.1).
+/// `Config/Identifiers.xcconfig`.
 enum HelperIdentity {
     private static var info: [String: Any] {
         Bundle.main.infoDictionary ?? [:]
@@ -78,7 +78,7 @@ final class HelperService: @unchecked Sendable {
     /// Starts serving. Does not return.
     ///
     /// Any failure to establish the security posture is fatal by design: a root helper that
-    /// cannot identify its callers must not run at all (ticket §10.4).
+    /// cannot identify its callers must not run at all.
     func run() -> Never {
         guard let machServiceName = HelperIdentity.machServiceName else {
             logger.fault("DFMMachServiceName missing from embedded Info.plist; build is corrupt")
@@ -86,7 +86,7 @@ final class HelperService: @unchecked Sendable {
         }
 
         // See CodeSigningRequirement for why the peer is pinned this way rather than by
-        // UID, PID, executable name, or bundle path (ticket §10.4).
+        // UID, PID, executable name, or bundle path.
         guard let requirement = CodeSigningRequirement.forSignedProgram(
             bundleIdentifier: HelperIdentity.authorizedAppBundleIdentifier,
             teamIdentifier: HelperIdentity.teamIdentifier
@@ -101,7 +101,7 @@ final class HelperService: @unchecked Sendable {
         }
 
         // Assemble the real dependencies once. Every one of them is behind a protocol, which
-        // is what lets the lifecycle be tested against fakes (ticket §24.2) — but here they are
+        // is what lets the lifecycle be tested against fakes — but here they are
         // the genuine implementations, and this is the only place that decides so.
         let runtimeFiles = RuntimeFileManager()
         let commandRunner = SystemCommandRunner()
@@ -121,7 +121,7 @@ final class HelperService: @unchecked Sendable {
             commandRunner: commandRunner
         )
 
-        // Ticket §17.3: reconcile the journal with reality before serving anything. A helper
+        // The specification: reconcile the journal with reality before serving anything. A helper
         // that was killed mid-session may have left an alias behind, and the next Start must
         // not stack a second one on top of it.
         Task {

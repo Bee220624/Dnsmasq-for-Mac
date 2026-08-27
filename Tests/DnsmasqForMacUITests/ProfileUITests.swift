@@ -1,6 +1,6 @@
 import XCTest
 
-/// Profile management coverage (ticket §Phase 6, §24.3).
+/// Profile management coverage.
 final class ProfileUITests: XCTestCase {
 
     @MainActor
@@ -42,7 +42,7 @@ final class ProfileUITests: XCTestCase {
 
         let list = app.element("profiles.list")
         waitForElement(list, "the profile list should exist")
-        // Ticket §5.6: one profile must always exist.
+        // The specification: one profile must always exist.
         XCTAssertGreaterThan(list.descendants(matching: .staticText).count, 0)
     }
 
@@ -52,7 +52,7 @@ final class ProfileUITests: XCTestCase {
         selectSidebar("profiles", in: app)
 
         // On a fresh install there is exactly one profile and it is the default — both reasons
-        // deletion must be unavailable (ticket §5.6).
+        // deletion must be unavailable.
         let delete = app.buttons["profiles.delete"]
         waitForElement(delete, "the delete button should exist")
         XCTAssertFalse(delete.isEnabled)

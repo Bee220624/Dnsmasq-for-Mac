@@ -7,7 +7,7 @@ import SwiftUI
 /// The enums themselves live in the shared package, which has no localization resources and is
 /// also linked by the helper — a root daemon has no business carrying user-facing translations.
 /// Their `displayName` is therefore the English technical term, which is the right thing for a
-/// log export (ticket §26.1 keeps technical output in English) and the wrong thing for a label
+/// log export (keeps technical output in English) and the wrong thing for a label
 /// on screen.
 ///
 /// These map the same values through the app's string catalog, so the UI follows the user's

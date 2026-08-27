@@ -6,7 +6,7 @@ import MacNetValidation
 import MacNetXPC
 import OSLog
 
-/// Runs the read-only checks that decide whether a session could start (ticket §14).
+/// Runs the read-only checks that decide whether a session could start.
 ///
 /// ## Read-only means read-only
 ///
@@ -18,7 +18,7 @@ import OSLog
 ///
 /// Its answer is already stale by the time the user reads it: a port can be taken, an adapter
 /// unplugged, an address configured by something else. The authoritative checks are the ones
-/// inside the start transaction, which re-run everything (ticket §15.1 step 2). Preflight
+/// inside the start transaction, which re-run everything. Preflight
 /// exists to tell the user what is wrong *before* they commit, not to grant permission.
 struct PreflightRunner: Sendable {
 
@@ -30,7 +30,7 @@ struct PreflightRunner: Sendable {
 
     private let logger = Logger(subsystem: HelperIdentity.bundleIdentifier, category: "preflight")
 
-    /// Runs every check, in the order given by ticket §14.1.
+    /// Runs every check, in the order given by the specification
     ///
     /// Order matters for the *user*, not the machine: a report that leads with "the interface
     /// is Wi-Fi" is more useful than one leading with "the generated configuration is invalid"
@@ -78,7 +78,7 @@ struct PreflightRunner: Sendable {
         let profile = draft.profileSnapshot
 
         // ---- Step 4: full validation, re-run here -----------------------------------------
-        // The app validated this. That is irrelevant: ticket §7 makes helper-side validation
+        // The app validated this. That is irrelevant: the specification makes helper-side validation
         // the security boundary, and nothing the app says is taken on trust.
         let validationIssues = ConfigurationValidator.validate(profile)
         for issue in validationIssues where issue.severity == .error {
@@ -163,7 +163,7 @@ struct PreflightRunner: Sendable {
         }
 
         // Link down is only a warning: in a datacenter the device on the other end is very
-        // often not powered on yet (ticket §21.6).
+        // often not powered on yet.
         if !live.isLinkActive {
             fail(.interfaceSupported, PreflightIssue(
                 id: "interface.noLink",
@@ -240,7 +240,7 @@ struct PreflightRunner: Sendable {
             ), nil)
         }
 
-        // Written into a throwaway directory that is removed afterwards (ticket §14.1 step 28),
+        // Written into a throwaway directory that is removed afterwards,
         // so preflight leaves nothing behind even on the failure path.
         let scratchID = UUID()
         let scratch = NSTemporaryDirectory() + "dnsmasqformac-preflight-\(scratchID.uuidString)"
@@ -287,7 +287,7 @@ struct PreflightRunner: Sendable {
 
         let output = (result.standardError + result.standardOutput)
             .split(separator: "\n")
-            .suffix(100)                    // ticket §9.10: the last 100 lines
+            .suffix(100)                    // the specification: the last 100 lines
             .joined(separator: "\n")
 
         guard result.succeeded else {
@@ -342,7 +342,7 @@ struct PreflightRunner: Sendable {
             case .inUse:
                 allAvailable = false
                 // `lsof` runs only after a bind has already failed, purely to name the holder.
-                // Its own failure changes nothing (ticket §14.3).
+                // Its own failure changes nothing.
                 let holder = await diagnostics.describeHolder(of: port)
                 issues.append(PreflightIssue(
                     id: "port.inUse.\(port.number)\(port.isTCP ? "tcp" : "udp")",
@@ -397,7 +397,7 @@ struct PreflightRunner: Sendable {
         now: Date
     ) -> PreflightReport {
         // Every check appears, including ones that never ran — the UI shows the full list so
-        // the user can see what was checked, not only what failed (ticket §5.3.6).
+        // the user can see what was checked, not only what failed.
         let results = PreflightCheck.allCases.map { check in
             PreflightCheckResult(
                 check: check,

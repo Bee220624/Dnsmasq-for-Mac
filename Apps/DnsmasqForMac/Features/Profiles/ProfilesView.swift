@@ -1,7 +1,7 @@
 import MacNetModels
 import SwiftUI
 
-/// The Profiles page (ticket §5.6): a list on the left, a summary on the right.
+/// The Profiles page: a list on the left, a summary on the right.
 struct ProfilesView: View {
     @Environment(ProfileLibrary.self) private var library
     @Environment(AppState.self) private var appState
@@ -49,7 +49,7 @@ struct ProfilesView: View {
 
     /// Deleting a profile a live session is using is allowed, because the session holds its
     /// own snapshot — but the user is told plainly that it will not stop anything
-    /// (ticket §5.6).
+    ///.
     private func deleteMessage(for profile: NetworkProfile) -> String {
         if appState.runtimePhase == .running {
             "This cannot be undone. If a session is running from this profile, it will keep "
@@ -149,7 +149,7 @@ struct ProfilesView: View {
         selectedProfile.map(canDelete) ?? false
     }
 
-    /// Ticket §5.6: one profile must always remain, and the default must be reassigned before
+    /// The specification: one profile must always remain, and the default must be reassigned before
     /// it can be removed.
     private func canDelete(_ profile: NetworkProfile) -> Bool {
         library.profiles.count > 1 && profile.id != library.defaultProfileID

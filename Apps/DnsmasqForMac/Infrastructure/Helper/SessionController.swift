@@ -4,7 +4,7 @@ import MacNetXPC
 import OSLog
 import SwiftUI
 
-/// Drives preflight, start, and stop from the UI (ticket §15–§17).
+/// Drives preflight, start, and stop from the UI (–).
 ///
 /// Holds no policy of its own. Every decision that matters — whether an interface may be used,
 /// whether a configuration is valid, whether a port is free — is made by the helper, on data it
@@ -22,7 +22,7 @@ final class SessionController {
     /// Warnings from a recovery that ran on connect. Cleared once acknowledged.
     private(set) var recoveryWarnings: [String] = []
 
-    /// The user's confirmation that the selected interface is isolated (ticket §5.3.5).
+    /// The user's confirmation that the selected interface is isolated.
     ///
     /// Deliberately a plain property on a view model: it is never persisted, never written to a
     /// profile, and does not survive a relaunch. `reset()` is called on stop, on interface
@@ -62,7 +62,7 @@ final class SessionController {
         return true
     }
 
-    /// Resets the confirmation (ticket §5.3.5).
+    /// Resets the confirmation.
     ///
     /// Called whenever the thing being confirmed changes. A confirmation given about one
     /// interface and pool must never carry over to a different one.
@@ -77,7 +77,7 @@ final class SessionController {
 
     // MARK: - Reconnection
 
-    /// Re-adopts whatever the helper is already doing (ticket §17.1).
+    /// Re-adopts whatever the helper is already doing.
     ///
     /// The app can be force-quit while a session runs; the helper and dnsmasq keep going. On
     /// relaunch the app must show what is actually happening rather than an empty Stopped
@@ -176,7 +176,7 @@ final class SessionController {
             try await client.stopSession(id: session.id)
             activeSession = nil
             phase = .stopped
-            // Ticket §5.3.5: the confirmation does not survive the session it was given for.
+            // The specification: the confirmation does not survive the session it was given for.
             isolationConfirmed = false
             logger.log("session \(session.id.uuidString, privacy: .public) stopped")
         } catch {

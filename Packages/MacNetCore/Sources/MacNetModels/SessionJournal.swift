@@ -1,6 +1,6 @@
 import Foundation
 
-/// How far along a session is, from the helper's point of view (ticket §11.1).
+/// How far along a session is, from the helper's point of view.
 ///
 /// The states exist to answer one question after a crash: *what did we already do that has to
 /// be undone?* Each transition is written to disk immediately after the side effect it
@@ -31,7 +31,7 @@ public enum JournalState: String, Codable, Sendable, Equatable, CaseIterable {
 /// already done, recovery would have to guess, and guessing wrong means either leaving an
 /// alias on an interface forever or removing an address the user configured themselves.
 ///
-/// Written atomically after every side effect (ticket §11.1), which is what makes the states
+/// Written atomically after every side effect, which is what makes the states
 /// above trustworthy.
 public struct SessionJournal: Codable, Sendable, Equatable {
     public let schemaVersion: Int
@@ -46,17 +46,17 @@ public struct SessionJournal: Codable, Sendable, Equatable {
     ///
     /// The single most important field here. Only an alias recorded as `true` is ever removed;
     /// an address the user configured themselves is never touched, however tempting it looks
-    /// during cleanup (ticket §13.2).
+    /// during cleanup.
     public var aliasAddedByApp: Bool
 
     /// Whether the interface was already up before the session started, so that a session
-    /// which brought it up can put it back down (ticket §15.1 step 10).
+    /// which brought it up can put it back down.
     public let interfaceWasUpBeforeStart: Bool
 
     public var dnsmasqPID: Int32?
 
     /// Digest of the executable that was launched, so a recycled PID can be told from the
-    /// process we started before any signal is sent (ticket §16.2).
+    /// process we started before any signal is sent.
     public var dnsmasqExecutableSHA256: String
 
     public let configurationPath: String

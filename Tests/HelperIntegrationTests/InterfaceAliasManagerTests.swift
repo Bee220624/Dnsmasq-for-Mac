@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import MacNetModels
 
-/// Coverage for temporary IPv4 alias management (ticket §13).
+/// Coverage for temporary IPv4 alias management.
 ///
 /// This is the component that changes the user's machine. Every test here is about a case
 /// where getting it wrong leaves a Mac holding an address it should not have, or strips one it
@@ -38,7 +38,7 @@ struct InterfaceAliasManagerTests {
 
         try await manager.addAlias(interface: "en7", address: serverAddress, prefixLength: 24)
 
-        // Ticket §21.1: every value is its own array element. If this were ever assembled into
+        // The specification: every value is its own array element. If this were ever assembled into
         // a string, a validated-but-hostile value could become a second command.
         #expect(runner.invocations == [
             FakeCommandRunner.Invocation(
@@ -57,7 +57,7 @@ struct InterfaceAliasManagerTests {
 
         try await manager.addAlias(interface: "en7", address: serverAddress, prefixLength: 24)
 
-        // Ticket §13.1. This matters for what happens *later*: an alias we did not add is one
+        // The specification This matters for what happens *later*: an alias we did not add is one
         // we must not remove on stop, and re-adding it would blur that distinction.
         #expect(runner.invocations.isEmpty)
     }
@@ -82,7 +82,7 @@ struct InterfaceAliasManagerTests {
 
     @Test("fails when ifconfig reports success but the address never appears")
     func failsWhenAddressDoesNotAppear() async throws {
-        // ifconfig exits 0 and the address is still not there. Ticket §13.1 requires
+        // ifconfig exits 0 and the address is still not there. The specification requires
         // confirming through getifaddrs rather than trusting an exit status.
         let unchanged = TestInterface.ethernet("en7")
         let (manager, _, _) = makeManager(interfaces: [unchanged])
@@ -130,7 +130,7 @@ struct InterfaceAliasManagerTests {
     @Test("re-validates the interface name it was handed",
           arguments: ["lo0", "utun0", "awdl0", "p2p0", "en7;rm -rf /", "EN7", "../etc"])
     func revalidatesInterfaceName(name: String) async throws {
-        // The app validated this too, and that is irrelevant: ticket §7 makes helper-side
+        // The app validated this too, and that is irrelevant: the specification makes helper-side
         // validation the security boundary, and this value is about to become an argument to a
         // root-privileged program.
         let (manager, runner, _) = makeManager(interfaces: [TestInterface.ethernet("en7")])
@@ -178,7 +178,7 @@ struct InterfaceAliasManagerTests {
 
     @Test("a vanished interface is not a failure")
     func vanishedInterfaceIsNotAFailure() async throws {
-        // Ticket §13.2: unplugging the adapter takes the alias with it. Treating this as an
+        // The specification: unplugging the adapter takes the alias with it. Treating this as an
         // error would leave the session stuck in cleanup-failed for something already resolved.
         let (manager, runner, _) = makeManager(interfaces: [])
 
@@ -196,7 +196,7 @@ struct InterfaceAliasManagerTests {
 
     @Test("a removal that does not take effect is reported with a manual recovery command")
     func reportsRemovalThatDidNotTakeEffect() async throws {
-        // ifconfig succeeds, the address stays. Ticket §13.2 forbids hiding this: the user is
+        // ifconfig succeeds, the address stays. The specification forbids hiding this: the user is
         // left with an address on their Mac and must be told how to remove it.
         let stubborn = TestInterface.ethernet(
             "en7", addresses: [("192.168.50.1", "255.255.255.0")]

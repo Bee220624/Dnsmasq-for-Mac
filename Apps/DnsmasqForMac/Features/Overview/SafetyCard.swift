@@ -1,7 +1,7 @@
 import MacNetModels
 import SwiftUI
 
-/// Overview → Safety (ticket §5.3.5).
+/// Overview → Safety.
 ///
 /// ## Why this exists at all
 ///

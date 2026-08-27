@@ -1,5 +1,5 @@
 #!/bin/bash
-# Verify every localizable string has a Simplified Chinese translation (ticket §26.1).
+# Verify every localizable string has a Simplified Chinese translation.
 #
 # The list of strings comes from the **compiler**, not from a regular expression over the
 # sources. Xcode emits a `.stringsdata` file per source file listing exactly which literals it

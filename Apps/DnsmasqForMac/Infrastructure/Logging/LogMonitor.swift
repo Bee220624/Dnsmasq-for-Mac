@@ -5,7 +5,7 @@ import MacNetXPC
 import OSLog
 import SwiftUI
 
-/// Supplies the Logs page (ticket §5.5, §19).
+/// Supplies the Logs page.
 ///
 /// Asks the helper for everything after the highest sequence it already holds, so a reconnect —
 /// or a pause and resume — produces no gaps and no duplicates. That is the whole reason the
@@ -14,7 +14,7 @@ import SwiftUI
 @Observable
 final class LogMonitor {
 
-    /// Everything held in memory, before filtering. Capped at 5,000 lines (ticket §5.5).
+    /// Everything held in memory, before filtering. Capped at 5,000 lines.
     private(set) var buffer = LogRingBuffer(capacity: LogRingBuffer.appCapacity)
 
     /// Whether new lines are being appended to the view.
@@ -55,7 +55,7 @@ final class LogMonitor {
         self.sessionID = sessionID
         highestSequence = 0
 
-        // 300 ms keeps the log-to-screen latency inside the 500 ms target in ticket §25
+        // 300 ms keeps the log-to-screen latency inside the 500 ms target in the specification
         // without making a round trip per line — the helper batches, this drains.
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -73,7 +73,7 @@ final class LogMonitor {
 
     /// Clears what is on screen.
     ///
-    /// Ticket §5.5 is explicit that this must not truncate the running dnsmasq log: the file is
+    /// The specification is explicit that this must not truncate the running dnsmasq log: the file is
     /// the record, and a user tidying their screen must not destroy evidence. Only the
     /// in-memory view is emptied; the sequence position is kept so the next fetch continues
     /// rather than replaying everything.
@@ -108,7 +108,7 @@ final class LogMonitor {
 
     // MARK: - Export
 
-    /// Renders the log as plain text for export (ticket §5.5).
+    /// Renders the log as plain text for export.
     ///
     /// Exports **what is on screen**, filter and all. An export that quietly contained more
     /// than the user was looking at would be a surprise in the wrong direction — and this file

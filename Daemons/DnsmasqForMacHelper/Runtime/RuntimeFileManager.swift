@@ -5,12 +5,12 @@ import MacNetModels
 import OSLog
 import CryptoKit
 
-/// Owns everything under `/var/db/com.bee.dnsmasqformac` (ticket §11).
+/// Owns everything under `/var/db/com.bee.dnsmasqformac`.
 ///
 /// ## Why the app never names a path
 ///
-/// Every path here is derived from a fixed root plus a `UUID` this process generated. Ticket
-/// §21.4 requires session directories to be named from a UUID rather than from a profile name,
+/// Every path here is derived from a fixed root plus a `UUID` this process generated. The specification
+/// Session directories are named from a UUID rather than from a profile name,
 /// hostname, or interface name — none of which are ours, and any of which could contain a
 /// separator or `..`. Taking a `UUID` rather than a `String` makes traversal unrepresentable
 /// instead of merely rejected.
@@ -115,7 +115,7 @@ struct RuntimeFileManager: RuntimeFileManaging {
         do {
             try data.write(to: URL(fileURLWithPath: temporary), options: [.atomic])
 
-            // Ticket §15.1 step 7: fsync before the rename. A rename is durable long before
+            // The specification: fsync before the rename. A rename is durable long before
             // the bytes are, and dnsmasq reading a zero-length config after a power loss would
             // be a genuinely confusing failure.
             let handle = try FileHandle(forWritingTo: URL(fileURLWithPath: temporary))
@@ -168,7 +168,7 @@ struct RuntimeFileManager: RuntimeFileManaging {
         defer { try? handle.close() }
 
         // Bounded read. A lease or log file that has grown unexpectedly must not be able to
-        // make the root helper allocate without limit (ticket §18.3).
+        // make the root helper allocate without limit.
         let data = (try? handle.read(upToCount: maximumBytes)) ?? Data()
         return String(decoding: data, as: UTF8.self)
     }

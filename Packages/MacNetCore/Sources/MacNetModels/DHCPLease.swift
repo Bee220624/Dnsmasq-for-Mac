@@ -1,6 +1,6 @@
 import Foundation
 
-/// Where a lease stands relative to now (ticket §5.4).
+/// Where a lease stands relative to now.
 public enum LeaseStatus: String, Codable, Sendable, Equatable, CaseIterable {
     case active
     case expired
@@ -8,7 +8,7 @@ public enum LeaseStatus: String, Codable, Sendable, Equatable, CaseIterable {
     case infinite
 }
 
-/// One entry from dnsmasq's lease file (ticket §18.2).
+/// One entry from dnsmasq's lease file.
 public struct DHCPLease: Codable, Sendable, Equatable, Identifiable {
     /// `<mac>|<ipv4>`.
     ///
@@ -48,7 +48,7 @@ public struct DHCPLease: Codable, Sendable, Equatable, Identifiable {
     /// Time left, or `nil` for an infinite or already-expired lease.
     ///
     /// Computed from a passed-in `now` rather than reading the clock, so the UI can tick every
-    /// second without re-reading the lease file (ticket §5.4) and so this stays testable.
+    /// second without re-reading the lease file and so this stays testable.
     public func remaining(asOf now: Date) -> TimeInterval? {
         guard status == .active, let expiresAt else { return nil }
         let interval = expiresAt.timeIntervalSince(now)

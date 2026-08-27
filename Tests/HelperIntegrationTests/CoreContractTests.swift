@@ -2,7 +2,7 @@ import Testing
 import MacNetModels
 
 /// Contract checks that must hold for the app and helper to be able to talk to each other
-/// at all. Real lifecycle coverage against injected fakes arrives with Phase 7.
+/// at all. Real lifecycle coverage against injected fakes lives in SessionLifecycleTests.
 @Suite("Core contract")
 struct CoreContractTests {
 
