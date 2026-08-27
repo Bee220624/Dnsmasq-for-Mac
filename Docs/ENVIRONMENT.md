@@ -36,8 +36,8 @@ shipped app; `Scripts/verify-bundle.sh` enforces this by rejecting any `/opt/hom
 
 ## 3. Repository baseline
 
-The repository was **empty** apart from the ticket document. Specifically, at audit time
-there was no:
+The repository was **empty** apart from the specification this work was written against,
+which is not published here. Specifically, at audit time there was no:
 
 - `.xcodeproj` / `.xcworkspace`
 - `Package.swift`
@@ -77,8 +77,9 @@ any app signed with it — so it is public by design rather than by accident.
   `SMAppService.daemon` locally, so Phase 2 (privileged helper + XPC) can be developed and
   verified on this machine.
 - **No `Developer ID Application` certificate is installed**, and no notarization
-  credentials are configured. Phase 12 (Developer ID signing, notarization, stapling,
-  外站分发) **cannot be completed in this environment**. See `Docs/RISKS.md` R-01.
+  credentials are configured. Phase 12 (Developer ID signing, notarization, stapling, and
+  distribution outside the Mac App Store) **cannot be completed in this environment**. See
+  `Docs/RISKS.md` R-01.
 
 The Team ID is configured in exactly one place, `Config/Identifiers.xcconfig`, and is
 consumed by the Xcode targets, the helper's caller-validation code, and the build scripts.

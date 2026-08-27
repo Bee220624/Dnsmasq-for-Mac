@@ -37,3 +37,7 @@ Release/
 *.mobileprovision
 *.cer
 notary-credentials*
+
+# The implementation specification this project was written against. Kept locally; the
+# repository publishes the result, not the brief.
+MacNetLab v0.1：macOS 本地网络服务工具实施工单.md
