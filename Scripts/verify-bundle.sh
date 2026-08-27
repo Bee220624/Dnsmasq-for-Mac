@@ -159,6 +159,24 @@ check_linkage "${APP}/Contents/MacOS/${PRODUCT_NAME_BASE}" "app"
 check_linkage "${HELPER}" "helper"
 
 # ---------------------------------------------------------------------------------------
+section "GPL licence texts"
+# ---------------------------------------------------------------------------------------
+# The app ships a GPL program, so each copy of the app has to carry the licence with it
+# (GPL v2 §1). Checked here because the failure is silent otherwise: the app still runs, the
+# Settings links simply stop rendering, and nobody notices until it is already distributed.
+for licence in COPYING COPYING-v3; do
+    bundled="${APP}/Contents/Resources/${licence}"
+    vendored="${REPO_ROOT}/Resources/ThirdParty/dnsmasq/${licence}"
+    if [[ ! -f "${bundled}" ]]; then
+        fail "${licence} is not in the bundle"
+    elif cmp -s "${bundled}" "${vendored}"; then
+        pass "${licence} present and identical to the vendored text"
+    else
+        fail "${licence} in the bundle differs from ${vendored}"
+    fi
+done
+
+# ---------------------------------------------------------------------------------------
 section "Bundled dnsmasq"
 # ---------------------------------------------------------------------------------------
 if [[ -f "${DNSMASQ}" ]]; then

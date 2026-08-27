@@ -761,6 +761,28 @@
         }
       }
     },
+    "GPL v2 Licence Text": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPL v2 许可证全文"
+          }
+        }
+      }
+    },
+    "GPL v3 Licence Text": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPL v3 许可证全文"
+          }
+        }
+      }
+    },
     "Generated configuration valid": {
       "extractionState": "manual",
       "localizations": {

@@ -109,9 +109,29 @@ struct LicensesSection: View {
                 Link("Open Notices File", destination: url)
                     .font(.callout)
             }
+
+            // The licence dnsmasq is under travels inside the bundle, so it is reachable
+            // from here rather than only from the source archive that accompanies a release.
+            HStack(spacing: 12) {
+                licenceLink("COPYING", title: "GPL v2 Licence Text")
+                licenceLink("COPYING-v3", title: "GPL v3 Licence Text")
+            }
+            .font(.callout)
         }
         .sheet(isPresented: $showingNotices) {
             NoticesSheet()
+        }
+    }
+
+    /// A link to one of the bundled licence texts.
+    ///
+    /// Rendered only when the file is actually present: a link that opens nothing is worse
+    /// than no link, and `Scripts/verify-bundle.sh` is what makes its absence a build failure
+    /// rather than something the user discovers here.
+    @ViewBuilder
+    private func licenceLink(_ resource: String, title: LocalizedStringKey) -> some View {
+        if let url = Bundle.main.url(forResource: resource, withExtension: nil) {
+            Link(title, destination: url)
         }
     }
 }

@@ -6,10 +6,10 @@
 #   1. Renders the LaunchDaemon plist template. It cannot simply be copied, because its
 #      Label, Mach service name, and BundleProgram path all come from
 #      Config/Identifiers.xcconfig.
-#   2. Copies the vendored dnsmasq next to the helper and signs it.
+#   2. Copies the GPL licence texts into Contents/Resources.
+#   3. Copies the vendored dnsmasq next to the helper and signs it.
 #
-# Both land under Contents/Library, and both must be in place before Xcode's own code signing
-# phase seals the bundle.
+# All of it must be in place before Xcode's own code signing phase seals the bundle.
 
 set -euo pipefail
 
@@ -55,6 +55,24 @@ if [[ "${PARSED_VALUES}" =~ @[A-Z_]+@ ]]; then
 fi
 
 echo "==> embedded ${OUTPUT}"
+
+# --- GPL licence texts --------------------------------------------------------------------
+# The app bundles dnsmasq, so every copy of the app has to carry the licence dnsmasq is
+# under (GPL v2 §1). The release ZIP ships them too, but a bundle is dragged out of a disk
+# image on its own — the licence has to travel inside the .app, not merely beside it.
+#
+# Staged before the dnsmasq step deliberately: that step exits early on an unvendored tree,
+# and the notices sheet in Settings links to these files in every build.
+RESOURCES_DIR="${APP_PATH}/Contents/Resources"
+mkdir -p "${RESOURCES_DIR}"
+for licence in COPYING COPYING-v3; do
+    SOURCE="${REPO_ROOT}/Resources/ThirdParty/dnsmasq/${licence}"
+    [[ -f "${SOURCE}" ]] || { echo "error: missing licence text ${SOURCE}" >&2; exit 1; }
+    # Copied from the vendor directory rather than duplicated into the app's own resources,
+    # so the shipped text and the text recorded against the vendored source cannot drift.
+    cp "${SOURCE}" "${RESOURCES_DIR}/${licence}"
+done
+echo "==> embedded GPL licence texts"
 
 # --- dnsmasq -----------------------------------------------------------------------------
 DNSMASQ_SOURCE="${REPO_ROOT}/Resources/ThirdParty/dnsmasq/dist/dnsmasq"

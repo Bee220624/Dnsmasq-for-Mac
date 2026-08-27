@@ -13,8 +13,11 @@ dnsmasq is bundled as a **separate, unmodified executable**. No dnsmasq source o
 code is compiled or linked into any MacNetLab binary; MacNetLab controls it purely by
 writing a configuration file and managing the process.
 
-The full licence texts are shipped as `COPYING` (GPL v2) and `COPYING-v3` (GPL v3), the
-exact upstream source URL and archive digest are recorded under
-`Resources/ThirdParty/dnsmasq/`, and the build procedure is `Scripts/build-dnsmasq.sh`.
-Any patches applied would live in `Resources/ThirdParty/dnsmasq/patches/` with a written
-rationale; as of v0.1 there are none.
+The full licence texts travel inside the application bundle, as `COPYING` (GPL v2) and
+`COPYING-v3` (GPL v3) in `Contents/Resources`, and can be opened from Settings → Licenses.
+
+The corresponding source is not merely cited. Every release is packaged with the exact
+upstream source archive, the digest it was verified against, and `Scripts/build-dnsmasq.sh` —
+the script that produced the bundled binary, including its compile options. Any patches
+applied would live in `Resources/ThirdParty/dnsmasq/patches/` with a written rationale; as of
+v0.1 there are none.
