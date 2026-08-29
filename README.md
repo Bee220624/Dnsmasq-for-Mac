@@ -8,6 +8,7 @@
 ![swift](https://img.shields.io/badge/Swift-6-orange?style=flat-square&logo=swift&logoColor=white)
 ![dnsmasq](https://img.shields.io/badge/dnsmasq-2.93-blue?style=flat-square)
 ![tests](https://img.shields.io/badge/tests-278%20passing-brightgreen?style=flat-square)
+![license](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![status](https://img.shields.io/badge/status-source%20only-yellow?style=flat-square)
 
 **English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
@@ -116,8 +117,9 @@ and process management. No dnsmasq source or object code is compiled or linked i
 this project. dnsmasq is by Simon Kelley, licensed GPL v2 or v3; both licence texts ship inside
 the app bundle, and every release is packaged with the corresponding source.
 
-This project's own licence is not yet decided (`LICENSE_PENDING`) and needs a legal review before
-any real distribution.
+Dnsmasq for Mac itself is [MIT licensed](LICENSE). The two licences do not conflict, precisely
+because dnsmasq is never linked in — MIT covers the code in this repository, GPL covers the
+program it launches.
 
 ## Documentation
 

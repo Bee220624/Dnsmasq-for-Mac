@@ -159,11 +159,17 @@ check_linkage "${APP}/Contents/MacOS/${PRODUCT_NAME_BASE}" "app"
 check_linkage "${HELPER}" "helper"
 
 # ---------------------------------------------------------------------------------------
-section "GPL licence texts"
+section "Licence texts"
 # ---------------------------------------------------------------------------------------
 # The app ships a GPL program, so each copy of the app has to carry the licence with it
 # (GPL v2 §1). Checked here because the failure is silent otherwise: the app still runs, the
 # Settings links simply stop rendering, and nobody notices until it is already distributed.
+if cmp -s "${APP}/Contents/Resources/LICENSE" "${REPO_ROOT}/LICENSE"; then
+    pass "LICENSE present and identical to the repository copy"
+else
+    fail "LICENSE is missing from the bundle or differs from ${REPO_ROOT}/LICENSE"
+fi
+
 for licence in COPYING COPYING-v3; do
     bundled="${APP}/Contents/Resources/${licence}"
     vendored="${REPO_ROOT}/Resources/ThirdParty/dnsmasq/${licence}"

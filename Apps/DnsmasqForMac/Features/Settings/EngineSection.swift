@@ -90,6 +90,15 @@ struct LicensesSection: View {
 
     var body: some View {
         Section("Licenses") {
+            // Product names and licence identifiers are proper nouns, so they are verbatim
+            // rather than catalog keys — there is nothing here to translate.
+            LabeledContent {
+                Text(verbatim: "MIT")
+                    .foregroundStyle(.secondary)
+            } label: {
+                Text(verbatim: "Dnsmasq for Mac")
+            }
+
             LabeledContent("dnsmasq") {
                 Text(verbatim: "GPL v2 or GPL v3")
                     .foregroundStyle(.secondary)
@@ -113,6 +122,7 @@ struct LicensesSection: View {
             // The licence dnsmasq is under travels inside the bundle, so it is reachable
             // from here rather than only from the source archive that accompanies a release.
             HStack(spacing: 12) {
+                licenceLink("LICENSE", title: "MIT Licence Text")
                 licenceLink("COPYING", title: "GPL v2 Licence Text")
                 licenceLink("COPYING-v3", title: "GPL v3 Licence Text")
             }

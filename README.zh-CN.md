@@ -8,6 +8,7 @@
 ![swift](https://img.shields.io/badge/Swift-6-orange?style=flat-square&logo=swift&logoColor=white)
 ![dnsmasq](https://img.shields.io/badge/dnsmasq-2.93-blue?style=flat-square)
 ![tests](https://img.shields.io/badge/tests-278%20passing-brightgreen?style=flat-square)
+![license](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![status](https://img.shields.io/badge/status-source%20only-yellow?style=flat-square)
 
 [English](README.md) · **简体中文** · [日本語](README.ja.md)
@@ -107,7 +108,8 @@ App 里附带的 dnsmasq 是**独立的、未经修改的可执行文件**，通
 代码被编译或链接进本项目的二进制。dnsmasq 由 Simon Kelley 编写，采用 GPL v2 或 v3；两份许可证全文都
 随 App 包一起分发，每个发行版还会附带对应的源码。
 
-本项目自身的许可证还没定（`LICENSE_PENDING`）——正式分发前需要过一遍法务。
+Dnsmasq for Mac 自身采用 [MIT 许可证](LICENSE)。两者不冲突，正是因为 dnsmasq 从未被链接进来——
+MIT 管的是本仓库里的代码，GPL 管的是它启动的那个程序。
 
 ## 文档
 

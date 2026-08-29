@@ -131,9 +131,10 @@ reproducibility is not the same as the distribution obligation: `Scripts/package
 must ship the verified `dnsmasq-<VERSION>.tar.xz`, `Scripts/build-dnsmasq.sh`, and both
 licence texts *alongside the distributed app*, not merely cite where they came from.
 
-*What needs doing.* The specification is explicit that the final licence of Dnsmasq for Mac itself is
-**not** an implementation decision. A legal review is required before commercial
-distribution. `LICENSE_PENDING` is intentionally left in place.
+*Own licence.* Settled: Dnsmasq for Mac is MIT (`LICENSE`). MIT and GPL coexist here only
+because the boundary above holds — dnsmasq is launched, never linked. If that ever changes,
+this entry has to be reopened and the licence reconsidered, because linking GPL code into an
+MIT binary is not a thing that can be papered over in a notices file.
 
 ---
 

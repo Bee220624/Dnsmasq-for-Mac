@@ -8,6 +8,7 @@
 ![swift](https://img.shields.io/badge/Swift-6-orange?style=flat-square&logo=swift&logoColor=white)
 ![dnsmasq](https://img.shields.io/badge/dnsmasq-2.93-blue?style=flat-square)
 ![tests](https://img.shields.io/badge/tests-278%20passing-brightgreen?style=flat-square)
+![license](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![status](https://img.shields.io/badge/status-source%20only-yellow?style=flat-square)
 
 [English](README.md) · [简体中文](README.zh-CN.md) · **日本語**
@@ -113,7 +114,8 @@ dnsmasq のソースやオブジェクトコードが本プロジェクトのバ
 は Simon Kelley 氏による GPL v2 または v3 のソフトウェアで、両方のライセンス全文がアプリバンドル内に
 同梱され、リリースには対応するソースが必ず付属します。
 
-本プロジェクト自体のライセンスは未定です（`LICENSE_PENDING`）。実際に配布する前に法務確認が必要です。
+Dnsmasq for Mac 自体は [MIT ライセンス](LICENSE) です。両者が衝突しないのは、dnsmasq が一度もリンク
+されていないからです。MIT はこのリポジトリのコードを、GPL はそれが起動するプログラムを対象とします。
 
 ## ドキュメント
 

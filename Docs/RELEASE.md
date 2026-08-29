@@ -56,9 +56,8 @@ containing the verified upstream source, both licence texts, the version and dig
 `build-dnsmasq.sh`. **Both archives must be published together.** Reproducibility is not the
 same obligation as distribution: the source has to travel with the binary, not merely be cited.
 
-> The final licence of Dnsmasq for Mac itself is not an implementation decision and requires legal
-> review before any commercial distribution (`RISKS.md` R-06). `LICENSE_PENDING` is
-> intentional.
+> Dnsmasq for Mac itself is MIT (`LICENSE`); the bundled dnsmasq stays GPL. Both licence texts
+> and the dnsmasq source travel with the release — see `RISKS.md` R-06.
 
 ## Before publishing
 

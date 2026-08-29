@@ -56,10 +56,11 @@ fi
 
 echo "==> embedded ${OUTPUT}"
 
-# --- GPL licence texts --------------------------------------------------------------------
-# The app bundles dnsmasq, so every copy of the app has to carry the licence dnsmasq is
-# under (GPL v2 §1). The release ZIP ships them too, but a bundle is dragged out of a disk
-# image on its own — the licence has to travel inside the .app, not merely beside it.
+# --- Licence texts ------------------------------------------------------------------------
+# Three licences travel inside the bundle. MIT requires its notice to accompany every copy of
+# this project's own code; GPL v2 §1 requires the same for the dnsmasq that ships alongside it.
+# The release ZIP carries them too, but a bundle is dragged out of a disk image on its own —
+# a licence has to travel inside the .app, not merely beside it.
 #
 # Staged before the dnsmasq step deliberately: that step exits early on an unvendored tree,
 # and the notices sheet in Settings links to these files in every build.
@@ -72,7 +73,9 @@ for licence in COPYING COPYING-v3; do
     # so the shipped text and the text recorded against the vendored source cannot drift.
     cp "${SOURCE}" "${RESOURCES_DIR}/${licence}"
 done
-echo "==> embedded GPL licence texts"
+[[ -f "${REPO_ROOT}/LICENSE" ]] || { echo "error: missing ${REPO_ROOT}/LICENSE" >&2; exit 1; }
+cp "${REPO_ROOT}/LICENSE" "${RESOURCES_DIR}/LICENSE"
+echo "==> embedded licence texts"
 
 # --- dnsmasq -----------------------------------------------------------------------------
 DNSMASQ_SOURCE="${REPO_ROOT}/Resources/ThirdParty/dnsmasq/dist/dnsmasq"
