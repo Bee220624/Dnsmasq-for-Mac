@@ -21,17 +21,13 @@
 
 ## Why this exists
 
-Apple's own Server app used to do this. The service was dropped years before the app itself
-was discontinued in 2022, and nothing replaced it.
+I wanted to run dnsmasq on macOS. I went looking for something with an interface, and the only
+one I found was paid software.
 
-So: you walk into a datacenter with a MacBook and a USB-to-Ethernet adapter, and you want to
-hand a temporary address to a BMC or a switch management port. On macOS that means a terminal,
-`ifconfig`, a hand-written `dnsmasq.conf`, a pile of `sudo`, and remembering to clean it all up
-afterwards.
+This is a window on top of dnsmasq. It should not cost anything. So I built one and opened the
+source.
 
-This app makes that a window: pick an interface, pick a profile, press Start.
-
-## What it does
+## Current features
 
 - Adds a **temporary** IPv4 address to a chosen wired interface, and removes it on stop
 - Single-subnet DHCPv4 with a configurable pool, lease duration, and router / DNS options
@@ -39,15 +35,10 @@ This app makes that a window: pick an interface, pick a profile, press Start.
   such as `lab.test`
 - Live leases and live logs, filtered by DHCP / DNS / warning / error, exportable as text
 - Reusable profiles
-
-## What it deliberately does not do
-
-It never touches `/etc/hosts` or `/etc/dnsmasq.conf`, and never makes a permanent change to any
-macOS network service. No telemetry, no log upload, no network calls at runtime. Nothing starts
-automatically.
-
-Wi-Fi and whichever interface currently carries your internet connection are **barred** from
-DHCP — enforced in the privileged helper, not merely greyed out in the UI.
+- Changes no system configuration — not `/etc/hosts`, not `/etc/dnsmasq.conf`, nothing
+  permanent. No telemetry, no network calls at runtime, nothing starting on its own
+- Wi-Fi and the interface carrying your internet connection are barred from DHCP, enforced in
+  the privileged helper rather than just greyed out
 
 ## Screenshots
 
