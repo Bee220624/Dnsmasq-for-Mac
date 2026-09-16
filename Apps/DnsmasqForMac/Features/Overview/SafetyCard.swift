@@ -60,7 +60,7 @@ struct SafetyCard: View {
     }
 
     private var interfaceLabel: String {
-        interfaceName ?? "the selected interface"
+        interfaceName ?? String(localized: "the selected interface")
     }
 
     private var confirmationBinding: Binding<Bool> {

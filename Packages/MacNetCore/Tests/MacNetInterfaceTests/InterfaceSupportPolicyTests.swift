@@ -127,12 +127,12 @@ struct InterfaceSupportPolicyTests {
 
     // MARK: - Default selection
 
-    @Test("prefers the interface used last time")
-    func prefersRemembered() {
+    @Test("multiple live interfaces require a choice even if one was remembered")
+    func refusesAmbiguousRememberedSelection() {
         let choice = InterfaceSupportPolicy.defaultSelection(
             from: [descriptor("en7"), descriptor("en5")], preferring: "en5"
         )
-        #expect(choice?.bsdName == "en5")
+        #expect(choice == nil)
     }
 
     @Test("falls back to a connected Ethernet when the remembered one is gone")
@@ -145,13 +145,20 @@ struct InterfaceSupportPolicyTests {
         #expect(choice?.bsdName == "en7")
     }
 
-    @Test("selects a disconnected Ethernet when nothing has a link")
-    func selectsDisconnectedEthernet() {
-        // The device may simply not be powered on yet, so Link Down is not disqualifying.
+    @Test("does not auto-select a disconnected Ethernet")
+    func refusesDisconnectedEthernet() {
         let choice = InterfaceSupportPolicy.defaultSelection(
             from: [descriptor("en5", linkActive: false)], preferring: nil
         )
-        #expect(choice?.bsdName == "en5")
+        #expect(choice == nil)
+    }
+
+    @Test("a remembered disconnected Thunderbolt interface cannot win over the live cable")
+    func connectedCableBeatsRememberedInterface() {
+        let choice = InterfaceSupportPolicy.defaultSelection(
+            from: [descriptor("en1", linkActive: false), descriptor("en7")], preferring: "en1"
+        )
+        #expect(choice?.bsdName == "en7")
     }
 
     @Test("never auto-selects Wi-Fi, even as the only interface present")

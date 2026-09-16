@@ -38,13 +38,6 @@ extension RuntimeStatePhase {
         }
     }
 
-    /// True while a transition is in flight, when Start/Stop must not be re-entered.
-    var isTransitioning: Bool {
-        switch self {
-        case .preflighting, .starting, .stopping, .recovering: true
-        case .stopped, .running, .failed: false
-        }
-    }
 }
 
 /// Always-visible summary strip at the top of the main window.
@@ -64,11 +57,11 @@ struct GlobalStatusBar: View {
             // with an explicit em dash keeps the layout honest rather than hiding them.
             summaryField(
                 title: "Profile",
-                value: Text(verbatim: library.draft?.working.name ?? "—")
+                value: Text(verbatim: session.activeSession?.profileSnapshot.name ?? library.draft?.working.name ?? "—")
             )
             summaryField(
                 title: "Interface",
-                value: Text(verbatim: interfaces.selected?.bsdName ?? "—")
+                value: Text(verbatim: session.activeSession?.interfaceSnapshot.bsdName ?? interfaces.selected?.bsdName ?? "—")
             )
             summaryField(title: "Started", value: startedAtText)
 
@@ -114,11 +107,11 @@ struct GlobalStatusBar: View {
 
     @ViewBuilder
     private var startStopButton: some View {
-        if session.isRunning {
+        if session.activeSession != nil || session.lastFailure?.code == .cleanupFailed {
             Button {
                 Task { await session.stop() }
             } label: {
-                Label("Stop", systemImage: "stop.fill")
+                Label(session.activeSession == nil ? "Clean Up" : "Stop", systemImage: "stop.fill")
                     .frame(minWidth: 64)
             }
             .buttonStyle(.borderedProminent)

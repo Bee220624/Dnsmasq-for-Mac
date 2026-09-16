@@ -52,13 +52,10 @@ struct OverviewView: View {
                     Task { await runPreflight() }
                 }
 
-                PagePlaceholder(
-                    systemImage: "slider.horizontal.3",
-                    title: "DHCP and DNS settings",
-                    message: "Editable DHCP and DNS forms are added in a later phase. The values from the selected profile are used as-is.",
-                    identifier: "overview.pendingCards"
-                )
-                .frame(minHeight: 120)
+                if let profile = library.workingProfile {
+                    NetworkSettingsCard(profile: profile, isLocked: isLocked)
+                        .id(library.selectedProfileID)
+                }
             }
             .padding(20)
             .frame(maxWidth: 900, alignment: .leading)
@@ -67,10 +64,6 @@ struct OverviewView: View {
         .accessibilityIdentifier("overview.page")
         // The specification: a confirmation given about one interface must never carry over to
         // another, and changing the pool changes what "this network" means.
-        .onChange(of: interfaces.selectedBSDName) { session.resetIsolationConfirmation() }
-        .onChange(of: library.draft?.working.dhcpConfiguration) {
-            session.resetIsolationConfirmation()
-        }
     }
 
     // MARK: - State
@@ -78,7 +71,7 @@ struct OverviewView: View {
     /// Configuration is read-only while anything is running or transitioning: the values are
     /// what the running session was started with, and editing them would misrepresent it.
     private var isLocked: Bool {
-        session.isRunning || session.isBusy
+        session.activeSession != nil || session.isBusy
     }
 
     private var canValidate: Bool {

@@ -35,6 +35,28 @@
         }
       }
     },
+    "Add DNS record": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 DNS 记录"
+          }
+        }
+      }
+    },
+    "Add temporary IPv4 address": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加临时 IPv4 地址"
+          }
+        }
+      }
+    },
     "Addresses": {
       "extractionState": "manual",
       "localizations": {
@@ -64,6 +86,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "地址配置"
+          }
+        }
+      }
+    },
+    "Advertise router": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向客户端提供网关"
+          }
+        }
+      }
+    },
+    "Advertise this Mac as DNS": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向客户端提供本机 DNS"
           }
         }
       }
@@ -134,6 +178,17 @@
         }
       }
     },
+    "Authoritative DHCP (isolated network only)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "权威 DHCP（仅限隔离网络）"
+          }
+        }
+      }
+    },
     "Auto-scroll": {
       "extractionState": "manual",
       "localizations": {
@@ -141,6 +196,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "自动滚动"
+          }
+        }
+      }
+    },
+    "Automatic cable detection": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动识别已连接的网线"
           }
         }
       }
@@ -262,6 +328,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "请选择连接到设备网络的网卡。"
+          }
+        }
+      }
+    },
+    "Choose wired adapter": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择有线网卡"
+          }
+        }
+      }
+    },
+    "Clean Up": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清理残留"
           }
         }
       }
@@ -431,6 +519,17 @@
         }
       }
     },
+    "Custom DNS": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定义 DNS"
+          }
+        }
+      }
+    },
     "DHCP": {
       "extractionState": "manual",
       "localizations": {
@@ -438,6 +537,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "DHCP"
+          }
+        }
+      }
+    },
+    "DHCP Server": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DHCP 服务器"
           }
         }
       }
@@ -482,6 +592,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "DNS"
+          }
+        }
+      }
+    },
+    "DNS IPv4 addresses (comma separated)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DNS IPv4 地址（英文逗号分隔）"
+          }
+        }
+      }
+    },
+    "DNS Server": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DNS 服务器"
           }
         }
       }
@@ -581,6 +713,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "开发版本。helper 执行与正式版本完全相同的调用方校验。"
+          }
+        }
+      }
+    },
+    "Devices appear after requesting DHCP. A BMC with a fixed IP will not appear here. Check link and power; use the server's local console or documented BMC settings to find a fixed IP. Do not reset a production BMC just to obtain a lease.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设备请求 DHCP 后才会显示。固定 IP 的 BMC 不会出现在这里。请检查链路和供电，并通过服务器本地控制台或已有 BMC 配置记录确认固定 IP。不要为了获取租约而重置生产 BMC。"
           }
         }
       }
@@ -728,6 +871,28 @@
         }
       }
     },
+    "Enable DHCP": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用 DHCP"
+          }
+        }
+      }
+    },
+    "Enable DNS": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用 DNS"
+          }
+        }
+      }
+    },
     "Enable Dnsmasq for Mac, then return here.": {
       "extractionState": "manual",
       "localizations": {
@@ -735,6 +900,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "启用 Dnsmasq for Mac 后返回此处。"
+          }
+        }
+      }
+    },
+    "Enabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用"
           }
         }
       }
@@ -926,6 +1102,17 @@
         }
       }
     },
+    "IPv4": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IPv4"
+          }
+        }
+      }
+    },
     "IPv4 configuration valid": {
       "extractionState": "manual",
       "localizations": {
@@ -1058,6 +1245,17 @@
         }
       }
     },
+    "Lease duration (seconds)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "租约时长（秒）"
+          }
+        }
+      }
+    },
     "Leases": {
       "extractionState": "manual",
       "localizations": {
@@ -1065,6 +1263,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "租约"
+          }
+        }
+      }
+    },
+    "Leave the router option off for direct BMC access. This app does not share the Mac's internet connection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直连 BMC 时请保持网关选项关闭。本应用不共享 Mac 的互联网连接。"
           }
         }
       }
@@ -1102,6 +1311,17 @@
         }
       }
     },
+    "Local Records Only (offline)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅本地记录（离线可用）"
+          }
+        }
+      }
+    },
     "Local domain": {
       "extractionState": "manual",
       "localizations": {
@@ -1120,6 +1340,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "本地记录"
+          }
+        }
+      }
+    },
+    "Log DNS queries": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记录 DNS 查询日志"
           }
         }
       }
@@ -1168,6 +1399,28 @@
         }
       }
     },
+    "Mac Address": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac 网络地址"
+          }
+        }
+      }
+    },
+    "Mac IPv4 address": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac IPv4 地址"
+          }
+        }
+      }
+    },
     "Make another profile the default first": {
       "extractionState": "manual",
       "localizations": {
@@ -1175,6 +1428,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "请先将另一个配置设为默认"
+          }
+        }
+      }
+    },
+    "Manually selected interface": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手动选择网口"
+          }
+        }
+      }
+    },
+    "Multiple wired connections detected. Choose the adapter connected to your BMC below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测到多个已连接的有线网口，请在下方选择接入目标 BMC 的网卡。"
           }
         }
       }
@@ -1366,6 +1641,50 @@
         }
       }
     },
+    "One connected wired adapter detected and selected. Verify that the cable goes to the intended BMC before starting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已检测到一个建立链路的有线网口并自动选中。启动前请核对网线另一端是目标 BMC。"
+          }
+        }
+      }
+    },
+    "Open BMC (HTTP)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 BMC（HTTP）"
+          }
+        }
+      }
+    },
+    "Open BMC (HTTPS)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 BMC（HTTPS）"
+          }
+        }
+      }
+    },
+    "Open BMC web interface (HTTPS)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 BMC 管理网页（HTTPS）"
+          }
+        }
+      }
+    },
     "Open Login Items & Extensions, then enable Dnsmasq for Mac. This window updates on its own once you do.": {
       "extractionState": "manual",
       "localizations": {
@@ -1428,6 +1747,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "暂停"
+          }
+        }
+      }
+    },
+    "Pool end": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "地址池结束 IP"
+          }
+        }
+      }
+    },
+    "Pool start": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "地址池起始 IP"
           }
         }
       }
@@ -1608,6 +1949,17 @@
         }
       }
     },
+    "Remove DNS record": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除 DNS 记录"
+          }
+        }
+      }
+    },
     "Remove Helper": {
       "extractionState": "manual",
       "localizations": {
@@ -1725,6 +2077,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "还原"
+          }
+        }
+      }
+    },
+    "Router IPv4 address": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网关 IPv4 地址"
           }
         }
       }
@@ -2004,6 +2367,28 @@
         }
       }
     },
+    "Subnet mask": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "子网掩码"
+          }
+        }
+      }
+    },
+    "Subnet prefix": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "子网前缀"
+          }
+        }
+      }
+    },
     "System": {
       "extractionState": "manual",
       "localizations": {
@@ -2011,6 +2396,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "系统"
+          }
+        }
+      }
+    },
+    "System DNS": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统 DNS"
           }
         }
       }
@@ -2092,6 +2488,28 @@
         }
       }
     },
+    "The interface is locked for this session.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务运行期间已锁定网口。"
+          }
+        }
+      }
+    },
+    "The manually selected adapter is no longer available. Choose another adapter or resume automatic detection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手动选择的网卡已不可用。请选择其他网卡，或恢复自动识别。"
+          }
+        }
+      }
+    },
     "The notices file is missing from this build.": {
       "extractionState": "manual",
       "localizations": {
@@ -2165,6 +2583,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "该接口承载着本机的互联网连接。"
+          }
+        }
+      }
+    },
+    "This is the Mac's address, not the BMC's address. Stop removes only the address added by this app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这里填写 Mac 的地址，而非 BMC 的地址。停止时只移除本应用添加的临时地址。"
+          }
+        }
+      }
+    },
+    "This manually selected adapter has no link. Check the cable and BMC power, or use automatic detection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手动选择的网卡尚未建立链路。请检查网线和 BMC 供电，或恢复自动识别。"
           }
         }
       }
@@ -2279,6 +2719,39 @@
         }
       }
     },
+    "Upstream DNS": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上游 DNS"
+          }
+        }
+      }
+    },
+    "Use DHCP for a BMC configured to request an address. For a known fixed IP, turn DHCP off and put the Mac in the same subnet; keep DNS in Local Records Only mode.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BMC 已启用自动获取地址时使用 DHCP。若已知 BMC 固定 IP，请关闭 DHCP，为 Mac 设置同网段地址，并将 DNS 保持为“仅本地记录”。"
+          }
+        }
+      }
+    },
+    "Use automatic detection": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复自动识别"
+          }
+        }
+      }
+    },
     "VPN": {
       "extractionState": "manual",
       "localizations": {
@@ -2356,6 +2829,17 @@
         }
       }
     },
+    "Waiting for a wired connection. Connect the Ethernet cable to a powered BMC; the connected adapter will be selected automatically. You can also choose an adapter manually below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待网线连接。请用网线连接已供电的 BMC，建立链路后会自动选中对应网口。也可以在下方手动选择网卡。"
+          }
+        }
+      }
+    },
     "Waiting for your approval": {
       "extractionState": "manual",
       "localizations": {
@@ -2429,6 +2913,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS"
+          }
+        }
+      }
+    },
+    "the selected interface": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所选网口"
           }
         }
       }

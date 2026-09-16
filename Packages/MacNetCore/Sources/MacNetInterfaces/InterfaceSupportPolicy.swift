@@ -120,30 +120,20 @@ public enum InterfaceSupportPolicy {
         }
     }
 
-    /// Picks a sensible default selection, or `nil` when nothing is safe to preselect
-    ///.
-    ///
-    /// The rules that matter are the negative ones: never auto-select Wi-Fi, never auto-select
-    /// the default-route interface, and never auto-start. Preferring a previously used
-    /// interface is a convenience; refusing to guess when nothing qualifies is the safety
-    /// property.
+    /// Only a unique live wired link provides enough evidence for an automatic selection.
+    /// A remembered BSD name says nothing about where today's cable is connected.
     public static func defaultSelection(
         from descriptors: [NetworkInterfaceDescriptor],
-        preferring lastUsedBSDName: String?
+        preferring _: String? = nil
     ) -> NetworkInterfaceDescriptor? {
-        let usable = descriptors.filter(\.isSupported)
+        let connected = connectedEthernetInterfaces(from: descriptors)
+        return connected.count == 1 ? connected.first : nil
+    }
 
-        if let lastUsedBSDName,
-           let remembered = usable.first(where: { $0.bsdName == lastUsedBSDName }) {
-            return remembered
-        }
-
-        // An adapter with a live link is almost certainly the one just plugged in.
-        if let active = usable.first(where: { $0.kind == .ethernet && $0.isLinkActive }) {
-            return active
-        }
-        // Otherwise the first permitted Ethernet: the device may simply not be powered yet.
-        return usable.first { $0.kind == .ethernet }
+    public static func connectedEthernetInterfaces(
+        from descriptors: [NetworkInterfaceDescriptor]
+    ) -> [NetworkInterfaceDescriptor] {
+        sorted(descriptors.filter { $0.isSupported && $0.kind == .ethernet && $0.isUp && $0.isLinkActive })
     }
 }
 

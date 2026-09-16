@@ -15,6 +15,13 @@ enum RuntimeStatePhase: String, Sendable, Equatable, CaseIterable {
     case stopping
     case recovering
     case failed
+
+    var isTransitioning: Bool {
+        switch self {
+        case .preflighting, .starting, .stopping, .recovering: true
+        case .stopped, .running, .failed: false
+        }
+    }
 }
 
 /// Root observable state for the app process.

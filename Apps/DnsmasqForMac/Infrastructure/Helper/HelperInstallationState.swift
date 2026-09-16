@@ -24,12 +24,14 @@ enum HelperInstallationState: Equatable, Sendable {
     /// `SMAppService` reported a status this build does not know how to interpret.
     case unknown(rawValue: Int)
 
-    init(status: SMAppService.Status) {
+    init(status: SMAppService.Status, bundledHelperAvailable: Bool = false) {
         switch status {
         case .notRegistered: self = .notRegistered
         case .enabled: self = .enabled
         case .requiresApproval: self = .requiresApproval
-        case .notFound: self = .bundleIncomplete
+        case .notFound:
+            // A missing service registration is not proof that files are missing from disk.
+            self = bundledHelperAvailable ? .notRegistered : .bundleIncomplete
         @unknown default: self = .unknown(rawValue: status.rawValue)
         }
     }

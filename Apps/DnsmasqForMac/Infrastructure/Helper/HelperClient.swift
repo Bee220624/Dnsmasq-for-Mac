@@ -9,7 +9,7 @@ import ServiceManagement
 ///
 /// An `actor` because the connection and its state are shared mutable state touched from
 /// several places — status polling, user-initiated install, and request calls.
-actor HelperClient {
+actor HelperClient: SessionClient {
 
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "helper-client")
 
@@ -40,7 +40,14 @@ actor HelperClient {
     }
 
     func installationState() -> HelperInstallationState {
-        HelperInstallationState(status: appService.status)
+        let library = Bundle.main.bundleURL.appending(path: "Contents/Library")
+        let plist = library.appending(path: "LaunchDaemons/\(daemonPlistName)")
+        let executable = library.appending(path: "HelperTools/\(machServiceName)")
+        return HelperInstallationState(
+            status: appService.status,
+            bundledHelperAvailable: FileManager.default.fileExists(atPath: plist.path)
+                && FileManager.default.isExecutableFile(atPath: executable.path)
+        )
     }
 
     /// Registers the daemon with the system.

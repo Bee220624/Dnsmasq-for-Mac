@@ -10,12 +10,13 @@ import SwiftUI
 struct LeasesView: View {
     @Environment(LeaseMonitor.self) private var monitor
     @Environment(SessionController.self) private var session
+    @Environment(\.openURL) private var openURL
 
     @State private var selection: DHCPLease.ID?
 
     var body: some View {
         Group {
-            if !session.isRunning {
+            if !session.isRunning || session.activeSession?.profileSnapshot.dhcpConfiguration.enabled != true {
                 notRunningState
             } else if monitor.leases.isEmpty {
                 waitingState
@@ -50,7 +51,7 @@ struct LeasesView: View {
         } description: {
             // Distinct from "not running" on purpose: here the service *is* up, so the next
             // thing to check is the cable and whether the device has power — not Dnsmasq for Mac.
-            Text("The service is running. Devices will appear here as they request an address.")
+            Text("Devices appear after requesting DHCP. A BMC with a fixed IP will not appear here. Check link and power; use the server's local console or documented BMC settings to find a fixed IP. Do not reset a production BMC just to obtain a lease.")
         }
         .accessibilityIdentifier("leases.emptyWaiting")
     }
@@ -66,8 +67,9 @@ struct LeasesView: View {
                 .width(min: 80, ideal: 90)
 
                 TableColumn("IP Address") { lease in
-                    Text(verbatim: lease.ipv4Address.description)
-                        .monospacedDigit()
+                    Button(lease.ipv4Address.description) { openBMC(lease, scheme: "https") }
+                        .buttonStyle(.link).monospacedDigit()
+                        .help("Open BMC web interface (HTTPS)")
                 }
                 .width(min: 110, ideal: 130)
 
@@ -166,6 +168,11 @@ struct LeasesView: View {
         if selected.isEmpty {
             EmptyView()
         } else {
+            if selected.count == 1, let lease = selected.first {
+                Button("Open BMC (HTTPS)") { openBMC(lease, scheme: "https") }
+                Button("Open BMC (HTTP)") { openBMC(lease, scheme: "http") }
+                Divider()
+            }
             Button("Copy IP Address") {
                 copy(selected.map(\.ipv4Address.description))
             }
@@ -196,6 +203,11 @@ struct LeasesView: View {
         guard !values.isEmpty else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(values.joined(separator: "\n"), forType: .string)
+    }
+
+    private func openBMC(_ lease: DHCPLease, scheme: String) {
+        guard let url = URL(string: "\(scheme)://\(lease.ipv4Address)/") else { return }
+        openURL(url)
     }
 
     // MARK: - Malformed lines

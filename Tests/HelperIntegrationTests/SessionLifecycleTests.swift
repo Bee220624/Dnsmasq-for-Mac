@@ -91,6 +91,139 @@ struct SessionLifecycleTests {
 
     // MARK: - Start: the happy path
 
+    @Test("preflight while running preserves the active session and its Stop path")
+    func runningPreflightPreservesSession() async throws {
+        let h = makeHarness()
+        defer { cleanUp(h) }
+        let session = try await h.coordinator.start(request: makeRequest())
+        let report = await h.coordinator.preflight(request: makeRequest())
+        #expect(report.issues.contains { $0.id == "session.alreadyRunning" })
+        #expect(await h.coordinator.runtimeStatus() == .running(session))
+        try await h.coordinator.stop(sessionID: session.id)
+        #expect(h.process.terminateCount == 1)
+        #expect(h.alias.isBalanced)
+    }
+
+    @Test("a delayed Stop for another session cannot erase the current session")
+    func wrongSessionStopPreservesCurrent() async throws {
+        let h = makeHarness()
+        defer { cleanUp(h) }
+        let session = try await h.coordinator.start(request: makeRequest())
+        await #expect(throws: ServiceFailure.self) { try await h.coordinator.stop(sessionID: UUID()) }
+        #expect(await h.coordinator.runtimeStatus() == .running(session))
+        #expect(h.journal.read()?.sessionID == session.id)
+        #expect(h.process.terminateCount == 0)
+        try await h.coordinator.stop(sessionID: session.id)
+    }
+
+    @Test("failed process termination retains the journal and Stop can be retried")
+    func stopRetriesProcessFailure() async throws {
+        let h = makeHarness()
+        defer { cleanUp(h) }
+        let session = try await h.coordinator.start(request: makeRequest())
+        h.process.terminateFailure = ServiceFailure(code: .processStopFailed, title: "Stop failed", message: "still running")
+        let failure = await #expect(throws: ServiceFailure.self) { try await h.coordinator.stop(sessionID: session.id) }
+        #expect(failure?.code == .cleanupFailed)
+        #expect(h.journal.read()?.dnsmasqPID == session.dnsmasqPID)
+        h.process.terminateFailure = nil
+        try await h.coordinator.stop(sessionID: session.id)
+        #expect(h.journal.read() == nil)
+        #expect(h.alias.isBalanced)
+    }
+
+    @Test("failed alias cleanup survives recovery and blocks another Start until resolved")
+    func failedCleanupIsRetryable() async throws {
+        let h = makeHarness()
+        defer { cleanUp(h) }
+        let session = try await h.coordinator.start(request: makeRequest())
+        h.alias.removeFailure = ServiceFailure(code: .cleanupFailed, title: "Alias remains", message: "still configured")
+        await #expect(throws: ServiceFailure.self) { try await h.coordinator.stop(sessionID: session.id) }
+        let recovery = await h.coordinator.recoverStaleState()
+        #expect(recovery.outcome == .cleanupIncomplete)
+        #expect(h.journal.read()?.aliasAddedByApp == true)
+        await #expect(throws: ServiceFailure.self) { try await h.coordinator.start(request: makeRequest()) }
+        #expect(h.process.launchCount == 1)
+        h.alias.removeFailure = nil
+        try await h.coordinator.stop(sessionID: session.id)
+        #expect(h.journal.read() == nil)
+        #expect(h.alias.isBalanced)
+    }
+
+    @Test("rollback cleanup failure is surfaced and its recovery record survives")
+    func rollbackPreservesFailedCleanup() async throws {
+        let h = makeHarness()
+        defer { cleanUp(h) }
+        h.process.launchFailure = ServiceFailure(code: .processStartFailed, title: "Launch failed", message: "could not launch")
+        h.alias.removeFailure = ServiceFailure(code: .cleanupFailed, title: "Alias remains", message: "still configured")
+        let failure = await #expect(throws: ServiceFailure.self) { try await h.coordinator.start(request: makeRequest()) }
+        #expect(failure?.code == .cleanupFailed)
+        #expect(h.journal.read()?.state == .cleanupRequired)
+        h.alias.removeFailure = nil
+        #expect(await h.coordinator.recoverStaleState().outcome == .cleanedUpAfterDeadProcess)
+        #expect(h.alias.isBalanced)
+    }
+
+    @Test("a restarted helper restores a full running session, leases, and Stop")
+    func restartedHelperRestoresSession() async throws {
+        let h = makeHarness()
+        defer { cleanUp(h) }
+        let session = try await h.coordinator.start(request: makeRequest())
+        let journal = try #require(h.journal.read())
+        try "0 00:11:22:33:44:55 192.168.50.10 bmc01 *\n".write(toFile: journal.leasePath, atomically: true, encoding: .utf8)
+        let restarted = SessionCoordinator(
+            runtimeFiles: h.runtimeFiles, journalStore: h.journal,
+            fileLock: RuntimeFileLock(path: "\(h.root)/lock"), enumerator: h.enumerator,
+            aliasManager: h.alias, portProbe: h.ports, processController: h.process,
+            executableVerifier: h.verifier, commandRunner: h.commands
+        )
+        let recovery = await restarted.recoverStaleState()
+        #expect(recovery.recoveredSession == session)
+        #expect(await restarted.runtimeStatus() == .running(session))
+        #expect(await restarted.leaseSnapshot(sessionID: session.id).leases.count == 1)
+        try await restarted.stop(sessionID: session.id)
+        #expect(h.process.terminateCount == 1)
+        #expect(h.alias.isBalanced)
+    }
+
+    @Test("a concurrently configured existing alias is never claimed or removed")
+    func respectsAliasOwnershipRace() async throws {
+        let h = makeHarness()
+        defer { cleanUp(h) }
+        h.alias.aliasAlreadyPresent = true
+        let session = try await h.coordinator.start(request: makeRequest())
+        #expect(!session.aliasAddedByApp)
+        try await h.coordinator.stop(sessionID: session.id)
+        #expect(h.alias.removedAliases.isEmpty)
+    }
+
+    @Test("starting refuses a subnet already connected through another adapter")
+    func rejectsOverlappingSubnet() async throws {
+        let h = makeHarness(interfaces: [TestInterface.ethernet(), TestInterface.ethernet("en8", addresses: [("192.168.50.77", "255.255.255.0")])])
+        defer { cleanUp(h) }
+        let report = await h.coordinator.preflight(request: makeRequest())
+        #expect(report.issues.contains { $0.id == "interface.subnetOverlap.en8" })
+        await #expect(throws: ServiceFailure.self) { try await h.coordinator.start(request: makeRequest()) }
+        #expect(h.alias.addedAliases.isEmpty)
+        #expect(h.process.launchCount == 0)
+    }
+
+    @Test("unplugging the adapter stops the engine without automatically restarting")
+    func adapterRemovalStopsSession() async throws {
+        let h = makeHarness()
+        defer { cleanUp(h) }
+        _ = try await h.coordinator.start(request: makeRequest())
+        h.enumerator.set([])
+        try await Task.sleep(for: .milliseconds(1400))
+        #expect(h.process.terminateCount == 1)
+        #expect(h.alias.isBalanced)
+        #expect(h.journal.read() == nil)
+        guard case .failed(let failure) = await h.coordinator.runtimeStatus() else {
+            Issue.record("interface loss must be visible"); return
+        }
+        #expect(failure.code == .interfaceNotFound)
+        #expect(h.process.launchCount == 1)
+    }
+
     @Test("a successful start adds the alias, launches, and records a running session")
     func startSucceeds() async throws {
         let harness = makeHarness()

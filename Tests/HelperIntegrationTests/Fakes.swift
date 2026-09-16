@@ -216,6 +216,7 @@ final class FakeAliasManager: InterfaceAliasManaging, @unchecked Sendable {
 
     var addFailure: ServiceFailure?
     var removeFailure: ServiceFailure?
+    var aliasAlreadyPresent = false
 
     /// True when everything added has also been removed.
     ///
@@ -229,13 +230,16 @@ final class FakeAliasManager: InterfaceAliasManaging, @unchecked Sendable {
         }
     }
 
+    @discardableResult
     func addAlias(
         interface: String,
         address: IPv4Address,
         prefixLength: Int
-    ) async throws(ServiceFailure) {
+    ) async throws(ServiceFailure) -> Bool {
         if let addFailure { throw addFailure }
+        if aliasAlreadyPresent { return false }
         lock.withLock { addedAliases.append((interface, address)) }
+        return true
     }
 
     func removeAlias(interface: String, address: IPv4Address) async throws(ServiceFailure) {

@@ -45,6 +45,9 @@ actor SessionCoordinator {
     // MARK: - State
 
     private var state: RuntimeState = .stopped
+    private var activeSession: ActiveSession?
+    // Actors are reentrant across await; transitions need an explicit gate as well as flock.
+    private var operationInProgress = false
 
     /// Notified when a session ends without being asked to.
     private var unexpectedExitHandler: (@Sendable (UnexpectedExitReport) -> Void)?
@@ -85,11 +88,6 @@ actor SessionCoordinator {
 
     func runtimeStatus() -> RuntimeState { state }
 
-    private var activeSession: ActiveSession? {
-        if case .running(let session) = state { return session }
-        return nil
-    }
-
     /// Verifies the bundled engine and summarises it for display.
     func verifyEngine() async throws(ServiceFailure) -> HelperServiceInfo.EngineVerification {
         let verification = try await executableVerifier.verifyBundledDnsmasq()
@@ -104,8 +102,16 @@ actor SessionCoordinator {
     // MARK: - Preflight
 
     func preflight(request: SessionStartRequest) async -> PreflightReport {
-        state = .preflighting
-        defer { state = activeSession.map(RuntimeState.running) ?? .stopped }
+        guard !operationInProgress else {
+            return PreflightReport(
+                checks: [], issues: [PreflightIssue(
+                    id: "session.busy", severity: .error,
+                    title: "Operation In Progress", message: "Wait for the current operation to finish."
+                )], generatedAt: clock()
+            )
+        }
+        operationInProgress = true
+        defer { operationInProgress = false }
 
         let runner = PreflightRunner(
             enumerator: enumerator,
@@ -123,6 +129,9 @@ actor SessionCoordinator {
 
     /// Starts a session, or leaves the machine exactly as it was.
     func start(request: SessionStartRequest) async throws(ServiceFailure) -> ActiveSession {
+        guard !operationInProgress else { throw Self.busyFailure }
+        operationInProgress = true
+        defer { operationInProgress = false }
         // The lock file lives inside the runtime root, so the root has to exist before the
         // lock can be taken. On a clean machine it does not — which would make the very first
         // Start fail with a confusing "no such file" from the lock rather than doing anything.
@@ -175,6 +184,8 @@ actor SessionCoordinator {
 
         // ---- Step 3: is something already running? -----------------------------------------
         try await refuseIfSessionActive()
+        state = .starting
+        defer { if case .starting = state { state = .stopped } }
 
         // ---- Step 4–5: identity and workspace ----------------------------------------------
         let validated: ValidatedSessionRequest
@@ -189,6 +200,13 @@ actor SessionCoordinator {
         }
 
         let live = try requireUsableInterface(named: validated.interfaceBSDName)
+        if let issue = InterfaceAddressPolicy.issues(
+            configuration: profile.interfaceConfiguration, selected: live,
+            interfaces: enumerator.enumerateInterfaces()
+        ).first(where: { $0.severity == .error }) {
+            throw ServiceFailure(code: .aliasConfigurationFailed, title: issue.title,
+                                 message: issue.message, recoverySuggestion: issue.recoverySuggestion)
+        }
         let verification = try await executableVerifier.verifyBundledDnsmasq()
 
         let sessionID = UUID()
@@ -265,16 +283,18 @@ actor SessionCoordinator {
             // ---- Step 11: the alias ---------------------------------------------------------
             let alreadyPresent = live.hasAddress(validated.serverIPv4)
             if profile.interfaceConfiguration.addTemporaryIPv4Alias && !alreadyPresent {
-                try await aliasManager.addAlias(
+                let added = try await aliasManager.addAlias(
                     interface: validated.interfaceBSDName,
                     address: validated.serverIPv4,
                     prefixLength: validated.subnet.prefixLength
                 )
-                rollback.add(.removeAlias(
-                    interface: validated.interfaceBSDName, address: validated.serverIPv4
-                ))
-                journal = try journalStore.transition(journal, to: .aliasAdded, now: clock()) {
-                    $0.aliasAddedByApp = true
+                if added {
+                    rollback.add(.removeAlias(
+                        interface: validated.interfaceBSDName, address: validated.serverIPv4
+                    ))
+                    journal = try journalStore.transition(journal, to: .aliasAdded, now: clock()) {
+                        $0.aliasAddedByApp = true
+                    }
                 }
             }
 
@@ -303,10 +323,6 @@ actor SessionCoordinator {
 
             // ---- Steps 16–18: commit --------------------------------------------------------
             let startedAt = clock()
-            journal = try journalStore.transition(journal, to: .running, now: startedAt) {
-                $0.startedAt = startedAt
-            }
-
             let session = ActiveSession(
                 id: sessionID,
                 profileSnapshot: profile,
@@ -317,6 +333,11 @@ actor SessionCoordinator {
                 dnsmasqPID: launched.processIdentifier,
                 aliasAddedByApp: journal.aliasAddedByApp
             )
+            journal = try journalStore.transition(journal, to: .running, now: startedAt) {
+                $0.startedAt = startedAt
+                $0.activeSession = session
+            }
+            activeSession = session
             state = .running(session)
             startWatchingForUnexpectedExit(session: session, digest: verification.sha256)
             await startWatchingLeases(sessionID: sessionID, path: paths.leaseFile)
@@ -332,21 +353,33 @@ actor SessionCoordinator {
 
         } catch let failure as ServiceFailure {
             // ---- Step 15.2: unwind, in reverse -------------------------------------------
-            await rollback.execute(
+            let cleanupWarnings = await rollback.execute(
                 aliasManager: aliasManager,
                 processController: processController,
                 runtimeFiles: runtimeFiles,
                 journalStore: journalStore
             )
+            if !cleanupWarnings.isEmpty {
+                let cleanup = Self.cleanupFailure(cleanupWarnings, original: failure)
+                state = .failed(cleanup)
+                throw cleanup
+            }
+            activeSession = nil
             state = .stopped
             throw failure
         } catch {
-            await rollback.execute(
+            let cleanupWarnings = await rollback.execute(
                 aliasManager: aliasManager,
                 processController: processController,
                 runtimeFiles: runtimeFiles,
                 journalStore: journalStore
             )
+            if !cleanupWarnings.isEmpty {
+                let cleanup = Self.cleanupFailure(cleanupWarnings)
+                state = .failed(cleanup)
+                throw cleanup
+            }
+            activeSession = nil
             state = .stopped
             throw ServiceFailure.internalError("\(error)")
         }
@@ -369,8 +402,28 @@ actor SessionCoordinator {
             }
             // A journal describing work that is no longer running must be cleaned up before
             // anything new starts, or its alias would be orphaned forever.
-            _ = await recoverStaleState()
+            let report = await performRecovery()
+            guard report.outcome != .cleanupIncomplete else {
+                throw Self.cleanupFailure(report.warnings)
+            }
         }
+    }
+
+    private static var busyFailure: ServiceFailure {
+        ServiceFailure(code: .invalidRequest, title: "Operation In Progress",
+                       message: "Wait for the current operation to finish.", isRetryable: true)
+    }
+
+    private static func cleanupFailure(
+        _ warnings: [String], original: ServiceFailure? = nil
+    ) -> ServiceFailure {
+        ServiceFailure(
+            code: .cleanupFailed, title: "Cleanup Required",
+            message: warnings.joined(separator: "\n"),
+            recoverySuggestion: "Reconnect the adapter if needed, then choose Stop or Clean Up to retry."
+                + (original?.recoverySuggestion.map { "\n\($0)" } ?? ""),
+            technicalDetails: original.map { "\($0.title): \($0.message)" }, isRetryable: true
+        )
     }
 
     private static func alreadyRunning(on interface: String) -> ServiceFailure {
@@ -524,6 +577,9 @@ actor SessionCoordinator {
     // MARK: - Stop
 
     func stop(sessionID: UUID) async throws(ServiceFailure) {
+        guard !operationInProgress else { throw Self.busyFailure }
+        operationInProgress = true
+        defer { operationInProgress = false }
         try runtimeFiles.prepareRuntimeRoot()
 
         do {
@@ -538,74 +594,76 @@ actor SessionCoordinator {
     }
 
     private func performStop(sessionID: UUID) async throws(ServiceFailure) {
-        guard let session = activeSession, session.id == sessionID else {
-            // Stopping something that is not running is not an error: the app may be retrying
-            // after a dropped connection, and the desired end state has already been reached.
-            logger.log("stop requested for a session that is not running; nothing to do")
+        let stored = journalStore.read()
+        if let currentID = activeSession?.id ?? stored?.sessionID, currentID != sessionID {
+            throw ServiceFailure.invalidRequest("The requested session is not the current session.")
+        }
+        guard let journal = stored else {
+            guard activeSession == nil else {
+                throw Self.cleanupFailure(["The active session journal is missing. Restart the helper to recover."])
+            }
             state = .stopped
-            journalStore.clear()
             return
         }
-
         state = .stopping
+        await stopWatchers()
+        do {
+            try await cleanUp(journal)
+            activeSession = nil
+            state = .stopped
+        } catch {
+            let failure = Self.cleanupFailure([error.message], original: error)
+            state = .failed(failure)
+            throw failure
+        }
+    }
+
+    private func stopWatchers() async {
         exitWatcher?.cancel()
         exitWatcher = nil
         await leaseWatcher?.stop()
         leaseWatcher = nil
         await logTailer?.stop()
         logTailer = nil
+    }
 
-        var journal = journalStore.read()
-        if let current = journal {
-            journal = try? journalStore.transition(current, to: .stopping, now: clock())
-        }
-
-        var warnings: [String] = []
-
-        // Steps 7–9: terminate, escalating only after re-verifying identity.
+    /// Keeps the journal until every cleanup succeeds, so Stop can always be retried.
+    private func cleanUp(_ stored: SessionJournal) async throws(ServiceFailure) {
+        var journal = try journalStore.transition(stored, to: .cleanupRequired, now: clock())
         do {
-            try await processController.terminate(
-                processIdentifier: session.dnsmasqPID,
-                expectedExecutableSHA256: journal?.dnsmasqExecutableSHA256 ?? "",
-                gracePeriod: .seconds(5)
-            )
-        } catch {
-            // A stale PID is not a reason to skip removing the alias — that is the part the
-            // user's machine is left holding.
-            warnings.append(error.message)
-            logger.error("could not stop dnsmasq cleanly: \(error.message, privacy: .public)")
-        }
-
-        // Step 12: remove only what this app added.
-        if session.aliasAddedByApp {
-            do {
-                try await aliasManager.removeAlias(
-                    interface: session.interfaceSnapshot.bsdName,
-                    address: session.profileSnapshot.interfaceConfiguration.serverIPv4
-                )
-            } catch {
-                // Reported, never hidden. The user is left with an address on their Mac.
-                logger.fault("alias removal failed: \(error.message, privacy: .public)")
-                state = .failed(error)
-                if let journal {
-                    _ = try? journalStore.transition(journal, to: .cleanupRequired, now: clock())
+            if let pid = journal.dnsmasqPID {
+                switch processController.liveness(of: pid, expectedExecutableSHA256: journal.dnsmasqExecutableSHA256) {
+                case .runningAsExpected:
+                    do {
+                        try await processController.terminate(
+                            processIdentifier: pid,
+                            expectedExecutableSHA256: journal.dnsmasqExecutableSHA256,
+                            gracePeriod: .seconds(5)
+                        )
+                    } catch {
+                        // A recycled PID is left alone; a failed stop of our process is retryable.
+                        guard error.code == .staleSession else { throw error }
+                    }
+                case .notRunning, .identityMismatch:
+                    break
                 }
-                throw error
+                journal.dnsmasqPID = nil
+                try journalStore.write(journal, now: clock())
             }
-        }
-
-        // Step 13: put the interface back as it was found.
-        if let journal, !journal.interfaceWasUpBeforeStart {
-            try? await aliasManager.setInterfaceUp(journal.interfaceBSDName, up: false)
-        }
-
-        // Steps 15–18: clear the record, keep the logs.
-        journalStore.clear()
-        state = .stopped
-
-        logger.log("session \(sessionID.uuidString, privacy: .public) stopped")
-        if !warnings.isEmpty {
-            logger.log("stop completed with warnings: \(warnings.joined(separator: "; "), privacy: .public)")
+            if journal.aliasAddedByApp {
+                try await aliasManager.removeAlias(interface: journal.interfaceBSDName, address: journal.serverIPv4)
+                journal.aliasAddedByApp = false
+                try journalStore.write(journal, now: clock())
+            }
+            if !journal.interfaceWasUpBeforeStart,
+               enumerator.enumerateInterfaces().contains(where: { $0.bsdName == journal.interfaceBSDName }) {
+                try await aliasManager.setInterfaceUp(journal.interfaceBSDName, up: false)
+            }
+            journalStore.clear()
+        } catch let failure as ServiceFailure {
+            throw failure
+        } catch {
+            throw Self.cleanupFailure(["\(error)"])
         }
     }
 
@@ -613,6 +671,20 @@ actor SessionCoordinator {
 
     /// Reconciles the journal with reality.
     func recoverStaleState() async -> RecoveryReport {
+        guard !operationInProgress else {
+            return RecoveryReport(outcome: .cleanupIncomplete, warnings: [Self.busyFailure.message])
+        }
+        operationInProgress = true
+        defer { operationInProgress = false }
+        do {
+            try runtimeFiles.prepareRuntimeRoot()
+            return try await fileLock.withLock { await self.performRecovery() }
+        } catch {
+            return RecoveryReport(outcome: .cleanupIncomplete, warnings: ["\(error)"])
+        }
+    }
+
+    private func performRecovery() async -> RecoveryReport {
         guard let journal = journalStore.read() else {
             return RecoveryReport(outcome: .nothingToRecover)
         }
@@ -623,19 +695,30 @@ actor SessionCoordinator {
 
         // Case B: the process is still there and still ours. Re-adopt it rather than killing
         // and restarting — the user's devices are holding leases from it.
-        if let pid = journal.dnsmasqPID,
+        if journal.state == .running,
+           let session = journal.activeSession,
+           session.id == journal.sessionID,
+           let pid = journal.dnsmasqPID,
+           pid == session.dnsmasqPID,
            case .runningAsExpected = processController.liveness(
                of: pid, expectedExecutableSHA256: journal.dnsmasqExecutableSHA256
            ) {
             logger.log("re-adopting running session \(journal.sessionID.uuidString, privacy: .public)")
+            activeSession = session
+            state = .running(session)
+            startWatchingForUnexpectedExit(session: session, digest: journal.dnsmasqExecutableSHA256)
+            await startWatchingLeases(sessionID: session.id, path: journal.leasePath)
+            await startTailingLog(sessionID: session.id, path: journal.logPath)
             return RecoveryReport(
                 outcome: .reattachedToRunningSession,
                 warnings: [],
-                recoveredSession: nil
+                recoveredSession: session
             )
         }
 
         // Case D: alive, but not ours. Signal nothing.
+        var warnings: [String] = []
+        var outcome: RecoveryReport.Outcome = .cleanedUpAfterDeadProcess
         if let pid = journal.dnsmasqPID,
            case .identityMismatch(let actualPath) = processController.liveness(
                of: pid, expectedExecutableSHA256: journal.dnsmasqExecutableSHA256
@@ -643,24 +726,23 @@ actor SessionCoordinator {
             journalStore.archiveForDiagnosis(
                 journal, reason: "pid \(pid) is now \(actualPath ?? "unidentifiable")"
             )
-            var warnings = [
+            warnings = [
                 "Process \(pid) is no longer Dnsmasq for Mac's and was left alone."
             ]
-            warnings.append(contentsOf: await removeOrphanedAlias(journal))
-            journalStore.clear()
-            return RecoveryReport(outcome: .staleSessionRequiresAttention, warnings: warnings)
+            outcome = .staleSessionRequiresAttention
         }
-
-        // Case C: the process is gone. Clean up what it left.
-        let warnings = await removeOrphanedAlias(journal)
-        try? runtimeFiles.removeSessionDirectory(sessionID: journal.sessionID)
-        journalStore.clear()
-        state = .stopped
-
-        return RecoveryReport(
-            outcome: warnings.isEmpty ? .cleanedUpAfterDeadProcess : .cleanupIncomplete,
-            warnings: warnings
-        )
+        // Old journals lack a restorable snapshot. Stop their verified process before cleanup.
+        await stopWatchers()
+        do {
+            try await cleanUp(journal)
+            activeSession = nil
+            state = .stopped
+            return RecoveryReport(outcome: outcome, warnings: warnings)
+        } catch {
+            warnings.append(error.message)
+            state = .failed(Self.cleanupFailure(warnings))
+            return RecoveryReport(outcome: .cleanupIncomplete, warnings: warnings)
+        }
     }
 
     /// Removes an alias the previous session added, returning any warnings.
@@ -773,6 +855,26 @@ actor SessionCoordinator {
     /// One poll. Returns `false` when watching should stop.
     private func handleExitCheck(session: ActiveSession, digest: String) async -> Bool {
         guard case .running(let current) = state, current.id == session.id else { return false }
+        guard !operationInProgress else { return true }
+
+        let live = enumerator.enumerateInterfaces().first { $0.bsdName == session.interfaceSnapshot.bsdName }
+        if live == nil || live?.isDefaultRoute == true || live?.macAddress != session.interfaceSnapshot.macAddress {
+            operationInProgress = true
+            defer { operationInProgress = false }
+            // This is the watcher itself; do not cancel its cleanup at the first await.
+            exitWatcher = nil
+            do {
+                try await fileLock.withLock { try await self.performStop(sessionID: session.id) }
+                state = .failed(ServiceFailure(
+                    code: .interfaceNotFound, title: "Interface Changed",
+                    message: "The selected adapter disappeared, changed, or became the default route. The session was stopped.",
+                    recoverySuggestion: "Reconnect the isolated device network and start a new session.", isRetryable: true
+                ))
+            } catch {
+                state = .failed(Self.cleanupFailure(["\(error)"]))
+            }
+            return false
+        }
 
         switch processController.liveness(
             of: session.dnsmasqPID, expectedExecutableSHA256: digest
@@ -781,6 +883,8 @@ actor SessionCoordinator {
             return true
 
         case .notRunning, .identityMismatch:
+            operationInProgress = true
+            defer { operationInProgress = false }
             logger.fault("dnsmasq exited unexpectedly for session \(session.id.uuidString, privacy: .public)")
 
             let logPath = journalStore.read()?.logPath
@@ -793,11 +897,21 @@ actor SessionCoordinator {
             await logTailer?.stop()
             logTailer = nil
 
-            let warnings = await removeOrphanedAlias(
-                journalStore.read() ?? Self.syntheticJournal(for: session, digest: digest)
-            )
-            journalStore.clear()
-            state = .stopped
+            var warnings: [String] = []
+            let journal = journalStore.read() ?? Self.syntheticJournal(for: session, digest: digest)
+            do {
+                try await fileLock.withLock { try await self.cleanUp(journal) }
+                activeSession = nil
+                state = .failed(ServiceFailure(
+                    code: .processStartFailed, title: "dnsmasq Stopped Unexpectedly",
+                    message: "The network service exited. Its temporary address has been removed.",
+                    recoverySuggestion: "Check the logs, then start again.",
+                    technicalDetails: tail.joined(separator: "\n"), isRetryable: true
+                ))
+            } catch {
+                warnings.append("\(error)")
+                state = .failed(Self.cleanupFailure(warnings))
+            }
 
             // The specification: never restart automatically. A crash loop against a network the
             // user cannot see would be far worse than a stopped service they can.
@@ -897,20 +1011,24 @@ struct RollbackPlan {
         processController: any ProcessControlling,
         runtimeFiles: RuntimeFileManager,
         journalStore: SessionJournalStore
-    ) async {
+    ) async -> [String] {
+        var warnings: [String] = []
         for step in steps.reversed() {
             switch step {
             case .terminate(let pid, let digest):
-                try? await processController.terminate(
-                    processIdentifier: pid,
-                    expectedExecutableSHA256: digest,
-                    gracePeriod: .seconds(3)
-                )
+                do {
+                    try await processController.terminate(
+                        processIdentifier: pid, expectedExecutableSHA256: digest, gracePeriod: .seconds(3)
+                    )
+                } catch {
+                    if error.code != .staleSession { warnings.append(error.message) }
+                }
 
             case .removeAlias(let interface, let address):
                 do {
                     try await aliasManager.removeAlias(interface: interface, address: address)
                 } catch {
+                    warnings.append(error.message)
                     // The one failure a user must be told about even during rollback: their
                     // Mac is left holding an address.
                     logger.fault(
@@ -922,14 +1040,20 @@ struct RollbackPlan {
                 }
 
             case .setInterfaceDown(let interface):
-                try? await aliasManager.setInterfaceUp(interface, up: false)
+                do { try await aliasManager.setInterfaceUp(interface, up: false) }
+                catch { warnings.append(error.message) }
 
             case .clearJournal:
-                journalStore.clear()
+                if warnings.isEmpty {
+                    journalStore.clear()
+                } else if let journal = journalStore.read() {
+                    _ = try? journalStore.transition(journal, to: .cleanupRequired)
+                }
 
             case .removeSessionDirectory(let sessionID):
-                try? runtimeFiles.removeSessionDirectory(sessionID: sessionID)
+                if warnings.isEmpty { try? runtimeFiles.removeSessionDirectory(sessionID: sessionID) }
             }
         }
+        return warnings
     }
 }

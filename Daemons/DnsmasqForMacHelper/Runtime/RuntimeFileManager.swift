@@ -53,8 +53,10 @@ struct RuntimeFileManager: RuntimeFileManaging {
     // MARK: - Layout
 
     func prepareRuntimeRoot() throws(ServiceFailure) {
-        try createDirectory(at: root, ownership: .privateToRootDirectory)
-        try createDirectory(at: sessionsDirectory, ownership: .privateToRootDirectory)
+        // dnsmasq must traverse every parent after dropping to nobody, including on reload.
+        // The journal itself remains root-only (0600); these directories are not writable.
+        try createDirectory(at: root, ownership: .sessionDirectory)
+        try createDirectory(at: sessionsDirectory, ownership: .sessionDirectory)
     }
 
     func createSessionDirectory(sessionID: UUID) throws(ServiceFailure) -> any RuntimePathsProviding {

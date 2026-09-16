@@ -1,6 +1,7 @@
 import Foundation
 import MacNetModels
 import MacNetXPC
+import MacNetValidation
 import OSLog
 import SwiftUI
 
@@ -30,10 +31,13 @@ final class SessionController {
     /// was given about.
     var isolationConfirmed = false
 
-    private let client: HelperClient
+    private let client: any SessionClient
+    private var localOperationInProgress = false
+    private var operationGeneration = 0
+    private var needsRecovery = true
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "session-controller")
 
-    init(client: HelperClient) {
+    init(client: any SessionClient) {
         self.client = client
     }
 
@@ -56,7 +60,10 @@ final class SessionController {
     /// whether the button looks available. Both layers matter: the helper for correctness, this
     /// for not presenting an action that will certainly fail.
     func canStart(profile: NetworkProfile?, hasInterface: Bool, helperReady: Bool) -> Bool {
-        guard let profile, helperReady, hasInterface, !isBusy, !isRunning else { return false }
+        guard let profile, helperReady, hasInterface, !isBusy, activeSession == nil,
+              lastFailure?.code != .cleanupFailed,
+              !ConfigurationValidator.hasBlockingIssues(ConfigurationValidator.validate(profile))
+        else { return false }
         if requiresIsolationConfirmation(for: profile) && !isolationConfirmed { return false }
         if let report = preflightReport, report.hasBlockingIssues { return false }
         return true
@@ -72,7 +79,14 @@ final class SessionController {
         isolationConfirmed = false
     }
 
-    func clearFailure() { lastFailure = nil }
+    func configurationChanged() {
+        preflightReport = nil
+        resetIsolationConfirmation()
+    }
+
+    func clearFailure() {
+        if lastFailure?.code != .cleanupFailed { lastFailure = nil }
+    }
     func acknowledgeRecoveryWarnings() { recoveryWarnings = [] }
 
     // MARK: - Reconnection
@@ -83,24 +97,39 @@ final class SessionController {
     /// relaunch the app must show what is actually happening rather than an empty Stopped
     /// state, or the user would have no way to stop it from the UI.
     func synchronize() async {
+        guard !localOperationInProgress else { return }
+        let generation = operationGeneration
         do {
             let state = try await client.runtimeStatus()
+            guard !localOperationInProgress, generation == operationGeneration else { return }
             apply(state)
 
-            if case .stopped = state {
+            if case .stopped = state, needsRecovery {
                 // Reconcile anything a previous run left behind before offering Start.
                 let report = try await client.recoverStaleState()
+                guard !localOperationInProgress, generation == operationGeneration else { return }
+                needsRecovery = false
                 if report.outcome != .nothingToRecover {
                     logger.log("recovery on connect: \(report.outcome.rawValue, privacy: .public)")
                     recoveryWarnings = report.warnings
                 }
+                if let recovered = report.recoveredSession { apply(.running(recovered)) }
+                if report.outcome == .cleanupIncomplete {
+                    lastFailure = ServiceFailure(code: .cleanupFailed, title: "Cleanup Required",
+                                                 message: report.warnings.joined(separator: "\n"), isRetryable: true)
+                    phase = .failed
+                }
             }
         } catch {
+            guard !localOperationInProgress, generation == operationGeneration else { return }
+            needsRecovery = true
             // Not surfaced as a failure: the helper may simply not be installed yet, which the
             // helper-status UI already explains far better than an error here would.
             logger.log("could not synchronize with the helper: \(error.message, privacy: .public)")
-            phase = .stopped
-            activeSession = nil
+            if activeSession != nil {
+                lastFailure = error
+                phase = .failed
+            }
         }
     }
 
@@ -126,16 +155,19 @@ final class SessionController {
         case .failed(let failure):
             phase = .failed
             lastFailure = failure
-            activeSession = nil
+            if failure.code != .cleanupFailed { activeSession = nil }
         }
     }
 
     // MARK: - Preflight
 
     func runPreflight(_ request: SessionStartRequest) async {
-        guard !isBusy else { return }
+        guard !isBusy, activeSession == nil else { return }
+        localOperationInProgress = true
+        operationGeneration += 1
+        defer { localOperationInProgress = false }
         phase = .preflighting
-        defer { phase = isRunning ? .running : .stopped }
+        defer { phase = .stopped }
 
         do {
             preflightReport = try await client.preflight(request)
@@ -150,6 +182,9 @@ final class SessionController {
 
     func start(_ request: SessionStartRequest) async {
         guard !isBusy, !isRunning else { return }
+        localOperationInProgress = true
+        operationGeneration += 1
+        defer { localOperationInProgress = false }
         phase = .starting
         lastFailure = nil
 
@@ -169,27 +204,46 @@ final class SessionController {
     }
 
     func stop() async {
-        guard let session = activeSession, !isBusy else { return }
+        guard !isBusy else { return }
+        localOperationInProgress = true
+        operationGeneration += 1
+        defer { localOperationInProgress = false }
+        let stoppingSession = activeSession
         phase = .stopping
 
         do {
-            try await client.stopSession(id: session.id)
+            if let stoppingSession {
+                try await client.stopSession(id: stoppingSession.id)
+            } else {
+                let report = try await client.recoverStaleState()
+                if let recovered = report.recoveredSession {
+                    activeSession = recovered
+                    try await client.stopSession(id: recovered.id)
+                } else if report.outcome == .cleanupIncomplete {
+                    throw ServiceFailure(code: .cleanupFailed, title: "Cleanup Required",
+                                         message: report.warnings.joined(separator: "\n"), isRetryable: true)
+                }
+            }
             activeSession = nil
             phase = .stopped
+            lastFailure = nil
+            preflightReport = nil
+            recoveryWarnings = []
             // The specification: the confirmation does not survive the session it was given for.
             isolationConfirmed = false
-            logger.log("session \(session.id.uuidString, privacy: .public) stopped")
+            logger.log("session stopped")
         } catch {
-            lastFailure = error
-            if error.code == .cleanupFailed {
-                // The user's Mac may still hold an address. This must stay visible rather than
-                // collapsing back to a tidy Stopped.
-                phase = .failed
-            } else {
-                activeSession = nil
-                phase = .stopped
-                isolationConfirmed = false
-            }
+            lastFailure = (error as? ServiceFailure) ?? ServiceFailure.internalError("\(error)")
+            // An XPC error is not evidence that the root process stopped. Keep the retry path.
+            phase = .failed
+        }
+    }
+
+    func monitorStatus() async {
+        while !Task.isCancelled {
+            await synchronize()
+            do { try await Task.sleep(for: .seconds(1)) }
+            catch { return }
         }
     }
 }

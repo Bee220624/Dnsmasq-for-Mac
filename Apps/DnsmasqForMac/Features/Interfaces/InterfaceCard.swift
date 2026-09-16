@@ -17,6 +17,7 @@ struct InterfaceCard: View {
     var body: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 12) {
+                detectionStatus
                 picker
                 Divider()
                 detail
@@ -44,6 +45,43 @@ struct InterfaceCard: View {
 
     // MARK: - Picker
 
+    private var detectionStatus: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                if monitor.usesAutomaticSelection {
+                    Label("Automatic cable detection", systemImage: "cable.connector")
+                        .font(.headline)
+                } else {
+                    Label("Manually selected interface", systemImage: "hand.point.up.left")
+                        .font(.headline)
+                    Spacer()
+                    Button("Use automatic detection") { monitor.useAutomaticSelection() }
+                        .disabled(isLocked)
+                        .accessibilityIdentifier("overview.autoDetectInterface")
+                }
+            }
+            if !monitor.hasLoaded {
+                Text("Scanning…")
+            } else if isLocked {
+                Text("The interface is locked for this session.")
+            } else if monitor.usesAutomaticSelection && monitor.connectedInterfaces.isEmpty {
+                Text("Waiting for a wired connection. Connect the Ethernet cable to a powered BMC; the connected adapter will be selected automatically. You can also choose an adapter manually below.")
+            } else if monitor.usesAutomaticSelection && monitor.connectedInterfaces.count > 1 {
+                Text("Multiple wired connections detected. Choose the adapter connected to your BMC below.")
+            } else if monitor.usesAutomaticSelection {
+                Text("One connected wired adapter detected and selected. Verify that the cable goes to the intended BMC before starting.")
+            } else if monitor.selected == nil {
+                Text("The manually selected adapter is no longer available. Choose another adapter or resume automatic detection.")
+            } else if monitor.selected?.isLinkActive == false {
+                Text("This manually selected adapter has no link. Check the cable and BMC power, or use automatic detection.")
+            }
+        }
+        .font(.callout)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityIdentifier("overview.interfaceDetection")
+    }
+
     @ViewBuilder
     private var picker: some View {
         if monitor.interfaces.isEmpty && monitor.hasLoaded {
@@ -51,9 +89,7 @@ struct InterfaceCard: View {
                 .foregroundStyle(.secondary)
         } else {
             Picker(selection: selectionBinding) {
-                if monitor.selected == nil {
-                    Text("Choose an interface…").tag(String?.none)
-                }
+                Text("Choose an interface…").tag(String?.none)
                 ForEach(monitor.interfaces) { interface in
                     row(for: interface)
                         .tag(String?.some(interface.bsdName))
@@ -62,7 +98,7 @@ struct InterfaceCard: View {
                         .disabled(!interface.isSupported)
                 }
             } label: {
-                Text("Interface")
+                Text("Choose wired adapter")
             }
             .pickerStyle(.menu)
             .disabled(isLocked)
@@ -73,7 +109,10 @@ struct InterfaceCard: View {
     private var selectionBinding: Binding<String?> {
         Binding(
             get: { monitor.selectedBSDName },
-            set: { if let value = $0 { monitor.select(value) } }
+            set: {
+                if let value = $0 { monitor.select(value) }
+                else { monitor.useAutomaticSelection() }
+            }
         )
     }
 
@@ -175,7 +214,7 @@ struct InterfaceCard: View {
         let addresses = interface.ipv4Addresses.map { entry in
             entry.prefixLength.map { "\(entry.address)/\($0)" } ?? entry.address.description
         }
-        return field("Current IPv4", addresses.isEmpty ? "None" : addresses.joined(separator: ", "))
+        return field("Current IPv4", addresses.isEmpty ? "—" : addresses.joined(separator: ", "))
     }
 
     @ViewBuilder

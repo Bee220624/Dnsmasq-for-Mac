@@ -45,7 +45,23 @@ struct DnsmasqForMacApp: App {
                 .task { await profiles.load() }
                 // The specification: adopt whatever the helper is already doing, so a
                 // session that survived a force-quit is visible and stoppable.
-                .task { await session.synchronize() }
+                .task { await session.monitorStatus() }
+                .onChange(of: profiles.draft?.working) { session.configurationChanged() }
+                .onChange(of: interfaces.selectedBSDName) { session.configurationChanged() }
+                .onChange(of: interfaces.selected?.macAddress) { session.configurationChanged() }
+                .onChange(of: interfaces.selected?.isLinkActive) { session.configurationChanged() }
+                .onChange(of: session.activeSession, initial: true) {
+                    interfaces.updateSessionLock(
+                        isLocked: session.activeSession != nil || session.isBusy,
+                        interfaceBSDName: session.activeSession?.interfaceSnapshot.bsdName
+                    )
+                }
+                .onChange(of: session.isBusy) {
+                    interfaces.updateSessionLock(
+                        isLocked: session.activeSession != nil || session.isBusy,
+                        interfaceBSDName: session.activeSession?.interfaceSnapshot.bsdName
+                    )
+                }
                 // The delegate is created by AppKit before any SwiftUI state, so
                 // the quit handler is joined to the controller here.
                 .onAppear { AppDelegate.sessionController = session }

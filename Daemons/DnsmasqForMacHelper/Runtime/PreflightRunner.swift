@@ -175,16 +175,10 @@ struct PreflightRunner: Sendable {
             ))
         }
 
-        let serverAddress = profile.interfaceConfiguration.serverIPv4
-        if let existing = live.existingEntry(for: serverAddress),
-           existing.prefixLength != profile.interfaceConfiguration.prefixLength {
-            fail(.ipv4ConfigurationValid, PreflightIssue(
-                id: "interface.addressPrefixConflict",
-                severity: .error,
-                title: "Address Already Configured Differently",
-                message: "\(serverAddress) is already on \(bsdName) with a different subnet mask.",
-                recoverySuggestion: "Choose a different server address, or remove the existing one."
-            ))
+        for issue in InterfaceAddressPolicy.issues(
+            configuration: profile.interfaceConfiguration, selected: live, interfaces: liveInterfaces
+        ) {
+            fail(.ipv4ConfigurationValid, issue)
         }
 
         // ---- Steps 22–25: does the generated configuration actually parse? -----------------
@@ -252,7 +246,7 @@ struct PreflightRunner: Sendable {
                 attributes: [.posixPermissions: 0o700]
             )
         } catch {
-            return (nil, "could not create a temporary directory: \(error)")
+            return (Self.configurationWriteFailure, "could not create a temporary directory: \(error)")
         }
 
         let paths = RuntimePaths(sessionDirectory: scratch)
@@ -264,7 +258,7 @@ struct PreflightRunner: Sendable {
             try Data(generated.hostsText.utf8)
                 .write(to: URL(fileURLWithPath: paths.hostsFile))
         } catch {
-            return (nil, "could not write the test configuration: \(error)")
+            return (Self.configurationWriteFailure, "could not write the test configuration: \(error)")
         }
 
         let result: CommandResult
@@ -312,6 +306,13 @@ struct PreflightRunner: Sendable {
             "This Mac has no usable DNS servers to forward to. "
                 + "Choose Custom DNS or Local Records Only instead."
         }
+    }
+
+    private static var configurationWriteFailure: PreflightIssue {
+        PreflightIssue(id: "configuration.writeFailed", severity: .error,
+                       title: "Could Not Check Configuration",
+                       message: "The temporary configuration could not be written.",
+                       recoverySuggestion: "Check free disk space and retry.")
     }
 
     // MARK: - Ports

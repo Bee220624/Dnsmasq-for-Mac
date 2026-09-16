@@ -18,8 +18,8 @@ XCB          := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPat
 # A plain `tail` is wrong for tests: with more than one test bundle it truncates away an
 # earlier bundle's summary, so a run can look like it covered less than it did — or hide a
 # failure entirely. XCB_FILTER keeps every failure, every error, and each bundle's own summary.
-XCB_FILTER := | grep -E "error:|Test run with|Executed .* test|\*\* (BUILD|TEST) (SUCCEEDED|FAILED)|recorded an issue" || true
-XCPRETTY := | tail -40
+XCB_FILTER := | awk '/error:|Test run with|Executed .* test|\*\* (BUILD|TEST) (SUCCEEDED|FAILED)|recorded an issue/ { print; fflush() }'
+XCPRETTY := $(XCB_FILTER)
 
 .PHONY: help bootstrap generate build test test-all test-package test-xcode test-ui \
         check-localization \

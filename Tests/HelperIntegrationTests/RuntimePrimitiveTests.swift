@@ -38,6 +38,19 @@ struct RuntimeFileManagerTests {
         #expect(paths.pidFile.hasSuffix("/dnsmasq.pid"))
     }
 
+    @Test("every runtime parent is traversable by dnsmasq after it drops privileges")
+    func parentsAllowDnsmasqTraversal() throws {
+        let (manager, applier, root) = makeManager()
+        defer { cleanUp(root) }
+        try manager.prepareRuntimeRoot()
+        for path in [root, manager.sessionsDirectory] {
+            let ownership = try #require(applier.requests[path])
+            #expect(ownership.owner == "root")
+            #expect(ownership.group == "nobody")
+            #expect(ownership.permissions == 0o750)
+        }
+    }
+
     @Test("writes are atomic and readable back")
     func writesAreReadable() throws {
         let (manager, applier, root) = makeManager()
@@ -206,8 +219,8 @@ struct SessionJournalTests {
 
         switch state {
         case .preparing:
-            // Nothing outside the session directory has been touched.
-            #expect(!journal.requiresCleanup)
+            // A crash after bringing the interface up can still leave a preparing journal.
+            #expect(journal.requiresCleanup)
         case .failed:
             // Already cleaned up; retained only for diagnosis.
             #expect(!journal.requiresCleanup)

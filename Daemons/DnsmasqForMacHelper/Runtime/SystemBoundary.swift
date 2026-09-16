@@ -116,11 +116,12 @@ public protocol PortProbing: Sendable {
 public protocol InterfaceAliasManaging: Sendable {
     /// Adds `address` to `interface`. Must be a no-op if the exact address and prefix are
     /// already present.
+    @discardableResult
     func addAlias(
         interface: String,
         address: IPv4Address,
         prefixLength: Int
-    ) async throws(ServiceFailure)
+    ) async throws(ServiceFailure) -> Bool
 
     /// Removes exactly `address` from `interface`.
     func removeAlias(interface: String, address: IPv4Address) async throws(ServiceFailure)

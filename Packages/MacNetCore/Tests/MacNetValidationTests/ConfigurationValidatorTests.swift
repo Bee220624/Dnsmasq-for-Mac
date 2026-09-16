@@ -324,7 +324,7 @@ struct DefaultProfileTests {
         #expect(profile.dhcpConfiguration.advertiseLocalDNSServer)
 
         #expect(profile.dnsConfiguration.localDomain == "lab.test")
-        #expect(profile.dnsConfiguration.upstreamMode == .system)
+        #expect(profile.dnsConfiguration.upstreamMode == .localOnly)
         #expect(!profile.dnsConfiguration.logQueries)
         #expect(profile.dnsConfiguration.records.isEmpty)
 

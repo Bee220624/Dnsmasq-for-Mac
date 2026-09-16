@@ -29,11 +29,12 @@ struct InterfaceAliasManager: InterfaceAliasManaging {
 
     // MARK: - Adding
 
+    @discardableResult
     func addAlias(
         interface: String,
         address: IPv4Address,
         prefixLength: Int
-    ) async throws(ServiceFailure) {
+    ) async throws(ServiceFailure) -> Bool {
         let name = try Self.validatedInterfaceName(interface)
         guard let subnet = IPv4Subnet(containing: address, prefixLength: prefixLength) else {
             throw ServiceFailure.invalidRequest("prefix length \(prefixLength) is not permitted")
@@ -57,7 +58,7 @@ struct InterfaceAliasManager: InterfaceAliasManaging {
                 )
             }
             logger.log("\(address.description, privacy: .public) already present on \(name, privacy: .public); not adding")
-            return
+            return false
         }
 
         // /sbin/ifconfig <interface> inet <address> netmask <mask> alias
@@ -84,6 +85,7 @@ struct InterfaceAliasManager: InterfaceAliasManaging {
         }
 
         logger.log("added \(address.description, privacy: .public)/\(prefixLength, privacy: .public) to \(name, privacy: .public)")
+        return true
     }
 
     // MARK: - Removing

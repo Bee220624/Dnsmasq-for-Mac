@@ -21,23 +21,18 @@ final class InterfaceMonitor {
     /// True once the first enumeration has completed, so the UI can tell "none found" apart
     /// from "not looked yet".
     private(set) var hasLoaded = false
+    private(set) var usesAutomaticSelection = true
+    private(set) var selectionIsLocked = false
+    private var selectedMACAddress: String?
 
     private let enumerator: any InterfaceEnumerating
-    private let defaults: UserDefaults
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "interfaces")
     private var watcher: InterfaceChangeWatcher?
 
-    /// The specification: the most recently used interface is remembered here and **not** in the
-    /// profile. A USB adapter's BSD name changes between reboots and ports, and a profile that
-    /// pinned one could silently select a production port on another machine.
-    private static let lastSelectedDefaultsKey = "com.bee.dnsmasqformac.lastSelectedInterface"
-
     init(
-        enumerator: any InterfaceEnumerating = SystemInterfaceEnumerator(),
-        defaults: UserDefaults = .standard
+        enumerator: any InterfaceEnumerating = SystemInterfaceEnumerator()
     ) {
         self.enumerator = enumerator
-        self.defaults = defaults
     }
 
     // MARK: - Selection
@@ -53,13 +48,18 @@ final class InterfaceMonitor {
         interfaces.filter(\.isSupported)
     }
 
+    var connectedInterfaces: [NetworkInterfaceDescriptor] {
+        InterfaceSupportPolicy.connectedEthernetInterfaces(from: interfaces)
+    }
+
     /// Records a user's choice.
     ///
     /// Refuses to select an unsupported interface. The picker already disables those rows;
     /// this is the second half of that, so a programming mistake elsewhere cannot put an
     /// unusable interface into a session request.
     func select(_ bsdName: String) {
-        guard let candidate = interfaces.first(where: { $0.bsdName == bsdName }),
+        guard !selectionIsLocked,
+              let candidate = interfaces.first(where: { $0.bsdName == bsdName }),
               candidate.isSupported
         else {
             logger.error("refused selection of unsupported interface \(bsdName, privacy: .public)")
@@ -67,7 +67,23 @@ final class InterfaceMonitor {
         }
 
         selectedBSDName = bsdName
-        defaults.set(bsdName, forKey: Self.lastSelectedDefaultsKey)
+        selectedMACAddress = candidate.macAddress
+        usesAutomaticSelection = false
+    }
+
+    func useAutomaticSelection() {
+        guard !selectionIsLocked else { return }
+        usesAutomaticSelection = true
+        refresh()
+    }
+
+    func updateSessionLock(isLocked: Bool, interfaceBSDName: String?) {
+        selectionIsLocked = isLocked
+        if isLocked {
+            if let interfaceBSDName { selectedBSDName = interfaceBSDName }
+        } else {
+            reconcileSelection()
+        }
     }
 
     // MARK: - Lifecycle
@@ -90,45 +106,26 @@ final class InterfaceMonitor {
 
     /// Re-reads the interface list and reconciles the current selection with it.
     func refresh() {
-        let previous = selectedBSDName
         interfaces = enumerator.enumerateInterfaces()
         hasLoaded = true
 
-        reconcileSelection(previouslySelected: previous)
+        reconcileSelection()
     }
 
-    /// Keeps the selection meaningful as hardware comes and goes.
-    ///
-    /// Three cases matter, and they are handled differently on purpose:
-    ///
-    /// * The selected interface is still usable — keep it, so a routine refresh does not move
-    ///   the user's choice underneath them.
-    /// * It disappeared, or became unusable — clear the selection rather than silently sliding
-    ///   to a neighbour. The specification forbids auto-selecting Wi-Fi or the default route, and
-    ///   quietly moving a selection is how a user ends up serving the wrong port.
-    /// * Nothing was selected — offer a default, which may legitimately be nothing.
-    private func reconcileSelection(previouslySelected: String?) {
-        if let previouslySelected,
-           let current = interfaces.first(where: { $0.bsdName == previouslySelected }) {
-            if current.isSupported { return }
-
-            logger.log(
-                """
-                clearing selection: \(previouslySelected, privacy: .public) \
-                is no longer usable
-                """
-            )
+    /// Automatic mode follows live links; a manual choice stays pinned until it disappears.
+    private func reconcileSelection() {
+        guard !selectionIsLocked else { return }
+        if !usesAutomaticSelection {
+            if let current = selected, current.isSupported, current.macAddress == selectedMACAddress {
+                return
+            }
+            // Do not silently replace a manually selected adapter with a different device.
             selectedBSDName = nil
-        } else if previouslySelected != nil {
-            logger.log("clearing selection: \(previouslySelected ?? "", privacy: .public) is gone")
-            selectedBSDName = nil
+            selectedMACAddress = nil
+            return
         }
-
-        guard selectedBSDName == nil else { return }
-
-        let remembered = defaults.string(forKey: Self.lastSelectedDefaultsKey)
-        selectedBSDName = InterfaceSupportPolicy.defaultSelection(
-            from: interfaces, preferring: remembered
-        )?.bsdName
+        let candidate = InterfaceSupportPolicy.defaultSelection(from: interfaces)
+        selectedBSDName = candidate?.bsdName
+        selectedMACAddress = candidate?.macAddress
     }
 }

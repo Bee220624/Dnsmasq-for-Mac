@@ -66,6 +66,9 @@ public struct SessionJournal: Codable, Sendable, Equatable {
     public var startedAt: Date?
     public var updatedAt: Date
 
+    /// Optional for compatibility with journals written before recovery stored a full snapshot.
+    public var activeSession: ActiveSession?
+
     public init(
         schemaVersion: Int = MacNetCoreInfo.schemaVersion,
         sessionID: UUID,
@@ -81,7 +84,8 @@ public struct SessionJournal: Codable, Sendable, Equatable {
         leasePath: String,
         logPath: String,
         startedAt: Date?,
-        updatedAt: Date
+        updatedAt: Date,
+        activeSession: ActiveSession? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.sessionID = sessionID
@@ -98,17 +102,17 @@ public struct SessionJournal: Codable, Sendable, Equatable {
         self.logPath = logPath
         self.startedAt = startedAt?.truncatedToSeconds
         self.updatedAt = updatedAt.truncatedToSeconds
+        self.activeSession = activeSession
     }
 
     /// Whether a journal in this state describes work that must be undone before anything else
     /// may start.
     public var requiresCleanup: Bool {
         switch state {
-        case .preparing, .failed:
-            // `preparing` touched nothing outside the session directory; `failed` has already
-            // been cleaned up and is kept only for diagnosis.
+        case .failed:
+            // Already cleaned up and kept only for diagnosis.
             false
-        case .aliasAdded, .processStarted, .running, .stopping, .cleanupRequired:
+        case .preparing, .aliasAdded, .processStarted, .running, .stopping, .cleanupRequired:
             true
         }
     }

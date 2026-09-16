@@ -76,7 +76,8 @@ public struct DnsmasqConfigurationGenerator: Sendable {
         return sections.map { $0.joined(separator: "\n") }.joined(separator: "\n\n") + "\n"
     }
 
-    /// Pins dnsmasq to exactly one interface and one address.
+    /// Selects the wired interface and ensures the temporary IPv4 address is listened on.
+    /// dnsmasq treats interface and address selectors as a union, not an intersection.
     ///
     /// `bind-interfaces` makes dnsmasq open sockets on the named interface instead of
     /// listening on the wildcard address and filtering afterwards. On a machine that is also

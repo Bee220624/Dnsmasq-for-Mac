@@ -40,7 +40,8 @@ extension NetworkProfile {
                 // `.test` is reserved by RFC 2606 for exactly this use, so it can never
                 // collide with a real registration.
                 localDomain: "lab.test",
-                upstreamMode: .system,
+                // A direct BMC connection must work without Wi-Fi or an upstream resolver.
+                upstreamMode: .localOnly,
                 customUpstreamServers: [],
                 logQueries: false,
                 records: []
