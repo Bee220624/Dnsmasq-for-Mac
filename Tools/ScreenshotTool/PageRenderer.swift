@@ -53,9 +53,10 @@ struct PageRenderer {
         // Built explicitly rather than resolved from `Bundle.main`. Inside a test bundle,
         // `Bundle.main` is the xctest runner, so Settings would report version 16.0 and
         // `com.apple.dt.xctest.tool` — a screenshot that misstates the app's own identity.
+        let buildEnvironment = AppEnvironment.resolve()
         let appEnvironment = AppEnvironment(
-            appVersion: "0.1.0",
-            buildNumber: "1",
+            appVersion: buildEnvironment.appVersion,
+            buildNumber: buildEnvironment.buildNumber,
             bundleIdentifier: "com.bee.dnsmasqformac",
             helperLabel: "com.bee.dnsmasqformac.helper",
             machServiceName: "com.bee.dnsmasqformac.helper",
@@ -211,6 +212,10 @@ struct PageRenderer {
             page { SettingsView() }
         }
 
+        try render("07-network-settings", fixture) {
+            page { NetworkSettingsPreview() }
+        }
+
         let written = try FileManager.default
             .contentsOfDirectory(atPath: outputDirectory.path)
             .filter { $0.hasSuffix(".png") }
@@ -218,10 +223,23 @@ struct PageRenderer {
         for name in written {
             print("    \(outputDirectory.appending(path: name).path)")
         }
-        guard written.count == 6 else {
+        guard written.count == 7 else {
             FileHandle.standardError.write(
-                Data("expected six pages, wrote \(written)\n".utf8))
+                Data("expected seven pages, wrote \(written)\n".utf8))
             exit(EXIT_FAILURE)
+        }
+    }
+}
+
+private struct NetworkSettingsPreview: View {
+    @State private var profile = NetworkProfile.makeDefault(now: Date())
+
+    var body: some View {
+        ScrollView {
+            NetworkSettingsCard(profile: $profile, isLocked: false)
+                .padding(20)
+                .frame(maxWidth: 900)
+                .frame(maxWidth: .infinity)
         }
     }
 }

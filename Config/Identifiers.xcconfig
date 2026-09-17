@@ -27,8 +27,8 @@ HELPER_BUNDLE_ID = $(HELPER_LABEL)
 PROTOCOL_VERSION = 1
 
 // Marketing / build version.
-APP_VERSION = 0.1.0
-APP_BUILD = 1
+APP_VERSION = 0.1.1
+APP_BUILD = 2
 
 // Signing. Team ID is required by the helper's caller validation, not just by codesign.
 DEVELOPMENT_TEAM = MDUMXF88CA

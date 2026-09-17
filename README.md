@@ -7,7 +7,7 @@
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey?style=flat-square)
 ![swift](https://img.shields.io/badge/Swift-6-orange?style=flat-square&logo=swift&logoColor=white)
 ![dnsmasq](https://img.shields.io/badge/dnsmasq-2.93-blue?style=flat-square)
-![tests](https://img.shields.io/badge/tests-278%20passing-brightgreen?style=flat-square)
+![tests](https://img.shields.io/badge/tests-303%20passing-brightgreen?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![status](https://img.shields.io/badge/status-source%20only-yellow?style=flat-square)
 
@@ -74,7 +74,9 @@ language. Regenerate every shot, in every shipped language, with `make screensho
 
 ## Building
 
-Needs macOS 14+ and Xcode 26+.
+Needs macOS 14+ and Xcode 26+. Version 0.1.1 has been built and tested on macOS 27.0 with Xcode 27.0.
+The macOS 27 native text field style requires the Xcode 27 SDK; older toolchains retain the existing style.
+See [the compatibility checkpoint](Docs/MACOS27_COMPATIBILITY.zh-CN.md) for verification scope and remaining hardware checks.
 
 ```bash
 make bootstrap        # install dev tooling, generate the Xcode project
@@ -90,7 +92,7 @@ codesign will refuse. Every identifier in the project lives in that one file.
 
 ## Status
 
-It builds, and 278 automated tests pass. Some things I **could not verify**:
+It builds, and 303 automated tests pass. Some things I **could not verify**:
 
 - No Developer ID certificate here, so signed distribution and notarization are untested —
   which is why there is no download yet, only source

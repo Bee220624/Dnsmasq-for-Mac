@@ -54,8 +54,11 @@ struct NetworkSettingsCard: View {
                     Toggle("Enable DNS", isOn: $profile.dnsConfiguration.enabled)
                         .accessibilityIdentifier("settings.dnsEnabled")
                     if profile.dnsConfiguration.enabled {
-                        TextField("Local domain", text: $profile.dnsConfiguration.localDomain)
-                            .textFieldStyle(.roundedBorder)
+                        LabeledContent("Local domain") {
+                            TextField("Local domain", text: $profile.dnsConfiguration.localDomain)
+                                .labelsHidden()
+                                .appTextFieldStyle()
+                        }
                         Picker("Upstream DNS", selection: $profile.dnsConfiguration.upstreamMode) {
                             Text("Local Records Only (offline)").tag(DNSUpstreamMode.localOnly)
                             Text("System DNS").tag(DNSUpstreamMode.system)
@@ -105,17 +108,20 @@ private struct DNSUpstreamField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField("DNS IPv4 addresses (comma separated)", text: $text)
-            .textFieldStyle(.roundedBorder).focused($focused)
-            .onAppear { text = addresses.map(\.description).joined(separator: ", ") }
-            .onChange(of: text) {
-                addresses = text.split(separator: ",", omittingEmptySubsequences: false).map {
-                    IPv4Address($0.trimmingCharacters(in: .whitespacesAndNewlines)) ?? .any
-                }
+        LabeledContent("DNS IPv4 addresses (comma separated)") {
+            TextField("DNS IPv4 addresses (comma separated)", text: $text)
+                .labelsHidden()
+                .appTextFieldStyle().focused($focused)
+        }
+        .onAppear { text = addresses.map(\.description).joined(separator: ", ") }
+        .onChange(of: text) {
+            addresses = text.split(separator: ",", omittingEmptySubsequences: false).map {
+                IPv4Address($0.trimmingCharacters(in: .whitespacesAndNewlines)) ?? .any
             }
-            .onChange(of: addresses) {
-                if !focused { text = addresses.map(\.description).joined(separator: ", ") }
-            }
+        }
+        .onChange(of: addresses) {
+            if !focused { text = addresses.map(\.description).joined(separator: ", ") }
+        }
     }
 }
 
@@ -125,11 +131,14 @@ private struct LeaseDurationField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField("Lease duration (seconds)", text: $text)
-            .textFieldStyle(.roundedBorder).focused($focused)
-            .onAppear { text = String(seconds) }
-            .onChange(of: text) { seconds = Int(text) ?? 0 }
-            .onChange(of: seconds) { if !focused { text = String(seconds) } }
+        LabeledContent("Lease duration (seconds)") {
+            TextField("Lease duration (seconds)", text: $text)
+                .labelsHidden()
+                .appTextFieldStyle().focused($focused)
+        }
+        .onAppear { text = String(seconds) }
+        .onChange(of: text) { seconds = Int(text) ?? 0 }
+        .onChange(of: seconds) { if !focused { text = String(seconds) } }
     }
 }
 
@@ -141,15 +150,18 @@ private struct IPv4TextField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField(title, text: $text)
-            .textFieldStyle(.roundedBorder)
-            .focused($focused)
-            .onAppear { text = address.description }
-            .onChange(of: text) {
-                address = IPv4Address(text.trimmingCharacters(in: .whitespacesAndNewlines)) ?? .any
-            }
-            .onChange(of: address) {
-                if !focused { text = address.description }
-            }
+        LabeledContent(title) {
+            TextField(title, text: $text)
+                .labelsHidden()
+                .appTextFieldStyle()
+                .focused($focused)
+        }
+        .onAppear { text = address.description }
+        .onChange(of: text) {
+            address = IPv4Address(text.trimmingCharacters(in: .whitespacesAndNewlines)) ?? .any
+        }
+        .onChange(of: address) {
+            if !focused { text = address.description }
+        }
     }
 }

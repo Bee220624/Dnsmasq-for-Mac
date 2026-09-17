@@ -7,7 +7,7 @@
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey?style=flat-square)
 ![swift](https://img.shields.io/badge/Swift-6-orange?style=flat-square&logo=swift&logoColor=white)
 ![dnsmasq](https://img.shields.io/badge/dnsmasq-2.93-blue?style=flat-square)
-![tests](https://img.shields.io/badge/tests-278%20passing-brightgreen?style=flat-square)
+![tests](https://img.shields.io/badge/tests-303%20passing-brightgreen?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![status](https://img.shields.io/badge/status-source%20only-yellow?style=flat-square)
 
@@ -73,7 +73,9 @@ UI は英語と簡体字中国語にローカライズされており、シス�
 
 ## ビルド
 
-macOS 14 以降と Xcode 26 以降が必要です。
+macOS 14 以降と Xcode 26 以降が必要です。0.1.1 は macOS 27.0 + Xcode 27.0 でビルド・テスト済みです。
+macOS 27 の新しい入力スタイルには Xcode 27 SDK が必要です。以前のツールチェーンでは従来のスタイルを使用します。
+検証範囲と未実施の実機確認は[互換性の記録（中国語）](Docs/MACOS27_COMPATIBILITY.zh-CN.md)を参照してください。
 
 ```bash
 make bootstrap        # 開発ツールを導入し、Xcode プロジェクトを生成
@@ -89,7 +91,7 @@ make test
 
 ## 現状
 
-ビルドは通り、自動テスト 278 件が通過します。ただし**検証できていない**部分があります。
+ビルドは通り、自動テスト 303 件が通過します。ただし**検証できていない**部分があります。
 
 - Developer ID 証明書がないため、署名付き配布と公証は未検証です。ダウンロード可能なバイナリがまだなく、
   ソースのみを公開しているのはこのためです

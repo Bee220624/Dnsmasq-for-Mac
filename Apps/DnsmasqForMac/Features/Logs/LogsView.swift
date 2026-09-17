@@ -55,7 +55,7 @@ struct LogsView: View {
 
         return HStack(spacing: 10) {
             TextField("Search", text: $monitor.filter.searchText)
-                .textFieldStyle(.roundedBorder)
+                .appTextFieldStyle()
                 .frame(minWidth: 160, maxWidth: 260)
                 .accessibilityIdentifier("logs.searchField")
 
@@ -210,6 +210,7 @@ struct LogsView: View {
         } description: {
             Text("Live dnsmasq output appears here while a session is running.")
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier("logs.empty")
     }
 

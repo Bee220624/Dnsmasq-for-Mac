@@ -7,7 +7,7 @@
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey?style=flat-square)
 ![swift](https://img.shields.io/badge/Swift-6-orange?style=flat-square&logo=swift&logoColor=white)
 ![dnsmasq](https://img.shields.io/badge/dnsmasq-2.93-blue?style=flat-square)
-![tests](https://img.shields.io/badge/tests-278%20passing-brightgreen?style=flat-square)
+![tests](https://img.shields.io/badge/tests-303%20passing-brightgreen?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![status](https://img.shields.io/badge/status-source%20only-yellow?style=flat-square)
 
@@ -69,7 +69,9 @@
 
 ## 怎么跑起来
 
-需要 macOS 14+ 和 Xcode 26+。
+需要 macOS 14+ 和 Xcode 26+。0.1.1 已在 macOS 27.0 + Xcode 27.0 上构建和测试。
+使用 Xcode 27 编译可启用 macOS 27 的原生输入框，旧工具链保留原有样式。
+验证范围和待完成的实机检查见[阶段记录](Docs/MACOS27_COMPATIBILITY.zh-CN.md)。
 
 ```bash
 make bootstrap        # 装开发工具，生成 Xcode 工程
@@ -85,7 +87,7 @@ make test
 
 ## 现在的状态
 
-能编译，278 个自动化测试全绿。但**有些东西我还没法验证**：
+能编译，303 个自动化测试全绿。但**有些东西我还没法验证**：
 
 - 没有 Developer ID 证书，所以签名分发和公证走不通——这也是为什么现在只有源码、还没有可下载的安装包
 - 特权 helper 的注册需要在系统设置里人工批准，端到端的 XPC 链路没有实测过
