@@ -82,32 +82,31 @@ runtime_has_active_journal() {
             exit 1
         fi
     fi
-    if ! "${SUDO_COMMAND}" -n /bin/test -d "${RUNTIME_ROOT}"; then
-        echo "error: could not inspect Helper runtime directory ${RUNTIME_ROOT}; no files were changed" >&2
-        exit 1
-    fi
+    if "${SUDO_COMMAND}" -n /bin/sh -c '
+runtime_root=$1
+active_journal=$2
 
-    if "${SUDO_COMMAND}" -n /bin/test -e "${ACTIVE_JOURNAL}"; then
-        return 0
+if ! /bin/test -d "${runtime_root}"; then
+    exit 12
+fi
+if /bin/test -e "${active_journal}" || /bin/test -L "${active_journal}"; then
+    exit 10
+fi
+exit 11
+' runtime-journal-probe "${RUNTIME_ROOT}" "${ACTIVE_JOURNAL}"; then
+        status=0
     else
         status=$?
     fi
-    if [[ ${status} -ne 1 ]]; then
-        echo "error: could not inspect Helper journal ${ACTIVE_JOURNAL}; no files were changed" >&2
-        exit 1
-    fi
 
-    if "${SUDO_COMMAND}" -n /bin/test -L "${ACTIVE_JOURNAL}"; then
-        return 0
-    else
-        status=$?
-    fi
-    if [[ ${status} -ne 1 ]]; then
-        echo "error: could not inspect Helper journal ${ACTIVE_JOURNAL}; no files were changed" >&2
-        exit 1
-    fi
-
-    return 1
+    case "${status}" in
+        10) return 0 ;;
+        11) return 1 ;;
+        *)
+            echo "error: could not inspect protected Helper runtime ${RUNTIME_ROOT} (status ${status}); no files were changed" >&2
+            exit 1
+            ;;
+    esac
 }
 
 ensure_uninstall_is_idle() {

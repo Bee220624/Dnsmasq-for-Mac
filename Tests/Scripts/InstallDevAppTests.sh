@@ -83,6 +83,7 @@ new_fixture() {
         'esac'
 
     make_stub "${STUB_BIN}/sudo" \
+        'printf "%s\n" "$*" >> "${DFM_TEST_SUDO_LOG}"' \
         'apply_authorization_side_effects() {' \
         '    if [[ "${DFM_TEST_APP_START_DURING_AUTH:-0}" == 1 ]]; then printf "running\n" > "${DFM_TEST_APP_STATE}"; fi' \
         '    if [[ "${DFM_TEST_JOURNAL_APPEAR_DURING_AUTH:-0}" == 1 ]]; then printf "{}\n" > "${DFM_TEST_RUNTIME}/active-session.json"; fi' \
@@ -90,17 +91,35 @@ new_fixture() {
         'if [[ "${1:-}" == -v ]]; then' \
         '    apply_authorization_side_effects' \
         '    [[ "${DFM_TEST_SUDO_INSPECTION_FAIL:-0}" != 1 ]]' \
-        '    if [[ "${DFM_TEST_SUDO_EXPIRE_AFTER_AUTH:-0}" == 1 ]]; then' \
+        '    if [[ "${DFM_TEST_SUDO_FAIL_AFTER_DIRECTORY_PROBE:-0}" == 1 ]]; then' \
         '        chmod 000 "${DFM_TEST_RUNTIME}"' \
-        '        printf "expired\n" > "${DFM_TEST_SUDO_STATE}"' \
+        '        printf "armed\n" > "${DFM_TEST_SUDO_STATE}"' \
         '    fi' \
         '    exit' \
         'fi' \
         'noninteractive=0' \
         'if [[ "${1:-}" == -n ]]; then noninteractive=1; shift; fi' \
-        'if (( noninteractive == 1 )) && [[ "$(<"${DFM_TEST_SUDO_STATE}")" == expired ]]; then exit 1; fi' \
         'if (( noninteractive == 0 )) && [[ "${1:-}" == launchctl ]]; then apply_authorization_side_effects; fi' \
-        'if [[ "${1:-}" == test || "${1:-}" == /bin/test ]]; then shift; exec /bin/test "$@"; fi' \
+        'if [[ "${1:-}" == test || "${1:-}" == /bin/test ]]; then' \
+        '    shift' \
+        '    if [[ "$(<"${DFM_TEST_SUDO_STATE}")" == expired ]]; then' \
+        '        if [[ "${1:-}" == -L ]]; then printf "recovered\n" > "${DFM_TEST_SUDO_STATE}"; fi' \
+        '        exit 1' \
+        '    fi' \
+        '    if [[ "${1:-}" == -d && "$(<"${DFM_TEST_SUDO_STATE}")" == armed ]]; then' \
+        '        /bin/test "$@"' \
+        '        status=$?' \
+        '        if [[ ${status} -eq 0 ]]; then printf "expired\n" > "${DFM_TEST_SUDO_STATE}"; fi' \
+        '        exit "${status}"' \
+        '    fi' \
+        '    exec /bin/test "$@"' \
+        'fi' \
+        'if [[ "${1:-}" == /bin/sh && "${2:-}" == -c ]]; then' \
+        '    if [[ "${DFM_TEST_SUDO_FAIL_AFTER_DIRECTORY_PROBE:-0}" == 1 ]]; then exit 1; fi' \
+        '    if [[ "${DFM_TEST_PROTECTED_JOURNAL_EXISTS:-0}" == 1 ]]; then exit 10; fi' \
+        '    exit 11' \
+        'fi' \
+        'if (( noninteractive == 1 )) && [[ "$(<"${DFM_TEST_SUDO_STATE}")" == expired ]]; then exit 1; fi' \
         'if [[ "${1:-}" == /bin/launchctl ]]; then shift; exec "${DFM_TEST_LAUNCHCTL}" "$@"; fi' \
         'exec "$@"'
 
@@ -175,6 +194,7 @@ run_script() {
         DFM_TEST_RUNTIME="${TEST_RUNTIME}" \
         DFM_TEST_LAUNCHCTL="${STUB_BIN}/launchctl" \
         DFM_TEST_SUDO_STATE="${FIXTURE}/sudo-state" \
+        DFM_TEST_SUDO_LOG="${FIXTURE}/sudo.log" \
         DFM_SUDO_COMMAND="${STUB_BIN}/sudo" \
         DFM_LAUNCHCTL_COMMAND="${STUB_BIN}/launchctl" \
         "$@" > "${output_file}" 2>&1
@@ -189,6 +209,13 @@ assert_old_app_preserved() {
     else
         fail "${name}: old app was changed"
     fi
+}
+
+assert_noninteractive_sudo_probe_ran() {
+    local name="$1"
+    grep -q '^-n ' "${FIXTURE}/sudo.log" \
+        && pass "${name}: protected runtime used non-interactive sudo probe" \
+        || fail "${name}: protected runtime did not use non-interactive sudo probe"
 }
 
 test_loaded_helper_blocks_install() {
@@ -301,6 +328,7 @@ test_protected_clean_runtime_allows_install_and_uninstall() {
     [[ "$(<"${TEST_APPLICATIONS}/DnsmasqForMac.app/version.txt")" == new-version ]] \
         && pass "protected clean runtime: new app is installed" \
         || fail "protected clean runtime: old app remains"
+    assert_noninteractive_sudo_probe_ran "protected clean runtime install"
 
     new_fixture protected-clean-uninstall
     chmod 000 "${TEST_RUNTIME}"
@@ -312,6 +340,35 @@ test_protected_clean_runtime_allows_install_and_uninstall() {
     [[ ! -e "${TEST_APPLICATIONS}/DnsmasqForMac.app" ]] \
         && pass "protected clean runtime: requested app removal completes" \
         || fail "protected clean runtime: requested app removal did not complete"
+    assert_noninteractive_sudo_probe_ran "protected clean runtime uninstall"
+}
+
+test_protected_journal_blocks_install_and_uninstall() {
+    new_fixture protected-journal-install
+    printf '{}\n' > "${TEST_RUNTIME}/active-session.json"
+    chmod 000 "${TEST_RUNTIME}"
+    export DFM_TEST_PROTECTED_JOURNAL_EXISTS=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/install-dev-app.sh"
+    unset DFM_TEST_PROTECTED_JOURNAL_EXISTS
+    chmod 700 "${TEST_RUNTIME}"
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "protected journal: install fails closed" \
+        || fail "protected journal: install unexpectedly succeeded"
+    assert_old_app_preserved "protected journal install"
+    assert_noninteractive_sudo_probe_ran "protected journal install"
+
+    new_fixture protected-journal-uninstall
+    printf '{}\n' > "${TEST_RUNTIME}/active-session.json"
+    chmod 000 "${TEST_RUNTIME}"
+    export DFM_TEST_PROTECTED_JOURNAL_EXISTS=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+    unset DFM_TEST_PROTECTED_JOURNAL_EXISTS
+    chmod 700 "${TEST_RUNTIME}"
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "protected journal: uninstall fails closed" \
+        || fail "protected journal: uninstall unexpectedly succeeded"
+    assert_old_app_preserved "protected journal uninstall"
+    assert_noninteractive_sudo_probe_ran "protected journal uninstall"
 }
 
 test_helper_starting_during_staging_blocks_replacement() {
@@ -371,20 +428,30 @@ test_uninstall_rechecks_after_authorization() {
         || fail "authorization race journal: Helper was booted out"
 }
 
-test_expired_sudo_credentials_fail_closed() {
-    new_fixture sudo-expired-after-authorization
-    printf 'loaded\n' > "${FIXTURE}/helper-state"
-    export DFM_TEST_SUDO_EXPIRE_AFTER_AUTH=1
-    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
-    unset DFM_TEST_SUDO_EXPIRE_AFTER_AUTH
+test_sudo_failure_after_directory_probe_fails_closed() {
+    new_fixture sudo-failed-after-directory-probe-install
+    chmod 000 "${TEST_RUNTIME}"
+    export DFM_TEST_SUDO_FAIL_AFTER_DIRECTORY_PROBE=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/install-dev-app.sh"
+    unset DFM_TEST_SUDO_FAIL_AFTER_DIRECTORY_PROBE
     chmod 700 "${TEST_RUNTIME}"
 
-    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "expired sudo credentials: uninstall fails closed" \
-        || fail "expired sudo credentials: uninstall unexpectedly succeeded"
-    assert_old_app_preserved "expired sudo credentials"
-    [[ "$(<"${FIXTURE}/helper-state")" == loaded ]] \
-        && pass "expired sudo credentials: Helper remains loaded" \
-        || fail "expired sudo credentials: Helper was booted out"
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "sudo failure after directory probe: install fails closed" \
+        || fail "sudo failure after directory probe: install unexpectedly succeeded"
+    assert_old_app_preserved "sudo failure after directory probe install"
+    assert_noninteractive_sudo_probe_ran "sudo failure after directory probe install"
+
+    new_fixture sudo-failed-after-directory-probe-uninstall
+    chmod 000 "${TEST_RUNTIME}"
+    export DFM_TEST_SUDO_FAIL_AFTER_DIRECTORY_PROBE=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+    unset DFM_TEST_SUDO_FAIL_AFTER_DIRECTORY_PROBE
+    chmod 700 "${TEST_RUNTIME}"
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "sudo failure after directory probe: uninstall fails closed" \
+        || fail "sudo failure after directory probe: uninstall unexpectedly succeeded"
+    assert_old_app_preserved "sudo failure after directory probe uninstall"
+    assert_noninteractive_sudo_probe_ran "sudo failure after directory probe uninstall"
 }
 
 test_uninstall_rechecks_before_app_removal() {
@@ -438,10 +505,11 @@ test_active_app_and_journal_block_install
 test_running_long_named_helper_blocks_install
 test_backup_cleanup_failure_keeps_verified_new_app
 test_protected_clean_runtime_allows_install_and_uninstall
+test_protected_journal_blocks_install_and_uninstall
 test_helper_starting_during_staging_blocks_replacement
 test_unexpected_launchctl_error_fails_closed
 test_uninstall_rechecks_after_authorization
-test_expired_sudo_credentials_fail_closed
+test_sudo_failure_after_directory_probe_fails_closed
 test_uninstall_rechecks_before_app_removal
 test_successful_upgrade_preserves_user_configuration
 
