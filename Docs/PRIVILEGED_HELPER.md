@@ -57,10 +57,32 @@ make build
 Scripts/install-dev-app.sh
 ```
 
-The script verifies the bundle, removes any previously registered helper (a stale
-registration pointing at an old copy is the most common source of confusing failures), copies
-the app to `/Applications` with `ditto` so nested signatures survive, and re-verifies the
-installed copy. Then follow the user steps above.
+Before upgrading, stop the active session in the app, choose **Remove Helper** in Settings, and
+quit every running copy of Dnsmasq for Mac, including copies launched from DerivedData. The
+installer checks the exact app and Helper process names, the launchd service, and the Helper's
+session journal. It refuses to overwrite the installed app while any of that evidence remains;
+it never kills a process as a substitute for session cleanup. If macOS still reports the Helper
+after removal, log out and back in before retrying.
+
+The Helper runtime directory is root-owned and is normally not searchable by the logged-in user.
+The installer therefore asks for administrator authorization to perform fixed, read-only
+existence checks for the directory and `active-session.json`. If authorization or inspection
+fails, installation stops before changing either app. The journal is never read, modified, or
+deleted by the installer. The activity checks run again after staging and immediately before the
+old app is moved, so opening the app or Helper during a slow copy also stops the upgrade safely.
+
+The script verifies the build, copies it to a temporary path beside the installed app with
+`ditto`, and verifies the staged signature before replacement. It retains the previous app until
+the installed copy passes signature verification. A copy, replacement, or verification failure
+returns a non-zero status and leaves the previous app in place (or restores it). Profiles under
+the user's Application Support directory are outside this transaction and are not changed.
+After a successful upgrade, follow the user steps above to register the Helper from the newly
+installed bundle.
+
+If the installer reports `active-session.json`, open the currently installed app and let the
+Helper recover or stop the session, then remove the Helper in Settings. An unreadable journal is
+also treated as active evidence; do not delete it by hand. If the current app no longer launches,
+restore that same app version first so its matching Helper can complete recovery.
 
 To watch what the helper does:
 
@@ -165,9 +187,11 @@ If the app will not launch at all, the escape hatch is:
 Scripts/uninstall-dev-helper.sh
 ```
 
-which boots the daemon out of launchd. It does **not** run `sfltool resetbtm`: that clears the
-background task database for the entire Mac, not just this app. It is mentioned in the
-script's output as a last resort for the user to decide on, never run automatically.
+which boots the daemon out of launchd. The script refuses while the app is running or a session
+journal remains, and a failed `launchctl bootout` is a hard error; it never removes the app after
+an uncertain unload. It does **not** run `sfltool resetbtm`: that clears the background task
+database for the entire Mac, not just this app. It is mentioned in the script's output as a last
+resort for the user to decide on, never run automatically.
 
 ---
 

@@ -13,9 +13,148 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib-identifiers.sh"
 
 CONFIGURATION="${1:-Debug}"
-DERIVED_DATA="${REPO_ROOT}/build/DerivedData"
+DERIVED_DATA="${DFM_DERIVED_DATA_ROOT:-${REPO_ROOT}/build/DerivedData}"
 BUILT_APP="${DERIVED_DATA}/Build/Products/${CONFIGURATION}/${PRODUCT_NAME_BASE}.app"
-INSTALLED_APP="/Applications/${PRODUCT_NAME_BASE}.app"
+APPLICATIONS_DIR="${DFM_APPLICATIONS_DIR:-/Applications}"
+RUNTIME_ROOT="${DFM_HELPER_RUNTIME_ROOT:-${HELPER_RUNTIME_ROOT}}"
+INSTALLED_APP="${APPLICATIONS_DIR}/${PRODUCT_NAME_BASE}.app"
+ACTIVE_JOURNAL="${RUNTIME_ROOT}/active-session.json"
+STAGED_APP="${APPLICATIONS_DIR}/.${PRODUCT_NAME_BASE}.app.install.$$"
+BACKUP_APP="${APPLICATIONS_DIR}/.${PRODUCT_NAME_BASE}.app.backup.$$"
+BACKUP_CREATED=0
+REPLACEMENT_INSTALLED=0
+
+process_is_running() {
+    local executable_name="$1" escaped_name pattern status
+
+    escaped_name="$(printf '%s' "${executable_name}" | sed 's/[][(){}.^$*+?|\\]/\\&/g')"
+    pattern="^(.*/)?${escaped_name}([[:space:]]|$)"
+
+    # macOS pgrep silently misses process names longer than 19 characters unless -f is used.
+    # Anchor the full argument list at argv[0]'s basename so similarly named processes and
+    # command arguments do not count as the app or Helper.
+    if pgrep -f "${pattern}" >/dev/null 2>&1; then
+        return 0
+    else
+        status=$?
+    fi
+    if [[ ${status} -eq 1 ]]; then
+        return 1
+    fi
+
+    echo "error: could not determine whether ${executable_name} is running" >&2
+    exit 1
+}
+
+runtime_has_active_journal() {
+    local status
+
+    if [[ ! -e "${RUNTIME_ROOT}" && ! -L "${RUNTIME_ROOT}" ]]; then
+        return 1
+    fi
+    if [[ ! -d "${RUNTIME_ROOT}" ]]; then
+        echo "error: Helper runtime path is not a directory: ${RUNTIME_ROOT}" >&2
+        exit 1
+    fi
+
+    if [[ -x "${RUNTIME_ROOT}" ]]; then
+        [[ -e "${ACTIVE_JOURNAL}" || -L "${ACTIVE_JOURNAL}" ]]
+        return
+    fi
+
+    echo "==> checking protected Helper runtime state (requires admin)"
+    if ! sudo -v; then
+        echo "error: admin authorization is required to inspect ${RUNTIME_ROOT}; no files were changed" >&2
+        exit 1
+    fi
+    if ! sudo test -d "${RUNTIME_ROOT}"; then
+        echo "error: could not inspect Helper runtime directory ${RUNTIME_ROOT}; no files were changed" >&2
+        exit 1
+    fi
+
+    if sudo test -e "${ACTIVE_JOURNAL}"; then
+        return 0
+    else
+        status=$?
+    fi
+    if [[ ${status} -ne 1 ]]; then
+        echo "error: could not inspect Helper journal ${ACTIVE_JOURNAL}; no files were changed" >&2
+        exit 1
+    fi
+
+    if sudo test -L "${ACTIVE_JOURNAL}"; then
+        return 0
+    else
+        status=$?
+    fi
+    if [[ ${status} -ne 1 ]]; then
+        echo "error: could not inspect Helper journal ${ACTIVE_JOURNAL}; no files were changed" >&2
+        exit 1
+    fi
+
+    return 1
+}
+
+ensure_install_is_idle() {
+    # Replacing a running app or helper can strand a session on old code. The installer never
+    # kills either process: the app owns session cleanup and SMAppService registration.
+    if process_is_running "${PRODUCT_NAME_BASE}"; then
+        cat >&2 <<EOF
+error: ${PRODUCT_DISPLAY_NAME} is still running.
+       Stop any active session in the app, remove the Helper in Settings, then quit the app.
+EOF
+        exit 1
+    fi
+
+    if launchctl print "system/${HELPER_LABEL}" >/dev/null 2>&1; then
+        cat >&2 <<EOF
+error: ${HELPER_LABEL} is still loaded.
+       Open the installed app, stop the session, and use Settings > Remove Helper.
+       If macOS still shows the Helper after removal, log out and back in before retrying.
+EOF
+        exit 1
+    fi
+
+    if process_is_running "${HELPER_LABEL}"; then
+        echo "error: ${HELPER_LABEL} is still running; clean it up from the app before installing" >&2
+        exit 1
+    fi
+
+    if runtime_has_active_journal; then
+        cat >&2 <<EOF
+error: Helper session evidence remains at ${ACTIVE_JOURNAL}.
+       Open the installed app so the Helper can recover and clean the session, then choose
+       Settings > Remove Helper. If the app cannot connect, restore this same app version first.
+EOF
+        exit 1
+    fi
+}
+
+rollback_on_failure() {
+    local status=$?
+    trap - EXIT
+
+    if [[ ${status} -ne 0 && ${REPLACEMENT_INSTALLED} -eq 1 ]]; then
+        echo "==> installation failed; restoring the previous application" >&2
+        if ! rm -rf "${INSTALLED_APP}"; then
+            echo "error: could not remove the failed replacement at ${INSTALLED_APP}" >&2
+        elif [[ ${BACKUP_CREATED} -eq 1 ]] && ! mv "${BACKUP_APP}" "${INSTALLED_APP}"; then
+            echo "error: could not restore the previous application from ${BACKUP_APP}" >&2
+        fi
+    elif [[ ${status} -ne 0 && ${BACKUP_CREATED} -eq 1 ]]; then
+        echo "==> installation failed; restoring the previous application" >&2
+        if ! mv "${BACKUP_APP}" "${INSTALLED_APP}"; then
+            echo "error: could not restore the previous application from ${BACKUP_APP}" >&2
+        fi
+    fi
+
+    if [[ -e "${STAGED_APP}" ]] && ! rm -rf "${STAGED_APP}"; then
+        echo "warning: could not remove staging path ${STAGED_APP}" >&2
+    fi
+
+    exit "${status}"
+}
+trap rollback_on_failure EXIT
 
 if [[ ! -d "${BUILT_APP}" ]]; then
     echo "error: no ${CONFIGURATION} build found at ${BUILT_APP}" >&2
@@ -26,23 +165,45 @@ fi
 echo "==> verifying the build before installing it"
 "${SCRIPT_DIR}/verify-bundle.sh" "${BUILT_APP}"
 
-# A previously registered daemon keeps pointing at the old copy, so it is removed first.
-if launchctl print "system/${HELPER_LABEL}" >/dev/null 2>&1; then
-    echo "==> a previous helper is registered; removing it first"
-    "${SCRIPT_DIR}/uninstall-dev-helper.sh" || true
+ensure_install_is_idle
+
+if [[ ! -d "${APPLICATIONS_DIR}" ]]; then
+    echo "error: application directory does not exist: ${APPLICATIONS_DIR}" >&2
+    exit 1
 fi
 
-if [[ -d "${INSTALLED_APP}" ]]; then
-    echo "==> removing previous ${INSTALLED_APP}"
-    rm -rf "${INSTALLED_APP}"
+echo "==> staging a copy at ${STAGED_APP}"
+# ditto preserves the signature; a plain recursive copy can invalidate nested code signatures.
+ditto "${BUILT_APP}" "${STAGED_APP}"
+
+echo "==> verifying the staged copy"
+codesign --verify --deep --strict --verbose=1 "${STAGED_APP}"
+
+# Copying and authorization can take long enough for the user to reopen the app. Recheck every
+# activity signal immediately before the first mutation of the installed application.
+ensure_install_is_idle
+
+if [[ -e "${INSTALLED_APP}" ]]; then
+    echo "==> preserving the previous application for rollback"
+    mv "${INSTALLED_APP}" "${BACKUP_APP}"
+    BACKUP_CREATED=1
 fi
 
-echo "==> copying to ${INSTALLED_APP}"
-# -c preserves the signature; a plain recursive copy can invalidate nested code signatures.
-ditto "${BUILT_APP}" "${INSTALLED_APP}"
+echo "==> installing to ${INSTALLED_APP}"
+mv "${STAGED_APP}" "${INSTALLED_APP}"
+REPLACEMENT_INSTALLED=1
 
 echo "==> verifying the installed copy"
 codesign --verify --deep --strict --verbose=1 "${INSTALLED_APP}"
+
+if [[ ${BACKUP_CREATED} -eq 1 ]]; then
+    if ! rm -rf "${BACKUP_APP}"; then
+        echo "warning: could not remove rollback backup ${BACKUP_APP}; the verified new app remains installed" >&2
+    fi
+    BACKUP_CREATED=0
+fi
+REPLACEMENT_INSTALLED=0
+trap - EXIT
 
 cat <<EOF
 
