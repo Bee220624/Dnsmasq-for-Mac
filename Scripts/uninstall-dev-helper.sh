@@ -15,6 +15,8 @@ RUNTIME_ROOT="${DFM_HELPER_RUNTIME_ROOT:-${HELPER_RUNTIME_ROOT}}"
 INSTALLED_APP="${APPLICATIONS_DIR}/${PRODUCT_NAME_BASE}.app"
 ACTIVE_JOURNAL="${RUNTIME_ROOT}/active-session.json"
 REMOVE_APP="${1:-keep-app}"
+SUDO_COMMAND="${DFM_SUDO_COMMAND:-/usr/bin/sudo}"
+LAUNCHCTL_COMMAND="${DFM_LAUNCHCTL_COMMAND:-/bin/launchctl}"
 
 process_is_running() {
     local executable_name="$1" escaped_name pattern status
@@ -37,8 +39,28 @@ process_is_running() {
     exit 1
 }
 
+helper_is_loaded() {
+    local output status
+
+    if output="$("${LAUNCHCTL_COMMAND}" print "system/${HELPER_LABEL}" 2>&1)"; then
+        LAUNCHCTL_PRINT_OUTPUT="${output}"
+        return 0
+    else
+        status=$?
+    fi
+
+    if [[ ${status} -eq 113 && "${output}" == *"Could not find service"* ]]; then
+        LAUNCHCTL_PRINT_OUTPUT="${output}"
+        return 1
+    fi
+
+    echo "error: could not determine whether ${HELPER_LABEL} is loaded (launchctl status ${status})" >&2
+    [[ -z "${output}" ]] || printf '       %s\n' "${output}" >&2
+    exit 1
+}
+
 runtime_has_active_journal() {
-    local status
+    local authorization_mode="${1:-authorize}" status
 
     if [[ ! -e "${RUNTIME_ROOT}" && ! -L "${RUNTIME_ROOT}" ]]; then
         return 1
@@ -53,17 +75,19 @@ runtime_has_active_journal() {
         return
     fi
 
-    echo "==> checking protected Helper runtime state (requires admin)"
-    if ! sudo -v; then
-        echo "error: admin authorization is required to inspect ${RUNTIME_ROOT}; no files were changed" >&2
-        exit 1
+    if [[ "${authorization_mode}" == authorize ]]; then
+        echo "==> checking protected Helper runtime state (requires admin)"
+        if ! "${SUDO_COMMAND}" -v; then
+            echo "error: admin authorization is required to inspect ${RUNTIME_ROOT}; no files were changed" >&2
+            exit 1
+        fi
     fi
-    if ! sudo test -d "${RUNTIME_ROOT}"; then
+    if ! "${SUDO_COMMAND}" -n /bin/test -d "${RUNTIME_ROOT}"; then
         echo "error: could not inspect Helper runtime directory ${RUNTIME_ROOT}; no files were changed" >&2
         exit 1
     fi
 
-    if sudo test -e "${ACTIVE_JOURNAL}"; then
+    if "${SUDO_COMMAND}" -n /bin/test -e "${ACTIVE_JOURNAL}"; then
         return 0
     else
         status=$?
@@ -73,7 +97,7 @@ runtime_has_active_journal() {
         exit 1
     fi
 
-    if sudo test -L "${ACTIVE_JOURNAL}"; then
+    if "${SUDO_COMMAND}" -n /bin/test -L "${ACTIVE_JOURNAL}"; then
         return 0
     else
         status=$?
@@ -86,23 +110,41 @@ runtime_has_active_journal() {
     return 1
 }
 
-if process_is_running "${PRODUCT_NAME_BASE}"; then
-    echo "error: quit ${PRODUCT_DISPLAY_NAME} before removing its Helper" >&2
-    exit 1
-fi
+ensure_uninstall_is_idle() {
+    local authorization_mode="${1:-authorize}"
 
-if runtime_has_active_journal; then
-    cat >&2 <<EOF
+    if process_is_running "${PRODUCT_NAME_BASE}"; then
+        echo "error: quit ${PRODUCT_DISPLAY_NAME} before removing its Helper" >&2
+        exit 1
+    fi
+
+    if runtime_has_active_journal "${authorization_mode}"; then
+        cat >&2 <<EOF
 error: Helper session evidence remains at ${ACTIVE_JOURNAL}.
        Use the app to stop or recover the session before removing the Helper. If the app cannot
        connect, restore the matching installed app and retry recovery; do not delete the journal.
 EOF
-    exit 1
-fi
+        exit 1
+    fi
+}
+
+ensure_helper_is_unloaded() {
+    if helper_is_loaded; then
+        echo "error: ${HELPER_LABEL} is still loaded; the app was not removed" >&2
+        exit 1
+    fi
+
+    if process_is_running "${HELPER_LABEL}"; then
+        echo "error: ${HELPER_LABEL} is still running; the app was not removed" >&2
+        exit 1
+    fi
+}
+
+ensure_uninstall_is_idle authorize
 
 echo "==> current daemon state"
-if launchctl print "system/${HELPER_LABEL}" >/dev/null 2>&1; then
-    launchctl print "system/${HELPER_LABEL}" | sed -n '1,12p'
+if helper_is_loaded; then
+    printf '%s\n' "${LAUNCHCTL_PRINT_OUTPUT}" | sed -n '1,12p'
     HELPER_LOADED=1
 else
     echo "    ${HELPER_LABEL} is not loaded"
@@ -113,29 +155,39 @@ fi
 # what the Remove Helper button in Settings does. This is the escape hatch for when the app
 # will not launch or the registration is stale.
 if [[ ${HELPER_LOADED} -eq 1 ]]; then
-    echo "==> booting out ${HELPER_LABEL} (requires admin)"
-    if ! sudo launchctl bootout "system/${HELPER_LABEL}"; then
+    echo "==> authorizing removal of ${HELPER_LABEL} (requires admin)"
+    if ! "${SUDO_COMMAND}" -v; then
+        echo "error: admin authorization failed; the Helper and app were not removed" >&2
+        exit 1
+    fi
+
+    # Authorization can wait for the user. Refresh every activity signal before bootout, and
+    # require the same Helper to remain loaded so an external state change also fails closed.
+    ensure_uninstall_is_idle noninteractive
+    if ! helper_is_loaded; then
+        echo "error: ${HELPER_LABEL} changed state during authorization; the app was not removed" >&2
+        exit 1
+    fi
+
+    echo "==> booting out ${HELPER_LABEL}"
+    if ! "${SUDO_COMMAND}" -n /bin/launchctl bootout "system/${HELPER_LABEL}"; then
         echo "error: launchctl could not boot out ${HELPER_LABEL}; the app was not removed" >&2
         exit 1
     fi
     echo "    booted out"
 fi
 
-if launchctl print "system/${HELPER_LABEL}" >/dev/null 2>&1; then
-    echo "error: ${HELPER_LABEL} is still loaded; the app was not removed" >&2
-    exit 1
-fi
-
-if process_is_running "${HELPER_LABEL}"; then
-    echo "error: ${HELPER_LABEL} is still running; the app was not removed" >&2
-    exit 1
-fi
+ensure_helper_is_unloaded
 
 # Deliberately NOT run here: `sudo sfltool resetbtm` clears the background task database for
 # the ENTIRE Mac, not just this app, so every other login item and daemon registration goes
 # with it. It is mentioned in the closing message as a last resort for the user to decide on.
 
 if [[ "${REMOVE_APP}" == "--remove-app" && -d "${INSTALLED_APP}" ]]; then
+    # Nothing prompts between this check and rm. If credentials expired or activity reappeared,
+    # the non-interactive journal check fails closed and preserves the installed app.
+    ensure_uninstall_is_idle noninteractive
+    ensure_helper_is_unloaded
     echo "==> removing ${INSTALLED_APP}"
     rm -rf "${INSTALLED_APP}"
 fi

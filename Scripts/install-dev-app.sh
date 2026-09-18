@@ -21,6 +21,8 @@ INSTALLED_APP="${APPLICATIONS_DIR}/${PRODUCT_NAME_BASE}.app"
 ACTIVE_JOURNAL="${RUNTIME_ROOT}/active-session.json"
 STAGED_APP="${APPLICATIONS_DIR}/.${PRODUCT_NAME_BASE}.app.install.$$"
 BACKUP_APP="${APPLICATIONS_DIR}/.${PRODUCT_NAME_BASE}.app.backup.$$"
+SUDO_COMMAND="${DFM_SUDO_COMMAND:-/usr/bin/sudo}"
+LAUNCHCTL_COMMAND="${DFM_LAUNCHCTL_COMMAND:-/bin/launchctl}"
 BACKUP_CREATED=0
 REPLACEMENT_INSTALLED=0
 
@@ -46,6 +48,24 @@ process_is_running() {
     exit 1
 }
 
+helper_is_loaded() {
+    local output status
+
+    if output="$("${LAUNCHCTL_COMMAND}" print "system/${HELPER_LABEL}" 2>&1)"; then
+        return 0
+    else
+        status=$?
+    fi
+
+    if [[ ${status} -eq 113 && "${output}" == *"Could not find service"* ]]; then
+        return 1
+    fi
+
+    echo "error: could not determine whether ${HELPER_LABEL} is loaded (launchctl status ${status})" >&2
+    [[ -z "${output}" ]] || printf '       %s\n' "${output}" >&2
+    exit 1
+}
+
 runtime_has_active_journal() {
     local status
 
@@ -63,16 +83,16 @@ runtime_has_active_journal() {
     fi
 
     echo "==> checking protected Helper runtime state (requires admin)"
-    if ! sudo -v; then
+    if ! "${SUDO_COMMAND}" -v; then
         echo "error: admin authorization is required to inspect ${RUNTIME_ROOT}; no files were changed" >&2
         exit 1
     fi
-    if ! sudo test -d "${RUNTIME_ROOT}"; then
+    if ! "${SUDO_COMMAND}" -n /bin/test -d "${RUNTIME_ROOT}"; then
         echo "error: could not inspect Helper runtime directory ${RUNTIME_ROOT}; no files were changed" >&2
         exit 1
     fi
 
-    if sudo test -e "${ACTIVE_JOURNAL}"; then
+    if "${SUDO_COMMAND}" -n /bin/test -e "${ACTIVE_JOURNAL}"; then
         return 0
     else
         status=$?
@@ -82,7 +102,7 @@ runtime_has_active_journal() {
         exit 1
     fi
 
-    if sudo test -L "${ACTIVE_JOURNAL}"; then
+    if "${SUDO_COMMAND}" -n /bin/test -L "${ACTIVE_JOURNAL}"; then
         return 0
     else
         status=$?
@@ -106,7 +126,7 @@ EOF
         exit 1
     fi
 
-    if launchctl print "system/${HELPER_LABEL}" >/dev/null 2>&1; then
+    if helper_is_loaded; then
         cat >&2 <<EOF
 error: ${HELPER_LABEL} is still loaded.
        Open the installed app, stop the session, and use Settings > Remove Helper.

@@ -66,25 +66,51 @@ new_fixture() {
         'command_name="${1:-}"' \
         'case "${command_name}" in' \
         '    print)' \
-        '        [[ -f "${DFM_TEST_HELPER_STATE}" ]] && [[ "$(<"${DFM_TEST_HELPER_STATE}")" == loaded ]]' \
+        '        case "$(<"${DFM_TEST_HELPER_STATE}")" in' \
+        '            loaded) printf "service = loaded\n" ;;' \
+        '            unloaded) printf "Could not find service in domain for system\n" >&2; exit 113 ;;' \
+        '            error) printf "launchctl: internal error\n" >&2; exit 2 ;;' \
+        '            *) exit 64 ;;' \
+        '        esac' \
         '        ;;' \
         '    bootout)' \
         '        if [[ "${DFM_TEST_BOOTOUT_FAIL:-0}" == 1 ]]; then exit 78; fi' \
         '        printf "unloaded\n" > "${DFM_TEST_HELPER_STATE}"' \
+        '        if [[ "${DFM_TEST_APP_START_AFTER_BOOTOUT:-0}" == 1 ]]; then printf "running\n" > "${DFM_TEST_APP_STATE}"; fi' \
+        '        if [[ "${DFM_TEST_JOURNAL_APPEAR_AFTER_BOOTOUT:-0}" == 1 ]]; then printf "{}\n" > "${DFM_TEST_RUNTIME}/active-session.json"; fi' \
         '        ;;' \
         '    *) exit 64 ;;' \
         'esac'
 
     make_stub "${STUB_BIN}/sudo" \
-        'if [[ "${1:-}" == -v ]]; then [[ "${DFM_TEST_SUDO_INSPECTION_FAIL:-0}" != 1 ]]; exit; fi' \
-        'if [[ "${1:-}" == test ]]; then shift; exec /bin/test "$@"; fi' \
+        'apply_authorization_side_effects() {' \
+        '    if [[ "${DFM_TEST_APP_START_DURING_AUTH:-0}" == 1 ]]; then printf "running\n" > "${DFM_TEST_APP_STATE}"; fi' \
+        '    if [[ "${DFM_TEST_JOURNAL_APPEAR_DURING_AUTH:-0}" == 1 ]]; then printf "{}\n" > "${DFM_TEST_RUNTIME}/active-session.json"; fi' \
+        '}' \
+        'if [[ "${1:-}" == -v ]]; then' \
+        '    apply_authorization_side_effects' \
+        '    [[ "${DFM_TEST_SUDO_INSPECTION_FAIL:-0}" != 1 ]]' \
+        '    if [[ "${DFM_TEST_SUDO_EXPIRE_AFTER_AUTH:-0}" == 1 ]]; then' \
+        '        chmod 000 "${DFM_TEST_RUNTIME}"' \
+        '        printf "expired\n" > "${DFM_TEST_SUDO_STATE}"' \
+        '    fi' \
+        '    exit' \
+        'fi' \
+        'noninteractive=0' \
+        'if [[ "${1:-}" == -n ]]; then noninteractive=1; shift; fi' \
+        'if (( noninteractive == 1 )) && [[ "$(<"${DFM_TEST_SUDO_STATE}")" == expired ]]; then exit 1; fi' \
+        'if (( noninteractive == 0 )) && [[ "${1:-}" == launchctl ]]; then apply_authorization_side_effects; fi' \
+        'if [[ "${1:-}" == test || "${1:-}" == /bin/test ]]; then shift; exec /bin/test "$@"; fi' \
+        'if [[ "${1:-}" == /bin/launchctl ]]; then shift; exec "${DFM_TEST_LAUNCHCTL}" "$@"; fi' \
         'exec "$@"'
 
     make_stub "${STUB_BIN}/pgrep" \
         'pattern="${*: -1}"' \
         'full_arguments=0' \
         'for argument in "$@"; do [[ "${argument}" == -f ]] && full_arguments=1; done' \
-        'if [[ "${pattern}" == *DnsmasqForMac* && "${pattern}" != *dnsmasqformac*helper* && "${DFM_TEST_APP_RUNNING:-0}" == 1 ]]; then exit 0; fi' \
+        'if [[ "${pattern}" == *DnsmasqForMac* && "${pattern}" != *dnsmasqformac*helper* ]]; then' \
+        '    if [[ "${DFM_TEST_APP_RUNNING:-0}" == 1 || "$(<"${DFM_TEST_APP_STATE}")" == running ]]; then exit 0; fi' \
+        'fi' \
         'if [[ "${pattern}" == *dnsmasqformac*helper* && "${DFM_TEST_HELPER_RUNNING:-0}" == 1 ]]; then' \
         '    (( full_arguments == 1 )) && exit 0' \
         '    exit 1 # macOS pgrep silently misses process names longer than 19 characters without -f' \
@@ -131,6 +157,8 @@ new_fixture() {
         'esac'
 
     printf 'unloaded\n' > "${FIXTURE}/helper-state"
+    printf 'stopped\n' > "${FIXTURE}/app-state"
+    printf 'valid\n' > "${FIXTURE}/sudo-state"
 }
 
 run_script() {
@@ -143,6 +171,12 @@ run_script() {
         DFM_HELPER_RUNTIME_ROOT="${TEST_RUNTIME}" \
         DFM_TEST_APPLICATIONS_DIR="${TEST_APPLICATIONS}" \
         DFM_TEST_HELPER_STATE="${FIXTURE}/helper-state" \
+        DFM_TEST_APP_STATE="${FIXTURE}/app-state" \
+        DFM_TEST_RUNTIME="${TEST_RUNTIME}" \
+        DFM_TEST_LAUNCHCTL="${STUB_BIN}/launchctl" \
+        DFM_TEST_SUDO_STATE="${FIXTURE}/sudo-state" \
+        DFM_SUDO_COMMAND="${STUB_BIN}/sudo" \
+        DFM_LAUNCHCTL_COMMAND="${STUB_BIN}/launchctl" \
         "$@" > "${output_file}" 2>&1
     SCRIPT_STATUS=$?
     set -e
@@ -291,6 +325,90 @@ test_helper_starting_during_staging_blocks_replacement() {
     assert_old_app_preserved "late Helper start"
 }
 
+test_unexpected_launchctl_error_fails_closed() {
+    new_fixture launchctl-error-install
+    printf 'error\n' > "${FIXTURE}/helper-state"
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/install-dev-app.sh"
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "launchctl error: install fails closed" \
+        || fail "launchctl error: install unexpectedly succeeded"
+    assert_old_app_preserved "launchctl error install"
+
+    new_fixture launchctl-error-uninstall
+    printf 'error\n' > "${FIXTURE}/helper-state"
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "launchctl error: uninstall fails closed" \
+        || fail "launchctl error: uninstall unexpectedly succeeded"
+    assert_old_app_preserved "launchctl error uninstall"
+}
+
+test_uninstall_rechecks_after_authorization() {
+    new_fixture app-started-during-authorization
+    printf 'loaded\n' > "${FIXTURE}/helper-state"
+    export DFM_TEST_APP_START_DURING_AUTH=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+    unset DFM_TEST_APP_START_DURING_AUTH
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "authorization race app: uninstall is rejected" \
+        || fail "authorization race app: uninstall unexpectedly succeeded"
+    assert_old_app_preserved "authorization race app"
+    [[ "$(<"${FIXTURE}/helper-state")" == loaded ]] \
+        && pass "authorization race app: Helper remains loaded" \
+        || fail "authorization race app: Helper was booted out"
+
+    new_fixture journal-started-during-authorization
+    printf 'loaded\n' > "${FIXTURE}/helper-state"
+    export DFM_TEST_JOURNAL_APPEAR_DURING_AUTH=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+    unset DFM_TEST_JOURNAL_APPEAR_DURING_AUTH
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "authorization race journal: uninstall is rejected" \
+        || fail "authorization race journal: uninstall unexpectedly succeeded"
+    assert_old_app_preserved "authorization race journal"
+    [[ "$(<"${FIXTURE}/helper-state")" == loaded ]] \
+        && pass "authorization race journal: Helper remains loaded" \
+        || fail "authorization race journal: Helper was booted out"
+}
+
+test_expired_sudo_credentials_fail_closed() {
+    new_fixture sudo-expired-after-authorization
+    printf 'loaded\n' > "${FIXTURE}/helper-state"
+    export DFM_TEST_SUDO_EXPIRE_AFTER_AUTH=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+    unset DFM_TEST_SUDO_EXPIRE_AFTER_AUTH
+    chmod 700 "${TEST_RUNTIME}"
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "expired sudo credentials: uninstall fails closed" \
+        || fail "expired sudo credentials: uninstall unexpectedly succeeded"
+    assert_old_app_preserved "expired sudo credentials"
+    [[ "$(<"${FIXTURE}/helper-state")" == loaded ]] \
+        && pass "expired sudo credentials: Helper remains loaded" \
+        || fail "expired sudo credentials: Helper was booted out"
+}
+
+test_uninstall_rechecks_before_app_removal() {
+    new_fixture app-started-before-removal
+    printf 'loaded\n' > "${FIXTURE}/helper-state"
+    export DFM_TEST_APP_START_AFTER_BOOTOUT=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+    unset DFM_TEST_APP_START_AFTER_BOOTOUT
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "pre-removal app race: app removal is rejected" \
+        || fail "pre-removal app race: uninstall unexpectedly succeeded"
+    assert_old_app_preserved "pre-removal app race"
+
+    new_fixture journal-started-before-removal
+    printf 'loaded\n' > "${FIXTURE}/helper-state"
+    export DFM_TEST_JOURNAL_APPEAR_AFTER_BOOTOUT=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+    unset DFM_TEST_JOURNAL_APPEAR_AFTER_BOOTOUT
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "pre-removal journal race: app removal is rejected" \
+        || fail "pre-removal journal race: uninstall unexpectedly succeeded"
+    assert_old_app_preserved "pre-removal journal race"
+}
+
 test_successful_upgrade_preserves_user_configuration() {
     new_fixture success
     run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/install-dev-app.sh"
@@ -321,6 +439,10 @@ test_running_long_named_helper_blocks_install
 test_backup_cleanup_failure_keeps_verified_new_app
 test_protected_clean_runtime_allows_install_and_uninstall
 test_helper_starting_during_staging_blocks_replacement
+test_unexpected_launchctl_error_fails_closed
+test_uninstall_rechecks_after_authorization
+test_expired_sudo_credentials_fail_closed
+test_uninstall_rechecks_before_app_removal
 test_successful_upgrade_preserves_user_configuration
 
 printf '\n%d passed, %d failed\n' "${PASS_COUNT}" "${FAIL_COUNT}"
