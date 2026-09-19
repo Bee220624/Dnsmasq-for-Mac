@@ -9,18 +9,30 @@ private actor TestSessionClient: SessionClient {
     var runtimeFailure: ServiceFailure?
     var report = PreflightReport(checks: [], issues: [], generatedAt: Date())
     var recovery = RecoveryReport(outcome: .nothingToRecover)
+    var sessionToStart: ActiveSession?
+    var preflightCallCount = 0
+    var startCallCount = 0
 
     func setState(_ value: RuntimeState) { state = value }
     func failRuntime(_ value: ServiceFailure?) { runtimeFailure = value }
     func failStop(_ value: ServiceFailure?) { stopFailure = value }
     func setReport(_ value: PreflightReport) { report = value }
     func setRecovery(_ value: RecoveryReport) { recovery = value }
+    func setSessionToStart(_ value: ActiveSession?) { sessionToStart = value }
+    func sessionOperationCallCounts() -> (preflight: Int, start: Int) {
+        (preflightCallCount, startCallCount)
+    }
     func runtimeStatus() async throws(ServiceFailure) -> RuntimeState {
         if let runtimeFailure { throw runtimeFailure }; return state
     }
     func recoverStaleState() async throws(ServiceFailure) -> RecoveryReport { recovery }
-    func preflight(_ request: SessionStartRequest) async throws(ServiceFailure) -> PreflightReport { report }
+    func preflight(_ request: SessionStartRequest) async throws(ServiceFailure) -> PreflightReport {
+        preflightCallCount += 1
+        return report
+    }
     func startSession(_ request: SessionStartRequest) async throws(ServiceFailure) -> ActiveSession {
+        startCallCount += 1
+        if let sessionToStart { return sessionToStart }
         throw ServiceFailure.invalidRequest("Not used by this fixture")
     }
     func stopSession(id: UUID) async throws(ServiceFailure) {
@@ -61,11 +73,16 @@ struct SessionControllerTests {
         #expect(controller.phase == .stopped)
     }
 
-    @Test("unresolved recovery remains retryable without an active session", arguments: [
+    @Test("unresolved cleanup blocks preflight and start until stop retry succeeds", arguments: [
         RecoveryReport.Outcome.cleanupIncomplete, .staleSessionRequiresAttention
     ])
     func unresolvedRecovery(outcome: RecoveryReport.Outcome) async {
         let client = TestSessionClient()
+        let running = session()
+        let request = SessionStartRequest(draft: SessionDraft(
+            profileSnapshot: running.profileSnapshot, selectedInterface: running.interfaceSnapshot,
+            resolvedSystemDNSServers: [], safetyConfirmation: true
+        ))
         await client.setRecovery(RecoveryReport(outcome: outcome, warnings: ["Needs cleanup"]))
         let controller = SessionController(client: client)
         await controller.synchronize()
@@ -73,8 +90,18 @@ struct SessionControllerTests {
         #expect(controller.lastFailure?.code == .cleanupFailed)
         #expect(controller.activeSession == nil)
         #expect(!controller.canRemoveHelper)
-        await controller.synchronize()
+        #expect(!controller.canStart(profile: running.profileSnapshot, hasInterface: true, helperReady: true))
+
+        await controller.runPreflight(request)
+        await controller.start(request)
+        let blockedCounts = await client.sessionOperationCallCounts()
+        #expect(blockedCounts.preflight == 0)
+        #expect(blockedCounts.start == 0)
+        #expect(controller.phase == .failed)
+        #expect(controller.lastFailure?.code == .cleanupFailed)
         #expect(!controller.canRemoveHelper)
+        #expect(!controller.canStart(profile: running.profileSnapshot, hasInterface: true, helperReady: true))
+
         controller.clearFailure()
         #expect(controller.lastFailure?.code == .cleanupFailed)
         await controller.stop()
@@ -84,6 +111,15 @@ struct SessionControllerTests {
         await controller.stop()
         #expect(controller.phase == .stopped)
         #expect(controller.lastFailure == nil)
+        #expect(controller.canRemoveHelper)
+
+        await client.setSessionToStart(running)
+        await controller.runPreflight(request)
+        await controller.start(request)
+        let allowedCounts = await client.sessionOperationCallCounts()
+        #expect(allowedCounts.preflight == 1)
+        #expect(allowedCounts.start == 1)
+        #expect(controller.activeSession == running)
     }
 
     @Test("removal requires known stopped state and completed recovery")
