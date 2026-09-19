@@ -34,10 +34,12 @@ struct UITestFixtureTests {
         dependencies.interfaces.stop()
         #expect(try await dependencies.helper.runtimeStatus() == .stopped)
         #expect(try await dependencies.helper.recoverStaleState().outcome == .nothingToRecover)
-        let request = SessionStartRequest(draft: SessionDraft(
-            profileSnapshot: .makeDefault(now: Date()), selectedInterface: try #require(dependencies.interfaces.selected),
-            resolvedSystemDNSServers: [], safetyConfirmation: true
+        let request = try #require(dependencies.sessionRequests.make(
+            draft: dependencies.profiles.draft,
+            interface: dependencies.interfaces.selected,
+            isolationConfirmed: true
         ))
+        #expect(request.draft.resolvedSystemDNSServers == [IPv4Address(rawValue: 0xC000_0235)])
         #expect(try await dependencies.helper.preflight(request).hasBlockingIssues)
         do { _ = try await dependencies.helper.startSession(request); Issue.record("fixture started service") } catch {}
         try await dependencies.helper.stopSession(id: UUID())

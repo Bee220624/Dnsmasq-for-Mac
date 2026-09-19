@@ -21,7 +21,7 @@ XCB          := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPat
 XCB_FILTER := | awk '/error:|Test run with|Executed .* test|\*\* (BUILD|TEST) (SUCCEEDED|FAILED)|recorded an issue/ { print; fflush() }'
 XCPRETTY := $(XCB_FILTER)
 
-.PHONY: help bootstrap generate build test test-all test-package test-xcode test-ui \
+.PHONY: help bootstrap generate build test test-all test-package test-scripts test-xcode test-ui \
         check-localization \
         screenshots \
         vendor-dnsmasq verify-bundle install-dev clean
@@ -33,6 +33,7 @@ help:
 	@echo "  generate        regenerate DnsmasqForMac.xcodeproj from project.yml"
 	@echo "  build           build app + helper (Debug)"
 	@echo "  test            run package tests and integration tests (no human input needed)"
+	@echo "  test-scripts    run isolated build/install script tests"
 	@echo "  test-ui         run UI tests (needs a one-time macOS automation authorization)"
 	@echo "  test-all        test + test-ui"
 	@echo "  screenshots     render each page, in every shipped language"
@@ -58,9 +59,13 @@ test-package:
 	@echo "==> swift test ($(PACKAGE_PATH))"
 	@swift test --package-path $(PACKAGE_PATH)
 
+test-scripts:
+	@Tests/Scripts/MakefileTests.sh
+	@Tests/Scripts/InstallDevAppTests.sh
+
 test-xcode: generate
 	@echo "==> xcodebuild test ($(SCHEME)) — integration targets"
-	@$(XCB) -configuration Debug \
+	@set -o pipefail; $(XCB) -configuration Debug \
 		-only-testing:HelperIntegrationTests \
 		-only-testing:DnsmasqForMacTests test $(XCB_FILTER)
 
@@ -75,10 +80,10 @@ test-xcode: generate
 test-ui: generate
 	@echo "==> xcodebuild test ($(SCHEME)) — UI targets"
 	@echo "    Requires a one-time authorization; see Docs/RISKS.md R-11."
-	@$(XCB) -configuration Debug \
+	@set -o pipefail; $(XCB) -configuration Debug \
 		-only-testing:DnsmasqForMacUITests test $(XCB_FILTER)
 
-test: test-package test-xcode
+test: test-package test-scripts test-xcode
 
 test-all: test test-ui
 
@@ -97,7 +102,7 @@ check-localization: build
 
 screenshots: generate
 	@echo "==> building the screenshot tool"
-	@xcodebuild -project $(PROJECT) -scheme DnsmasqForMacScreenshots \
+	@set -o pipefail; xcodebuild -project $(PROJECT) -scheme DnsmasqForMacScreenshots \
 		-derivedDataPath $(DERIVED_DATA) -configuration Debug build $(XCB_FILTER)
 	@for lang in $(SCREENSHOT_LANGUAGES); do \
 		echo "==> rendering $$lang"; \

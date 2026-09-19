@@ -175,6 +175,7 @@ targets:
       - path: Tests/DnsmasqForMacTests
       - path: Apps/DnsmasqForMac/Infrastructure/Profiles
       - path: Apps/DnsmasqForMac/Infrastructure/Helper/SessionController.swift
+      - path: Apps/DnsmasqForMac/Infrastructure/Helper/SessionRequestBuilder.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Helper/SessionClient.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Helper/HelperClient.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Helper/HelperLifecycleClient.swift
@@ -185,6 +186,7 @@ targets:
       - path: Apps/DnsmasqForMac/Infrastructure/Helper/HelperInstallationState.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Interfaces/InterfaceMonitor.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Interfaces/InterfaceChangeWatcher.swift
+      - path: Apps/DnsmasqForMac/Infrastructure/Interfaces/SystemResolvers.swift
       - path: Apps/DnsmasqForMac/App/AppState.swift
     settings:
       base:

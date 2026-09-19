@@ -14,6 +14,7 @@ struct DnsmasqForMacApp: App {
     @State private var logs: LogMonitor
 
     private let environment: AppEnvironment
+    private let sessionRequests: SessionRequestBuilder
 
     init() {
         let environment = AppEnvironment.resolve()
@@ -27,6 +28,7 @@ struct DnsmasqForMacApp: App {
         }
         _profiles = State(wrappedValue: dependencies.profiles)
         _interfaces = State(wrappedValue: dependencies.interfaces)
+        sessionRequests = dependencies.sessionRequests
         let helperStatus = HelperStatusModel(client: dependencies.helper)
         _helperStatus = State(wrappedValue: helperStatus)
         // One XPC client shared by both: a second connection would mean the helper
@@ -48,6 +50,7 @@ struct DnsmasqForMacApp: App {
                 .environment(leases)
                 .environment(logs)
                 .environment(\.appEnvironment, environment)
+                .environment(\.sessionRequests, sessionRequests)
                 // The specification: check on launch so the user learns the helper needs
                 // attention immediately, rather than when Start fails.
                 .task { await helperStatus.refresh() }

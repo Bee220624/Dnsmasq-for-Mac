@@ -10,6 +10,7 @@ struct OverviewView: View {
     @Environment(SessionController.self) private var session
 
     @Environment(HelperStatusModel.self) private var helper
+    @Environment(\.sessionRequests) private var sessionRequests
 
     var body: some View {
         // Until the helper is usable there is exactly one thing to do, so Overview shows that
@@ -86,7 +87,7 @@ struct OverviewView: View {
     // MARK: - Actions
 
     private func runPreflight() async {
-        guard let request = SessionRequestBuilder.make(
+        guard let request = sessionRequests.make(
             draft: library.draft,
             interface: interfaces.selected,
             isolationConfirmed: session.isolationConfirmed
@@ -111,31 +112,6 @@ struct OverviewView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 4)
         }
-    }
-}
-
-/// Builds a start request from what the UI currently has.
-///
-/// Returns `nil` rather than a partly-filled request when something essential is missing: an
-/// incomplete request would be refused by the helper anyway, and a refusal is a worse
-/// explanation than a disabled button.
-enum SessionRequestBuilder {
-    @MainActor
-    static func make(
-        draft: ProfileDraft?,
-        interface: NetworkInterfaceDescriptor?,
-        isolationConfirmed: Bool
-    ) -> SessionStartRequest? {
-        guard let draft, let interface else { return nil }
-
-        return SessionStartRequest(draft: SessionDraft(
-            // The *working* copy, not the saved profile: the user pressed Start looking at
-            // these values, so these are the values that must run.
-            profileSnapshot: draft.working,
-            selectedInterface: interface,
-            resolvedSystemDNSServers: SystemResolvers.current(),
-            safetyConfirmation: isolationConfirmed
-        ))
     }
 }
 

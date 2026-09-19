@@ -6,6 +6,7 @@ struct AppDependencies {
     let helper: any HelperLifecycleClient
     let profiles: ProfileLibrary
     let interfaces: InterfaceMonitor
+    let sessionRequests: SessionRequestBuilder
     #if DEBUG
     let fixtureProfileDirectory: URL?
     #endif
@@ -19,10 +20,11 @@ struct AppDependencies {
             return try UITestFixture.dependencies(scenario: scenario)
         }
         return AppDependencies(helper: HelperClient(environment: environment), profiles: ProfileLibrary(),
-                               interfaces: InterfaceMonitor(), fixtureProfileDirectory: nil)
+                               interfaces: InterfaceMonitor(), sessionRequests: SessionRequestBuilder(),
+                               fixtureProfileDirectory: nil)
         #else
         return AppDependencies(helper: HelperClient(environment: environment), profiles: ProfileLibrary(),
-                               interfaces: InterfaceMonitor())
+                               interfaces: InterfaceMonitor(), sessionRequests: SessionRequestBuilder())
         #endif
     }
 }

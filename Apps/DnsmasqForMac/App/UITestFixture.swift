@@ -19,6 +19,9 @@ enum UITestFixture {
             helper: UITestHelperClient(scenario: scenario),
             profiles: ProfileLibrary(store: ProfileStore(directory: directory)),
             interfaces: InterfaceMonitor(enumerator: UITestInterfaces(), watchesSystemChanges: false),
+            sessionRequests: SessionRequestBuilder(resolveSystemDNSServers: {
+                [IPv4Address(rawValue: 0xC000_0235)] // 192.0.2.53, reserved for documentation.
+            }),
             fixtureProfileDirectory: directory
         )
     }

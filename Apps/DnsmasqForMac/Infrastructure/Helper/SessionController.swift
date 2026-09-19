@@ -115,13 +115,15 @@ final class SessionController {
                 // Reconcile anything a previous run left behind before offering Start.
                 let report = try await client.recoverStaleState()
                 guard !localOperationInProgress, generation == operationGeneration else { return }
-                needsRecovery = false
+                let cleanupIsIncomplete = report.outcome == .cleanupIncomplete
+                    || report.outcome == .staleSessionRequiresAttention
+                needsRecovery = cleanupIsIncomplete
                 if report.outcome != .nothingToRecover {
                     logger.log("recovery on connect: \(report.outcome.rawValue, privacy: .public)")
                     recoveryWarnings = report.warnings
                 }
                 if let recovered = report.recoveredSession { apply(.running(recovered)) }
-                if report.outcome == .cleanupIncomplete || report.outcome == .staleSessionRequiresAttention {
+                if cleanupIsIncomplete {
                     lastFailure = ServiceFailure(code: .cleanupFailed, title: "Cleanup Required",
                                                  message: report.warnings.joined(separator: "\n"), isRetryable: true)
                     phase = .failed
@@ -171,7 +173,7 @@ final class SessionController {
     // MARK: - Preflight
 
     func runPreflight(_ request: SessionStartRequest) async {
-        guard !isBusy, activeSession == nil else { return }
+        guard !isBusy, activeSession == nil, lastFailure?.code != .cleanupFailed else { return }
         localOperationInProgress = true
         operationGeneration += 1
         defer { localOperationInProgress = false }
@@ -190,7 +192,7 @@ final class SessionController {
     // MARK: - Start and stop
 
     func start(_ request: SessionStartRequest) async {
-        guard !isBusy, !isRunning else { return }
+        guard !isBusy, !isRunning, lastFailure?.code != .cleanupFailed else { return }
         localOperationInProgress = true
         operationGeneration += 1
         defer { localOperationInProgress = false }

@@ -46,6 +46,7 @@ struct GlobalStatusBar: View {
     @Environment(ProfileLibrary.self) private var library
     @Environment(InterfaceMonitor.self) private var interfaces
     @Environment(HelperStatusModel.self) private var helper
+    @Environment(\.sessionRequests) private var sessionRequests
 
     var body: some View {
         HStack(spacing: 16) {
@@ -173,7 +174,7 @@ struct GlobalStatusBar: View {
     }
 
     private func start() async {
-        guard let request = SessionRequestBuilder.make(
+        guard let request = sessionRequests.make(
             draft: library.draft,
             interface: interfaces.selected,
             isolationConfirmed: session.isolationConfirmed
