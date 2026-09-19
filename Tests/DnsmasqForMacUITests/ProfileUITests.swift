@@ -12,10 +12,7 @@ final class ProfileUITests: XCTestCase {
     func testProfileCardIsPresentWhenTheHelperIsReady() throws {
         let app = XCUIApplication.launchForUITesting()
 
-        try XCTSkipUnless(
-            isConfigurationShown(app),
-            "the privileged helper is not installed, so Overview shows onboarding"
-        )
+        XCTAssertTrue(isConfigurationShown(app), "ready fixture must show configuration")
         XCTAssertTrue(app.element("overview.profilePicker").exists)
     }
 
@@ -23,10 +20,7 @@ final class ProfileUITests: XCTestCase {
     func testSaveAndRevertAreDisabledWithoutChanges() throws {
         let app = XCUIApplication.launchForUITesting()
 
-        try XCTSkipUnless(
-            isConfigurationShown(app),
-            "the privileged helper is not installed, so Overview shows onboarding"
-        )
+        XCTAssertTrue(isConfigurationShown(app), "ready fixture must show configuration")
 
         // Nothing has been edited, so there is nothing to save or undo. Enabled buttons would
         // suggest the profile is dirty when it is not.

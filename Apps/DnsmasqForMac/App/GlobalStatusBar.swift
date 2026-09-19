@@ -143,7 +143,7 @@ struct GlobalStatusBar: View {
         session.canStart(
             profile: library.draft?.working,
             hasInterface: interfaces.selected != nil,
-            helperReady: isHelperReady
+            helperReady: isHelperReady && !helper.isBusy
         )
     }
 

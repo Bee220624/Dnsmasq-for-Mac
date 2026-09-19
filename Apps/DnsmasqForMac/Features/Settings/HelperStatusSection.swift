@@ -6,9 +6,7 @@ import SwiftUI
 struct HelperStatusSection: View {
     @Environment(HelperStatusModel.self) private var model
 
-    /// Uninstall is refused while services are running — the specification Passed in rather than
-    /// read here so this view has no opinion about where run state lives.
-    let isSessionRunning: Bool
+    @Environment(SessionController.self) private var session
 
     @State private var isConfirmingUninstall = false
 
@@ -46,8 +44,12 @@ struct HelperStatusSection: View {
             isPresented: $isConfirmingUninstall
         ) {
             Button("Remove Helper", role: .destructive) {
-                Task { await model.uninstall() }
+                Task {
+                    guard session.canRemoveHelper, !model.isBusy else { return }
+                    await model.uninstall()
+                }
             }
+            .disabled(!session.canRemoveHelper || model.isBusy)
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Dnsmasq for Mac will not be able to start any service until the helper is installed again.")
@@ -160,11 +162,17 @@ struct HelperStatusSection: View {
                 Button("Remove Helper…", role: .destructive) {
                     isConfirmingUninstall = true
                 }
-                .disabled(isSessionRunning)
-                .help(isSessionRunning
+                .disabled(!session.canRemoveHelper)
+                .help(!session.canRemoveHelper
                       ? Text("Stop the running service before removing the helper.")
                       : Text("Unregister the privileged helper."))
                 .accessibilityIdentifier("settings.uninstallHelper")
+
+            case .failed:
+                Button("Try Again") {
+                    Task { await model.refresh() }
+                }
+                .accessibilityIdentifier("settings.retryHelper")
 
             default:
                 Button(installButtonTitle) {
@@ -185,7 +193,7 @@ struct HelperStatusSection: View {
 
     private var installButtonTitle: LocalizedStringKey {
         switch model.readiness {
-        case .incompatible, .failed: "Repair Helper"
+        case .incompatible: "Repair Helper"
         default: "Install Helper"
         }
     }

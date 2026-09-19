@@ -79,6 +79,7 @@ struct OnboardingView: View {
         case .notInstalled(.bundleIncomplete):
             VStack(spacing: 8) {
                 Label("This copy of Dnsmasq for Mac is incomplete", systemImage: "xmark.octagon.fill")
+                    .accessibilityIdentifier("onboarding.bundleIncomplete")
                     .font(.headline)
                     .foregroundStyle(.red)
                 Text("The helper is missing from the app bundle. Reinstall Dnsmasq for Mac from your original download.")
@@ -92,6 +93,7 @@ struct OnboardingView: View {
         case .incompatible(_, let reason):
             VStack(spacing: 10) {
                 Label("The installed helper does not match this app", systemImage: "exclamationmark.triangle.fill")
+                    .accessibilityIdentifier("onboarding.incompatible")
                     .font(.headline)
                     .foregroundStyle(.orange)
                 Text(verbatim: reason)
@@ -121,8 +123,9 @@ struct OnboardingView: View {
                         .multilineTextAlignment(.center)
                 }
                 Button("Try Again") {
-                    Task { await helper.install() }
+                    Task { await helper.refresh() }
                 }
+                .accessibilityIdentifier("onboarding.retryHelper")
                 .buttonStyle(.borderedProminent)
                 .disabled(helper.isBusy)
             }

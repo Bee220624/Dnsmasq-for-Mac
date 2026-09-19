@@ -75,7 +75,7 @@ struct OverviewView: View {
     }
 
     private var canValidate: Bool {
-        library.draft != nil && interfaces.selected != nil && !session.isRunning
+        library.draft != nil && interfaces.selected != nil && !session.isRunning && !helper.isBusy
     }
 
     private func poolDescription(_ profile: NetworkProfile) -> String? {

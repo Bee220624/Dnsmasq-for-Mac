@@ -7,8 +7,8 @@ struct DnsmasqForMacApp: App {
     @State private var appState = AppState()
     @State private var router = AppRouter()
     @State private var helperStatus: HelperStatusModel
-    @State private var interfaces = InterfaceMonitor()
-    @State private var profiles = ProfileLibrary()
+    @State private var interfaces: InterfaceMonitor
+    @State private var profiles: ProfileLibrary
     @State private var session: SessionController
     @State private var leases: LeaseMonitor
     @State private var logs: LogMonitor
@@ -18,7 +18,16 @@ struct DnsmasqForMacApp: App {
     init() {
         let environment = AppEnvironment.resolve()
         self.environment = environment
-        let helperStatus = HelperStatusModel(environment: environment)
+        let dependencies: AppDependencies
+        do {
+            dependencies = try AppDependencies.resolve(environment: environment)
+        } catch {
+            // Invalid fixture requests must fail before constructing production dependencies.
+            fatalError("Invalid UI fixture configuration: \(error)")
+        }
+        _profiles = State(wrappedValue: dependencies.profiles)
+        _interfaces = State(wrappedValue: dependencies.interfaces)
+        let helperStatus = HelperStatusModel(client: dependencies.helper)
         _helperStatus = State(wrappedValue: helperStatus)
         // One XPC client shared by both: a second connection would mean the helper
         // serving two peers that each believe they own the session state.

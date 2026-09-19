@@ -26,7 +26,7 @@ final class LogMonitor {
     var filter = LogFilter()
     var autoScroll = true
 
-    private let client: HelperClient
+    private let client: any HelperLifecycleClient
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "log-monitor")
 
     private var pollTask: Task<Void, Never>?
@@ -35,7 +35,7 @@ final class LogMonitor {
     /// Highest sequence received. Survives a pause, so resuming asks for the right thing.
     private var highestSequence: Int64 = 0
 
-    init(client: HelperClient) {
+    init(client: any HelperLifecycleClient) {
         self.client = client
     }
 

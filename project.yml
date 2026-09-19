@@ -176,6 +176,12 @@ targets:
       - path: Apps/DnsmasqForMac/Infrastructure/Profiles
       - path: Apps/DnsmasqForMac/Infrastructure/Helper/SessionController.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Helper/SessionClient.swift
+      - path: Apps/DnsmasqForMac/Infrastructure/Helper/HelperClient.swift
+      - path: Apps/DnsmasqForMac/Infrastructure/Helper/HelperLifecycleClient.swift
+      - path: Apps/DnsmasqForMac/Infrastructure/Helper/HelperStatusModel.swift
+      - path: Apps/DnsmasqForMac/App/AppEnvironment.swift
+      - path: Apps/DnsmasqForMac/App/AppDependencies.swift
+      - path: Apps/DnsmasqForMac/App/UITestFixture.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Helper/HelperInstallationState.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Interfaces/InterfaceMonitor.swift
       - path: Apps/DnsmasqForMac/Infrastructure/Interfaces/InterfaceChangeWatcher.swift

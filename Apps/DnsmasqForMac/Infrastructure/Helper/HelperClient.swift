@@ -9,21 +9,27 @@ import ServiceManagement
 ///
 /// An `actor` because the connection and its state are shared mutable state touched from
 /// several places — status polling, user-initiated install, and request calls.
-actor HelperClient: SessionClient {
+actor HelperClient: HelperLifecycleClient {
 
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "helper-client")
 
-    private let daemonPlistName: String
     private let machServiceName: String
     private let expectedProtocolVersion: Int
     private let helperRequirement: String?
 
     private var connection: NSXPCConnection?
+    private let registration: any HelperRegistration
+    private let proxyProvider: HelperProxyProvider?
+    private var operationInProgress = false
 
-    init(environment: AppEnvironment) {
-        // SMAppService identifies the daemon by the plist's file name inside
-        // Contents/Library/LaunchDaemons, which Scripts/embed-helper.sh names after the label.
-        daemonPlistName = "\(environment.helperLabel).plist"
+    init(environment: AppEnvironment,
+         registration: (any HelperRegistration)? = nil,
+         proxyProvider: HelperProxyProvider? = nil) {
+        self.registration = registration ?? SystemHelperRegistration(
+            daemonPlistName: "\(environment.helperLabel).plist",
+            machServiceName: environment.machServiceName
+        )
+        self.proxyProvider = proxyProvider
         machServiceName = environment.machServiceName
         expectedProtocolVersion = environment.protocolVersion
         // Same builder the helper uses to pin us, so the two directions cannot drift.
@@ -35,19 +41,8 @@ actor HelperClient: SessionClient {
 
     // MARK: - Installation
 
-    private var appService: SMAppService {
-        SMAppService.daemon(plistName: daemonPlistName)
-    }
-
     func installationState() -> HelperInstallationState {
-        let library = Bundle.main.bundleURL.appending(path: "Contents/Library")
-        let plist = library.appending(path: "LaunchDaemons/\(daemonPlistName)")
-        let executable = library.appending(path: "HelperTools/\(machServiceName)")
-        return HelperInstallationState(
-            status: appService.status,
-            bundledHelperAvailable: FileManager.default.fileExists(atPath: plist.path)
-                && FileManager.default.isExecutableFile(atPath: executable.path)
-        )
+        registration.installationState()
     }
 
     /// Registers the daemon with the system.
@@ -56,8 +51,10 @@ actor HelperClient: SessionClient {
     /// waiting for the user to enable the item in System Settings. The specification forbids
     /// retrying `register()` in a loop to force it through.
     func install() throws(ServiceFailure) -> HelperInstallationState {
+        try beginOperation()
+        defer { operationInProgress = false }
         do {
-            try appService.register()
+            try registration.register()
             logger.log("SMAppService.register succeeded")
         } catch {
             let nsError = error as NSError
@@ -82,12 +79,20 @@ actor HelperClient: SessionClient {
         return installationState()
     }
 
-    /// Unregisters the daemon. Callers must ensure no session is running first — the specification
-    /// forbids uninstalling the helper while services are up.
+    /// Removal requires fresh stopped state and a clear recovery journal. The operation
+    /// guard spans awaits so another app action cannot start while removal checks are running.
     func uninstall() async throws(ServiceFailure) {
+        try beginOperation()
+        defer { operationInProgress = false }
+        guard case .stopped = try await runtimeStatus() else { throw removalRefused() }
+        let report = try await recover()
+        guard report.recoveredSession == nil,
+              report.outcome == .nothingToRecover || report.outcome == .cleanedUpAfterDeadProcess
+        else { throw removalRefused() }
+        guard case .stopped = try await runtimeStatus() else { throw removalRefused() }
         closeConnection()
         do {
-            try await appService.unregister()
+            try await registration.unregister()
             logger.log("SMAppService.unregister succeeded")
         } catch {
             let nsError = error as NSError
@@ -105,7 +110,7 @@ actor HelperClient: SessionClient {
 
     /// Opens the Login Items pane so the user can approve the daemon.
     nonisolated func openLoginItemsSettings() {
-        SMAppService.openSystemSettingsLoginItems()
+        registration.openLoginItemsSettings()
     }
 
     // MARK: - Connection
@@ -207,6 +212,8 @@ actor HelperClient: SessionClient {
     func preflight(
         _ request: SessionStartRequest
     ) async throws(ServiceFailure) -> PreflightReport {
+        try beginOperation()
+        defer { operationInProgress = false }
         let payload = try XPCPayload.encodeRequest(request)
         return try await call(PreflightReport.self) { proxy, box in
             proxy.runPreflight(requestData: payload) { data, error in
@@ -218,6 +225,8 @@ actor HelperClient: SessionClient {
     func startSession(
         _ request: SessionStartRequest
     ) async throws(ServiceFailure) -> ActiveSession {
+        try beginOperation()
+        defer { operationInProgress = false }
         let payload = try XPCPayload.encodeRequest(request)
         return try await call(ActiveSession.self) { proxy, box in
             proxy.startSession(requestData: payload) { data, error in
@@ -227,6 +236,8 @@ actor HelperClient: SessionClient {
     }
 
     func stopSession(id: UUID) async throws(ServiceFailure) {
+        try beginOperation()
+        defer { operationInProgress = false }
         _ = try await call(EmptyHelperReply.self) { proxy, box in
             proxy.stopSession(sessionID: id.uuidString) { data, error in
                 box.resume(with: HelperClient.result(data: data, error: error))
@@ -256,11 +267,31 @@ actor HelperClient: SessionClient {
     }
 
     func recoverStaleState() async throws(ServiceFailure) -> RecoveryReport {
+        try beginOperation()
+        defer { operationInProgress = false }
+        return try await recover()
+    }
+
+    private func recover() async throws(ServiceFailure) -> RecoveryReport {
         try await call(RecoveryReport.self) { proxy, box in
             proxy.recoverStaleState { data, error in
                 box.resume(with: HelperClient.result(data: data, error: error))
             }
         }
+    }
+
+    private func beginOperation() throws(ServiceFailure) {
+        guard !operationInProgress else {
+            throw ServiceFailure(code: .helperUnavailable, title: "Helper Busy",
+                                 message: "Wait for the current helper operation to finish.", isRetryable: true)
+        }
+        operationInProgress = true
+    }
+
+    private func removalRefused() -> ServiceFailure {
+        ServiceFailure(code: .cleanupFailed, title: "Helper Removal Blocked",
+                       message: "Stop the service and complete cleanup before removing the helper.",
+                       isRetryable: true)
     }
 
     // MARK: - Call plumbing
@@ -286,8 +317,6 @@ actor HelperClient: SessionClient {
     private func withProxy(
         _ body: @escaping @Sendable (any DnsmasqForMacHelperProtocol, ContinuationBox) -> Void
     ) async throws(ServiceFailure) -> Data {
-        let connection = activeConnection()
-
         do {
             return try await withCheckedThrowingContinuation { continuation in
                 let box = ContinuationBox(continuation)
@@ -295,10 +324,14 @@ actor HelperClient: SessionClient {
                 // Both the error handler and the reply block route through `box`, which
                 // resumes at most once. XPC guarantees only one of them fires, but a double
                 // resume traps the process, so the invariant is enforced rather than assumed.
-                let proxy = connection.remoteObjectProxyWithErrorHandler { error in
-                    box.resume(
-                        with: .failure(HelperClient.transportFailure(from: error as NSError))
-                    )
+                let onError: @Sendable (any Error) -> Void = { error in
+                    box.resume(with: .failure(HelperClient.transportFailure(from: error as NSError)))
+                }
+                let proxy: Any?
+                if let proxyProvider {
+                    proxy = proxyProvider(onError)
+                } else {
+                    proxy = activeConnection().remoteObjectProxyWithErrorHandler(onError)
                 }
 
                 guard let helper = proxy as? any DnsmasqForMacHelperProtocol else {
@@ -383,3 +416,36 @@ private final class HelperEventReceiver: NSObject, DnsmasqForMacHelperClientProt
 /// say" needs a shape. Decoding it — rather than ignoring the data — keeps a malformed reply
 /// from being read as success.
 struct EmptyHelperReply: Codable, Sendable {}
+
+/// Registration and proxy creation are injected below the real client's validation logic.
+protocol HelperRegistration: Sendable {
+    func installationState() -> HelperInstallationState
+    func register() throws
+    func unregister() async throws
+    func openLoginItemsSettings()
+}
+
+typealias HelperProxyProvider = @Sendable (
+    @escaping @Sendable (any Error) -> Void
+) -> (any DnsmasqForMacHelperProtocol)?
+
+private struct SystemHelperRegistration: HelperRegistration {
+    let daemonPlistName: String
+    let machServiceName: String
+    private var service: SMAppService { SMAppService.daemon(plistName: daemonPlistName) }
+
+    func installationState() -> HelperInstallationState {
+        let library = Bundle.main.bundleURL.appending(path: "Contents/Library")
+        return HelperInstallationState(
+            status: service.status,
+            bundledHelperAvailable: FileManager.default.fileExists(
+                atPath: library.appending(path: "LaunchDaemons/\(daemonPlistName)").path
+            ) && FileManager.default.isExecutableFile(
+                atPath: library.appending(path: "HelperTools/\(machServiceName)").path
+            )
+        )
+    }
+    func register() throws { try service.register() }
+    func unregister() async throws { try await service.unregister() }
+    func openLoginItemsSettings() { SMAppService.openSystemSettingsLoginItems() }
+}

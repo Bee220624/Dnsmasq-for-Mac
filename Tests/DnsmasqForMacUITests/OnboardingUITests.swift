@@ -5,29 +5,38 @@ final class OnboardingUITests: XCTestCase {
 
     @MainActor
     func testOnboardingIsShownWhenTheHelperIsNotInstalled() throws {
-        let app = XCUIApplication.launchForUITesting()
+        let app = XCUIApplication.launchForUITesting(fixture: "notRegistered")
+        waitForElement(app.element("onboarding.installHelper"), "not installed must offer installation")
+        XCTAssertFalse(app.element("overview.profilePicker").exists)
+    }
 
-        let onboarding = app.element("onboarding.page")
-        try XCTSkipUnless(
-            onboarding.waitForExistence(timeout: 15),
-            "the privileged helper is installed, so onboarding is not shown"
-        )
+    @MainActor
+    func testPendingApprovalShowsSettingsEntryWithoutInstall() throws {
+        let app = XCUIApplication.launchForUITesting(fixture: "approval")
+        waitForElement(app.element("onboarding.openLoginItems"), "approval needs a settings entry")
+        XCTAssertFalse(app.element("onboarding.installHelper").exists)
+        app.element("onboarding.openLoginItems").click()
+        XCTAssertTrue(app.element("onboarding.page").exists)
+    }
 
-        // Helper status settles asynchronously: it begins as "checking" and shows a spinner,
-        // then resolves. Asserting immediately would test the loading state.
-        let install = app.element("onboarding.installHelper")
-        let approval = app.element("onboarding.openLoginItems")
+    @MainActor
+    func testFailedHandshakeCanRetryWithoutRegistering() throws {
+        let app = XCUIApplication.launchForUITesting(fixture: "failed")
+        let retry = app.element("onboarding.retryHelper")
+        guard waitUntilHittable(retry) else { return }
+        retry.click()
+        waitForElement(app.element("overview.profilePicker"), "retry handshake should open configuration")
+        XCTAssertFalse(app.element("onboarding.openLoginItems").exists)
+    }
 
-        let deadline = Date().addingTimeInterval(15)
-        while Date() < deadline, !install.exists, !approval.exists {
-            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+    @MainActor
+    func testIncompleteBundleAndProtocolMismatchShowDistinctErrors() throws {
+        for fixture in ["bundleIncomplete", "incompatible"] {
+            let app = XCUIApplication.launchForUITesting(fixture: fixture)
+            waitForElement(app.element("onboarding.\(fixture)"), "fixture should show its specific error")
+            XCTAssertFalse(app.element("overview.profilePicker").exists)
+            app.terminate()
         }
-
-        // One of the two, depending on how far a previous install got.
-        XCTAssertTrue(
-            install.exists || approval.exists,
-            "onboarding must offer an action, not just an explanation"
-        )
     }
 
     @MainActor

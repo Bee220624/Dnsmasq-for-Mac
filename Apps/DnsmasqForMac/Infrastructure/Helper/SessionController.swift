@@ -35,6 +35,7 @@ final class SessionController {
     private var localOperationInProgress = false
     private var operationGeneration = 0
     private var needsRecovery = true
+    private var runtimeIsKnown = false
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "session-controller")
 
     init(client: any SessionClient) {
@@ -45,6 +46,12 @@ final class SessionController {
 
     var isRunning: Bool { phase == .running }
     var isBusy: Bool { phase.isTransitioning }
+
+    /// Removal is offered only after synchronization confirmed stopped state and cleanup.
+    var canRemoveHelper: Bool {
+        runtimeIsKnown && !needsRecovery && !localOperationInProgress && phase == .stopped
+            && activeSession == nil && lastFailure?.code != .cleanupFailed
+    }
 
     /// Whether the isolation confirmation is required for this configuration.
     ///
@@ -114,14 +121,16 @@ final class SessionController {
                     recoveryWarnings = report.warnings
                 }
                 if let recovered = report.recoveredSession { apply(.running(recovered)) }
-                if report.outcome == .cleanupIncomplete {
+                if report.outcome == .cleanupIncomplete || report.outcome == .staleSessionRequiresAttention {
                     lastFailure = ServiceFailure(code: .cleanupFailed, title: "Cleanup Required",
                                                  message: report.warnings.joined(separator: "\n"), isRetryable: true)
                     phase = .failed
                 }
             }
+            runtimeIsKnown = true
         } catch {
             guard !localOperationInProgress, generation == operationGeneration else { return }
+            runtimeIsKnown = false
             needsRecovery = true
             // Not surfaced as a failure: the helper may simply not be installed yet, which the
             // helper-status UI already explains far better than an error here would.
@@ -219,13 +228,15 @@ final class SessionController {
                 if let recovered = report.recoveredSession {
                     activeSession = recovered
                     try await client.stopSession(id: recovered.id)
-                } else if report.outcome == .cleanupIncomplete {
+                } else if report.outcome == .cleanupIncomplete || report.outcome == .staleSessionRequiresAttention {
                     throw ServiceFailure(code: .cleanupFailed, title: "Cleanup Required",
                                          message: report.warnings.joined(separator: "\n"), isRetryable: true)
                 }
             }
             activeSession = nil
             phase = .stopped
+            runtimeIsKnown = true
+            needsRecovery = false
             lastFailure = nil
             preflightReport = nil
             recoveryWarnings = []

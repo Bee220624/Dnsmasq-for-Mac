@@ -26,7 +26,7 @@ enum HelperInstallationState: Equatable, Sendable {
 
     init(status: SMAppService.Status, bundledHelperAvailable: Bool = false) {
         switch status {
-        case .notRegistered: self = .notRegistered
+        case .notRegistered: self = bundledHelperAvailable ? .notRegistered : .bundleIncomplete
         case .enabled: self = .enabled
         case .requiresApproval: self = .requiresApproval
         case .notFound:

@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.appEnvironment) private var appEnvironment
-    @Environment(SessionController.self) private var session
 
     var body: some View {
         Form {
@@ -14,7 +13,7 @@ struct SettingsView: View {
                 LabeledContent("Architecture", value: appEnvironment.architecture)
             }
 
-            HelperStatusSection(isSessionRunning: session.isRunning)
+            HelperStatusSection()
 
             EngineSection()
 

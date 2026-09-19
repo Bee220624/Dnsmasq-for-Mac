@@ -29,14 +29,14 @@ final class LeaseMonitor {
     /// same instant and makes the whole table one invalidation instead of one per row.
     private(set) var now = Date()
 
-    private let client: HelperClient
+    private let client: any HelperLifecycleClient
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "leases")
 
     private var pollTask: Task<Void, Never>?
     private var tickTask: Task<Void, Never>?
     private var sessionID: UUID?
 
-    init(client: HelperClient) {
+    init(client: any HelperLifecycleClient) {
         self.client = client
     }
 

@@ -8,7 +8,7 @@ extension XCUIApplication {
 
     /// Launches the app in a state that does not depend on the machine running the tests.
     ///
-    /// * **Language is forced to English.** The app is localized into Simplified Chinese, so on
+    /// * **Language defaults to English.** The app is localized into Simplified Chinese, so on
     ///   a Chinese system every assertion about visible text compared `"已停止"` against
     ///   `"Stopped"` and failed. A UI test that only passes in one system language is testing
     ///   the tester's Mac, not the product.
@@ -17,13 +17,15 @@ extension XCUIApplication {
     ///   tall — far beyond the 944 pt screen — which put the sidebar items at a negative Y and
     ///   made every one of them report "not hittable". Restored geometry from a previous run
     ///   must not decide whether this run passes.
-    static func launchForUITesting() -> XCUIApplication {
+    static func launchForUITesting(fixture: String = "ready", language: String = "en") -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += [
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
+            "-AppleLanguages", "(\(language))",
+            "-AppleLocale", language == "zh-Hans" ? "zh_CN" : "en_US",
             "-ApplePersistenceIgnoreState", "YES",
         ]
+        // The app selects fake Helper, fixed interfaces and fresh temporary profiles together.
+        app.launchEnvironment["DFM_UI_FIXTURE"] = fixture
         app.launch()
         return app
     }

@@ -19,16 +19,19 @@ final class HelperStatusModel {
     ///
     /// One client, not two: a second `NSXPCConnection` would mean the helper serving two peers
     /// that each believe they own the session state.
-    let client: HelperClient
+    let client: any HelperLifecycleClient
 
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "helper-status")
 
     /// Polls while the user is away approving the daemon in System Settings.
     private var approvalWatcher: Task<Void, Never>?
+    private var refreshGeneration = 0
 
     init(environment: AppEnvironment) {
         client = HelperClient(environment: environment)
     }
+
+    init(client: any HelperLifecycleClient) { self.client = client }
 
     // No deinit cancels `approvalWatcher`: a deinit on a @MainActor type is nonisolated and
     // cannot touch isolated state. It is not needed — the watcher holds only a weak reference,
@@ -37,7 +40,10 @@ final class HelperStatusModel {
     // MARK: - Status
 
     func refresh() async {
+        refreshGeneration += 1
+        let generation = refreshGeneration
         let installation = await client.installationState()
+        guard generation == refreshGeneration else { return }
 
         guard installation.isConnectable else {
             readiness = .notInstalled(installation)
@@ -53,7 +59,9 @@ final class HelperStatusModel {
 
         stopWatchingForApproval()
         readiness = .connecting
-        readiness = await client.handshake()
+        let result = await client.handshake()
+        guard generation == refreshGeneration else { return }
+        readiness = result
         logIfIncompatible()
     }
 
@@ -74,6 +82,7 @@ final class HelperStatusModel {
     func install() async {
         guard !isBusy else { return }
         isBusy = true
+        refreshGeneration += 1
         defer { isBusy = false }
 
         do {
@@ -89,6 +98,7 @@ final class HelperStatusModel {
     func uninstall() async {
         guard !isBusy else { return }
         isBusy = true
+        refreshGeneration += 1
         defer { isBusy = false }
 
         do {

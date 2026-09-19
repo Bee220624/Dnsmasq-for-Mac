@@ -31,10 +31,7 @@ final class InterfaceSelectionUITests: XCTestCase {
     func testInterfaceCardIsPresentWhenTheHelperIsReady() throws {
         let app = XCUIApplication.launchForUITesting()
 
-        try XCTSkipUnless(
-            isConfigurationShown(app),
-            "the privileged helper is not installed, so Overview shows onboarding"
-        )
+        XCTAssertTrue(isConfigurationShown(app), "ready fixture must show configuration")
         XCTAssertTrue(app.element("overview.interfacePicker").exists)
     }
 
@@ -42,10 +39,7 @@ final class InterfaceSelectionUITests: XCTestCase {
     func testRefreshIsAvailableWhenTheHelperIsReady() throws {
         let app = XCUIApplication.launchForUITesting()
 
-        try XCTSkipUnless(
-            isConfigurationShown(app),
-            "the privileged helper is not installed, so Overview shows onboarding"
-        )
+        XCTAssertTrue(isConfigurationShown(app), "ready fixture must show configuration")
 
         let refresh = app.element("overview.refreshInterfaces")
         guard waitUntilHittable(refresh) else { return }

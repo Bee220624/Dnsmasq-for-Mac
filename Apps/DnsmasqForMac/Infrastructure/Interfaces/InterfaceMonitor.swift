@@ -25,14 +25,17 @@ final class InterfaceMonitor {
     private(set) var selectionIsLocked = false
     private var selectedMACAddress: String?
 
+    private let watchesSystemChanges: Bool
     private let enumerator: any InterfaceEnumerating
     private let logger = Logger(subsystem: "com.bee.dnsmasqformac", category: "interfaces")
     private var watcher: InterfaceChangeWatcher?
 
     init(
-        enumerator: any InterfaceEnumerating = SystemInterfaceEnumerator()
+        enumerator: any InterfaceEnumerating = SystemInterfaceEnumerator(),
+        watchesSystemChanges: Bool = true
     ) {
         self.enumerator = enumerator
+        self.watchesSystemChanges = watchesSystemChanges
     }
 
     // MARK: - Selection
@@ -91,7 +94,7 @@ final class InterfaceMonitor {
     func start() {
         refresh()
 
-        guard watcher == nil else { return }
+        guard watchesSystemChanges, watcher == nil else { return }
         let watcher = InterfaceChangeWatcher { [weak self] in
             Task { @MainActor in self?.refresh() }
         }

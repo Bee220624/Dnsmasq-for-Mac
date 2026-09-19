@@ -13,6 +13,11 @@ struct HelperInstallationStateTests {
         #expect(HelperInstallationState(status: .notFound, bundledHelperAvailable: false) == .bundleIncomplete)
     }
 
+    @Test("unregistered service with missing bundle must not offer installation")
+    func unregisteredMissingBundle() {
+        #expect(HelperInstallationState(status: .notRegistered, bundledHelperAvailable: false) == .bundleIncomplete)
+    }
+
     @Test("pending system approval never offers repeated registration")
     func approvalStateIsPreserved() {
         #expect(HelperInstallationState(status: .requiresApproval, bundledHelperAvailable: true) == .requiresApproval)

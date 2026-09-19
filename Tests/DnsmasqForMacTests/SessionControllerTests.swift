@@ -6,14 +6,18 @@ import MacNetXPC
 private actor TestSessionClient: SessionClient {
     var state: RuntimeState = .stopped
     var stopFailure: ServiceFailure?
+    var runtimeFailure: ServiceFailure?
     var report = PreflightReport(checks: [], issues: [], generatedAt: Date())
     var recovery = RecoveryReport(outcome: .nothingToRecover)
 
     func setState(_ value: RuntimeState) { state = value }
+    func failRuntime(_ value: ServiceFailure?) { runtimeFailure = value }
     func failStop(_ value: ServiceFailure?) { stopFailure = value }
     func setReport(_ value: PreflightReport) { report = value }
     func setRecovery(_ value: RecoveryReport) { recovery = value }
-    func runtimeStatus() async throws(ServiceFailure) -> RuntimeState { state }
+    func runtimeStatus() async throws(ServiceFailure) -> RuntimeState {
+        if let runtimeFailure { throw runtimeFailure }; return state
+    }
     func recoverStaleState() async throws(ServiceFailure) -> RecoveryReport { recovery }
     func preflight(_ request: SessionStartRequest) async throws(ServiceFailure) -> PreflightReport { report }
     func startSession(_ request: SessionStartRequest) async throws(ServiceFailure) -> ActiveSession {
@@ -50,10 +54,57 @@ struct SessionControllerTests {
         await controller.stop()
         #expect(controller.activeSession == running)
         #expect(controller.phase == .failed)
+        #expect(!controller.canRemoveHelper)
         await client.failStop(nil)
         await controller.stop()
         #expect(controller.activeSession == nil)
         #expect(controller.phase == .stopped)
+    }
+
+    @Test("unresolved recovery remains retryable without an active session", arguments: [
+        RecoveryReport.Outcome.cleanupIncomplete, .staleSessionRequiresAttention
+    ])
+    func unresolvedRecovery(outcome: RecoveryReport.Outcome) async {
+        let client = TestSessionClient()
+        await client.setRecovery(RecoveryReport(outcome: outcome, warnings: ["Needs cleanup"]))
+        let controller = SessionController(client: client)
+        await controller.synchronize()
+        #expect(controller.phase == .failed)
+        #expect(controller.lastFailure?.code == .cleanupFailed)
+        #expect(controller.activeSession == nil)
+        #expect(!controller.canRemoveHelper)
+        await controller.synchronize()
+        #expect(!controller.canRemoveHelper)
+        controller.clearFailure()
+        #expect(controller.lastFailure?.code == .cleanupFailed)
+        await controller.stop()
+        #expect(controller.phase == .failed)
+        #expect(controller.lastFailure?.code == .cleanupFailed)
+        await client.setRecovery(RecoveryReport(outcome: .nothingToRecover))
+        await controller.stop()
+        #expect(controller.phase == .stopped)
+        #expect(controller.lastFailure == nil)
+    }
+
+    @Test("removal requires known stopped state and completed recovery")
+    func removalAvailability() async {
+        let client = TestSessionClient()
+        let controller = SessionController(client: client)
+        #expect(!controller.canRemoveHelper)
+        await controller.synchronize()
+        #expect(controller.canRemoveHelper)
+        for state in [RuntimeState.preflighting, .starting, .stopping, .recovering, .running(session()),
+                      .failed(ServiceFailure.internalError("unknown state"))] {
+            await client.setState(state)
+            await controller.synchronize()
+            #expect(!controller.canRemoveHelper)
+        }
+        await client.setState(.stopped)
+        await controller.synchronize()
+        #expect(controller.canRemoveHelper)
+        await client.failRuntime(ServiceFailure.internalError("lost connection"))
+        await controller.synchronize()
+        #expect(!controller.canRemoveHelper)
     }
 
     @Test("editing invalidates stale blocking preflight and requires fresh isolation confirmation")
