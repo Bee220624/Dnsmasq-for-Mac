@@ -37,6 +37,7 @@
 | `Scripts/check-localization.sh` | 简体中文翻译检查通过 |
 | `git diff --check` | 无空白错误 |
 | 本机应用安装 | `/Applications/DnsmasqForMac.app` 已更新为 0.1.1（2），安装后嵌套签名校验通过；解锁后退出旧窗口并重开 |
+| 真实 Helper 批准与握手 | 2026-09-20 完成系统批准；`launchctl` 确认 system domain 服务和 Mach 端点运行，真实请求返回版本 0.1.1、协议 1、`euid=0`、Debug 构建 |
 
 复现命令（需完成仓库 README 中的签名和 dnsmasq 构建准备）：
 
@@ -55,7 +56,7 @@ git diff --check
 ## 尚未完成的验证
 
 - Mac 锁屏，未执行前台点击、键盘输入和 XCUITest。
-- 未重新验证系统升级后的 Helper 注册、系统授权和真实 XPC 往返。
+- Helper 授权拒绝、取消、再次批准及旧版本修复路径未实测；本轮只验证了首次批准成功路径。
 - 未接入 BMC/DHCP 客户端；没有声称 DHCP 获租约、BMC 网页连接或拔线后的完整清理已通过。
 - macOS 14–26、Intel/Rosetta 运行和 Developer ID 公证分发未在本轮验证。
 
