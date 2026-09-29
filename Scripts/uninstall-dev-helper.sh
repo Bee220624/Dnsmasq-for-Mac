@@ -183,12 +183,17 @@ ensure_helper_is_unloaded
 # with it. It is mentioned in the closing message as a last resort for the user to decide on.
 
 if [[ "${REMOVE_APP}" == "--remove-app" && -d "${INSTALLED_APP}" ]]; then
+    echo "==> authorizing removal of ${INSTALLED_APP} (requires admin)"
+    if ! "${SUDO_COMMAND}" -v; then
+        echo "error: admin authorization failed; the app was not removed" >&2
+        exit 1
+    fi
     # Nothing prompts between this check and rm. If credentials expired or activity reappeared,
     # the non-interactive journal check fails closed and preserves the installed app.
     ensure_uninstall_is_idle noninteractive
     ensure_helper_is_unloaded
     echo "==> removing ${INSTALLED_APP}"
-    rm -rf "${INSTALLED_APP}"
+    "${SUDO_COMMAND}" -n /bin/rm -rf "${INSTALLED_APP}"
 fi
 
 cat <<EOF

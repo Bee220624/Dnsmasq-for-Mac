@@ -155,19 +155,20 @@ rollback_on_failure() {
 
     if [[ ${status} -ne 0 && ${REPLACEMENT_INSTALLED} -eq 1 ]]; then
         echo "==> installation failed; restoring the previous application" >&2
-        if ! rm -rf "${INSTALLED_APP}"; then
+        if ! "${SUDO_COMMAND}" -n /bin/rm -rf "${INSTALLED_APP}"; then
             echo "error: could not remove the failed replacement at ${INSTALLED_APP}" >&2
-        elif [[ ${BACKUP_CREATED} -eq 1 ]] && ! mv "${BACKUP_APP}" "${INSTALLED_APP}"; then
+        elif [[ ${BACKUP_CREATED} -eq 1 ]] \
+            && ! "${SUDO_COMMAND}" -n /bin/mv "${BACKUP_APP}" "${INSTALLED_APP}"; then
             echo "error: could not restore the previous application from ${BACKUP_APP}" >&2
         fi
     elif [[ ${status} -ne 0 && ${BACKUP_CREATED} -eq 1 ]]; then
         echo "==> installation failed; restoring the previous application" >&2
-        if ! mv "${BACKUP_APP}" "${INSTALLED_APP}"; then
+        if ! "${SUDO_COMMAND}" -n /bin/mv "${BACKUP_APP}" "${INSTALLED_APP}"; then
             echo "error: could not restore the previous application from ${BACKUP_APP}" >&2
         fi
     fi
 
-    if [[ -e "${STAGED_APP}" ]] && ! rm -rf "${STAGED_APP}"; then
+    if [[ -e "${STAGED_APP}" ]] && ! "${SUDO_COMMAND}" -n /bin/rm -rf "${STAGED_APP}"; then
         echo "warning: could not remove staging path ${STAGED_APP}" >&2
     fi
 
@@ -191,9 +192,19 @@ if [[ ! -d "${APPLICATIONS_DIR}" ]]; then
     exit 1
 fi
 
+echo "==> authorizing a root-owned application install"
+if ! "${SUDO_COMMAND}" -v; then
+    echo "error: admin authorization is required to install the Helper and dnsmasq as root" >&2
+    exit 1
+fi
+
+# Authorization can wait for the user. Do not stage over a newly active session.
+ensure_install_is_idle
+
 echo "==> staging a copy at ${STAGED_APP}"
 # ditto preserves the signature; a plain recursive copy can invalidate nested code signatures.
-ditto "${BUILT_APP}" "${STAGED_APP}"
+"${SUDO_COMMAND}" -n /usr/bin/ditto "${BUILT_APP}" "${STAGED_APP}"
+"${SUDO_COMMAND}" -n /usr/sbin/chown -R root:wheel "${STAGED_APP}"
 
 echo "==> verifying the staged copy"
 codesign --verify --deep --strict --verbose=1 "${STAGED_APP}"
@@ -201,22 +212,27 @@ codesign --verify --deep --strict --verbose=1 "${STAGED_APP}"
 # Copying and authorization can take long enough for the user to reopen the app. Recheck every
 # activity signal immediately before the first mutation of the installed application.
 ensure_install_is_idle
+if ! "${SUDO_COMMAND}" -v; then
+    echo "error: admin authorization expired before replacing ${INSTALLED_APP}" >&2
+    exit 1
+fi
+ensure_install_is_idle
 
 if [[ -e "${INSTALLED_APP}" ]]; then
     echo "==> preserving the previous application for rollback"
-    mv "${INSTALLED_APP}" "${BACKUP_APP}"
+    "${SUDO_COMMAND}" -n /bin/mv "${INSTALLED_APP}" "${BACKUP_APP}"
     BACKUP_CREATED=1
 fi
 
 echo "==> installing to ${INSTALLED_APP}"
-mv "${STAGED_APP}" "${INSTALLED_APP}"
+"${SUDO_COMMAND}" -n /bin/mv "${STAGED_APP}" "${INSTALLED_APP}"
 REPLACEMENT_INSTALLED=1
 
 echo "==> verifying the installed copy"
 codesign --verify --deep --strict --verbose=1 "${INSTALLED_APP}"
 
 if [[ ${BACKUP_CREATED} -eq 1 ]]; then
-    if ! rm -rf "${BACKUP_APP}"; then
+    if ! "${SUDO_COMMAND}" -n /bin/rm -rf "${BACKUP_APP}"; then
         echo "warning: could not remove rollback backup ${BACKUP_APP}; the verified new app remains installed" >&2
     fi
     BACKUP_CREATED=0

@@ -2,7 +2,7 @@
 
 验证日期：2026-09-20。测试机为 macOS 27.0（26A428），Xcode 27.0（27A266a）。应用版本 0.1.1（2），Debug 本地开发签名，Team ID `MDUMXF88CA`。本轮从 `69c7f1f` 继续，修复清理保护、测试命令退出码和 UI fixture DNS 隔离。此构建不是已公证的对外发行包。
 
-当前状态：**软件回归、首次 Helper 批准和真实身份握手通过，M1 的 BMC 链路验收尚未完成。** 独立审查提出的 3 项代码阻断问题均已修复并加入回归测试；安装到“应用程序”后的系统批准路径和真实 Helper 握手已在测试 Mac 上完成。真实 DHCP 获租约、固定 IP BMC 连接、拔线清理和完整前台交互仍需实机验证。
+截至 2026-09-20：**软件回归、首次 Helper 批准和真实身份握手通过，M1 的 BMC 链路验收尚未完成。** 2026-09-29 现场预检发现引擎路径与安装所有权问题；见文末补充，先前握手通过不代表引擎可启动。真实 DHCP 获租约、固定 IP BMC 连接、拔线清理和完整前台交互仍需实机验证。
 
 - 未完成清理会持续保留 `cleanupFailed` 和恢复需求；预检、启动、Helper 移除均保持阻断，清理重试成功后才放开。
 - `test-xcode`、`test-ui` 和 `screenshots` 在命令内显式启用 `pipefail`；退出 42 的假 `xcodebuild` 现在能让三个目标失败，截图构建失败后不会继续渲染。
@@ -27,3 +27,9 @@
 主体实现已处理：非停止状态仍可移除 Helper、清理后运行状态变化未复查、旧握手覆盖新状态、`staleSessionRequiresAttention` 丢失清理入口、未注册但文件缺失时仍提供安装操作，以及清理失败可被预检清除的绕过路径。相关回归用例均通过。
 
 仍存在的限制：无回复的 XPC 回调尚无超时／取消完成机制，可能使操作持续等待；连接中断后的 Helper ready 显示没有新增即时失效机制，仍依赖刷新，不能把旧的 ready 当作实时连通证明。真实旧版本 Helper 修复、授权拒绝／取消及再次批准未经本轮验证。假客户端通过、离屏截图、签名校验或真实 Helper 握手均不能替代 BMC 链路实机验收。
+
+## 2026-09-29 现场补充：引擎预检失败
+
+已安装的 0.1.1（2）在概览页显示 `Engine Not Found`，技术详情为 `/Contents/Library/HelperTools/dnsmasq: No such file or directory`。检查确认 `/Applications/DnsmasqForMac.app/Contents/Library/HelperTools/dnsmasq` 实际存在，Helper 也由 `SMAppService` 在 system domain 运行。根因是 launchd 以相对路径设置 Helper 的 `argv[0]`，而 Helper 用该参数拼出 dnsmasq 路径；安装脚本还把内置引擎留为普通用户所有，与 Helper 的 root 所有权校验不符。先前的真实身份握手因此不能证明引擎预检或 DHCP 已可用。
+
+0.1.1（3）源码改为从内核查询 Helper 的实际可执行文件路径，开发安装脚本以管理员权限将应用包及内置引擎安装为 root 所有，并补充路径与安装回归测试。安装脚本回归 65 项、Helper 测试 74 项、App 测试 53 项，以及 Debug 构建与包校验均通过。仍须卸载运行中的旧 Helper、安装新应用、重新批准 Helper，并在真实应用中复查引擎预检；在此之前不记为实机修复通过。BMC 获租约、固定 IP 连接和拔线清理仍待现场验证。

@@ -1,7 +1,24 @@
+import Darwin
 import Foundation
 import Testing
 import MacNetDnsmasq
 import MacNetModels
+
+@Suite("Bundled executable paths")
+struct BundledPathTests {
+    @Test("the helper locates siblings from the kernel's executable path")
+    func executablePathUsesProcessIdentity() throws {
+        let executable = try #require(BundledPaths.executablePath(of: getpid()))
+        #expect(executable.hasPrefix("/"))
+        #expect(BundledPaths.helperExecutable == executable)
+        #expect(BundledPaths.helperToolsDirectory
+            == URL(fileURLWithPath: executable).deletingLastPathComponent().path)
+        #expect(BundledPaths.dnsmasq
+            == URL(fileURLWithPath: executable).deletingLastPathComponent()
+                .appending(path: "dnsmasq").path)
+        #expect(BundledPaths.executablePath(of: -1) == nil)
+    }
+}
 
 /// Coverage for the helper's runtime primitives.
 ///

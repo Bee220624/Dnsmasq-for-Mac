@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import MacNetModels
 
@@ -286,12 +287,23 @@ public protocol ExecutableVerifying: Sendable {
 /// helper executable sits at `…/Contents/Library/HelperTools/<label>`, so dnsmasq is its
 /// sibling — a relationship the app cannot influence.
 public enum BundledPaths {
+    public static func executablePath(of processIdentifier: Int32) -> String? {
+        var buffer = [UInt8](repeating: 0, count: Int(MAXPATHLEN) * 4)
+        let length = proc_pidpath(processIdentifier, &buffer, UInt32(buffer.count))
+        guard length > 0, length <= buffer.count else { return nil }
+
+        let path = String(decoding: buffer[0..<Int(length)], as: UTF8.self)
+        guard path.hasPrefix("/") else { return nil }
+        return URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+    }
+
     public static var helperExecutable: String {
-        CommandLine.arguments.first.flatMap { argument in
-            // Resolve to an absolute, symlink-free path so that a launch through a link
-            // cannot move where we look for dnsmasq.
-            URL(fileURLWithPath: argument).resolvingSymlinksInPath().path
-        } ?? "/"
+        // launchd may set argv[0] to the relative BundleProgram path. The kernel's path
+        // identifies the actual running executable, independent of argv and the working directory.
+        guard let path = executablePath(of: getpid()) else {
+            fatalError("cannot determine the Helper executable path")
+        }
+        return path
     }
 
     public static var helperToolsDirectory: String {

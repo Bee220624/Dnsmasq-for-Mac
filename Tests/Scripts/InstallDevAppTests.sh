@@ -121,6 +121,12 @@ new_fixture() {
         'fi' \
         'if (( noninteractive == 1 )) && [[ "$(<"${DFM_TEST_SUDO_STATE}")" == expired ]]; then exit 1; fi' \
         'if [[ "${1:-}" == /bin/launchctl ]]; then shift; exec "${DFM_TEST_LAUNCHCTL}" "$@"; fi' \
+        'if [[ "${1:-}" == /usr/bin/ditto ]]; then shift; exec "${DFM_TEST_STUB_BIN}/ditto" "$@"; fi' \
+        'if [[ "${1:-}" == /usr/sbin/chown ]]; then' \
+        '    if [[ "${DFM_TEST_CHOWN_FAIL:-0}" == 1 ]]; then exit 75; fi' \
+        '    exit 0' \
+        'fi' \
+        'if [[ "${1:-}" == /bin/rm ]]; then shift; exec "${DFM_TEST_STUB_BIN}/rm" "$@"; fi' \
         'exec "$@"'
 
     make_stub "${STUB_BIN}/pgrep" \
@@ -193,6 +199,7 @@ run_script() {
         DFM_TEST_APP_STATE="${FIXTURE}/app-state" \
         DFM_TEST_RUNTIME="${TEST_RUNTIME}" \
         DFM_TEST_LAUNCHCTL="${STUB_BIN}/launchctl" \
+        DFM_TEST_STUB_BIN="${STUB_BIN}" \
         DFM_TEST_SUDO_STATE="${FIXTURE}/sudo-state" \
         DFM_TEST_SUDO_LOG="${FIXTURE}/sudo.log" \
         DFM_SUDO_COMMAND="${STUB_BIN}/sudo" \
@@ -496,6 +503,42 @@ test_successful_upgrade_preserves_user_configuration() {
         || fail "successful upgrade: user configuration changed"
 }
 
+test_install_uses_root_owned_staging() {
+    new_fixture root-owned-install
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/install-dev-app.sh"
+
+    [[ ${SCRIPT_STATUS} -eq 0 ]] && pass "root-owned staging: install succeeds" \
+        || fail "root-owned staging: install failed"
+    grep -Fq -- '-n /usr/bin/ditto ' "${FIXTURE}/sudo.log" \
+        && pass "root-owned staging: copy runs with admin rights" \
+        || fail "root-owned staging: copy did not run with admin rights"
+    grep -Fq -- '-n /usr/sbin/chown -R root:wheel ' "${FIXTURE}/sudo.log" \
+        && pass "root-owned staging: installed bundle is assigned to root" \
+        || fail "root-owned staging: root ownership was not requested"
+}
+
+test_chown_failure_preserves_old_app() {
+    new_fixture chown-failure
+    export DFM_TEST_CHOWN_FAIL=1
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/install-dev-app.sh"
+    unset DFM_TEST_CHOWN_FAIL
+
+    [[ ${SCRIPT_STATUS} -ne 0 ]] && pass "chown failure: install returns non-zero" \
+        || fail "chown failure: install unexpectedly succeeded"
+    assert_old_app_preserved "chown failure"
+}
+
+test_uninstall_removes_root_owned_app() {
+    new_fixture root-owned-uninstall
+    run_script "${FIXTURE}/output" "${REPO_COPY}/Scripts/uninstall-dev-helper.sh" --remove-app
+
+    [[ ${SCRIPT_STATUS} -eq 0 ]] && pass "root-owned uninstall: uninstall succeeds" \
+        || fail "root-owned uninstall: uninstall failed"
+    grep -Fq -- '-n /bin/rm -rf ' "${FIXTURE}/sudo.log" \
+        && pass "root-owned uninstall: app removal runs with admin rights" \
+        || fail "root-owned uninstall: app removal did not run with admin rights"
+}
+
 test_loaded_helper_blocks_install
 test_unload_failure_is_fatal
 test_copy_failure_preserves_old_app
@@ -512,6 +555,9 @@ test_uninstall_rechecks_after_authorization
 test_sudo_failure_after_directory_probe_fails_closed
 test_uninstall_rechecks_before_app_removal
 test_successful_upgrade_preserves_user_configuration
+test_install_uses_root_owned_staging
+test_chown_failure_preserves_old_app
+test_uninstall_removes_root_owned_app
 
 printf '\n%d passed, %d failed\n' "${PASS_COUNT}" "${FAIL_COUNT}"
 (( FAIL_COUNT == 0 ))
