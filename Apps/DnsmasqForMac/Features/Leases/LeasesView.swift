@@ -49,9 +49,7 @@ struct LeasesView: View {
         ContentUnavailableView {
             Label("Waiting for DHCP clients…", systemImage: "antenna.radiowaves.left.and.right")
         } description: {
-            // Distinct from "not running" on purpose: here the service *is* up, so the next
-            // thing to check is the cable and whether the device has power — not Dnsmasq for Mac.
-            Text("Devices appear after requesting DHCP. A BMC with a fixed IP will not appear here. Check link and power; use the server's local console or documented BMC settings to find a fixed IP. Do not reset a production BMC just to obtain a lease.")
+            Text("Devices appear after requesting DHCP in this session. A BMC may still use an earlier lease or a fixed IP; try its last known address. Changing the pool does not force DHCP renewal, and Stop does not restore the BMC's previous network settings. Check DHCP mode on the BMC before requesting a new address.")
         }
         .accessibilityIdentifier("leases.emptyWaiting")
     }

@@ -717,13 +717,13 @@
         }
       }
     },
-    "Devices appear after requesting DHCP. A BMC with a fixed IP will not appear here. Check link and power; use the server's local console or documented BMC settings to find a fixed IP. Do not reset a production BMC just to obtain a lease.": {
+    "Devices appear after requesting DHCP in this session. A BMC may still use an earlier lease or a fixed IP; try its last known address. Changing the pool does not force DHCP renewal, and Stop does not restore the BMC's previous network settings. Check DHCP mode on the BMC before requesting a new address.": {
       "extractionState": "manual",
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "设备请求 DHCP 后才会显示。固定 IP 的 BMC 不会出现在这里。请检查链路和供电，并通过服务器本地控制台或已有 BMC 配置记录确认固定 IP。不要为了获取租约而重置生产 BMC。"
+            "value": "设备在本次会话请求 DHCP 后才会显示。BMC 可能仍在使用先前的租约或固定 IP，可尝试访问上次已知的地址。修改地址池不会强制 BMC 续租，停止服务也不会恢复 BMC 原来的网络设置。获取新地址前，请先在 BMC 上确认 DHCP 模式。"
           }
         }
       }
@@ -2235,6 +2235,17 @@
         }
       }
     },
+    "Single BMC only. Uses the current subnet and 100 + the local day. Existing leases change only when the BMC requests DHCP again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅用于直连一台 BMC。沿用当前网段，末段为 100 + 当地日期（日）。BMC 再次请求 DHCP 后，已有租约才可能更新。"
+          }
+        }
+      }
+    },
     "Start": {
       "extractionState": "manual",
       "localizations": {
@@ -2440,6 +2451,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法验证内置引擎。任何会话都无法启动。"
+          }
+        }
+      }
+    },
+    "The date preset requires a private /24 subnet and a target different from the Mac and advertised router.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日期预设需要私有 /24 网段，且目标 IP 不能与 Mac 或提供给客户端的网关相同。"
           }
         }
       }
@@ -2737,6 +2759,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "BMC 已启用自动获取地址时使用 DHCP。若已知 BMC 固定 IP，请关闭 DHCP，为 Mac 设置同网段地址，并将 DNS 保持为“仅本地记录”。"
+          }
+        }
+      }
+    },
+    "Use today's BMC address": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用今日 BMC 地址"
           }
         }
       }

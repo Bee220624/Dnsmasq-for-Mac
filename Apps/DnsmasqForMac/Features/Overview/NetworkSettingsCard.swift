@@ -33,6 +33,7 @@ struct NetworkSettingsCard: View {
                     if profile.dhcpConfiguration.enabled {
                         addressField("Pool start", value: $profile.dhcpConfiguration.rangeStart, id: "settings.rangeStart")
                         addressField("Pool end", value: $profile.dhcpConfiguration.rangeEnd, id: "settings.rangeEnd")
+                        dateBMCAddressPreset
                         LeaseDurationField(seconds: $profile.dhcpConfiguration.leaseDurationSeconds)
                         Toggle("Authoritative DHCP (isolated network only)", isOn: $profile.dhcpConfiguration.authoritative)
                         Toggle("Advertise this Mac as DNS", isOn: $profile.dhcpConfiguration.advertiseLocalDNSServer)
@@ -99,6 +100,34 @@ struct NetworkSettingsCard: View {
     private func addressField(_ title: LocalizedStringKey, value: Binding<IPv4Address>, id: String) -> some View {
         IPv4TextField(title: title, address: value)
             .accessibilityIdentifier(id)
+    }
+
+    private var dateBMCAddressPreset: some View {
+        TimelineView(.periodic(from: Calendar.current.startOfDay(for: Date()), by: 60)) { context in
+            let preset = DirectBMCDatePreset.applying(to: profile, on: context.date)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Button("Use today's BMC address") {
+                        if let updated = DirectBMCDatePreset.applying(to: profile) {
+                            profile = updated
+                        }
+                    }
+                    .disabled(preset == nil)
+                    .accessibilityIdentifier("settings.todayBMCAddress")
+                    if let preset {
+                        Text(verbatim: preset.dhcpConfiguration.rangeStart.description)
+                            .monospacedDigit()
+                    }
+                }
+                if preset == nil {
+                    Text("The date preset requires a private /24 subnet and a target different from the Mac and advertised router.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("Single BMC only. Uses the current subnet and 100 + the local day. Existing leases change only when the BMC requests DHCP again.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 }
 
