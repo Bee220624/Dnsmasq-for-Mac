@@ -7,7 +7,7 @@ final class OnboardingUITests: XCTestCase {
     func testOnboardingIsShownWhenTheHelperIsNotInstalled() throws {
         let app = XCUIApplication.launchForUITesting(fixture: "notRegistered")
         waitForElement(app.element("onboarding.installHelper"), "not installed must offer installation")
-        XCTAssertFalse(app.element("overview.profilePicker").exists)
+        XCTAssertFalse(app.element("overview.page").exists)
     }
 
     @MainActor
@@ -25,7 +25,7 @@ final class OnboardingUITests: XCTestCase {
         let retry = app.element("onboarding.retryHelper")
         guard waitUntilHittable(retry) else { return }
         retry.click()
-        waitForElement(app.element("overview.profilePicker"), "retry handshake should open configuration")
+        waitForElement(app.element("overview.page"), "retry handshake should show the connection overview")
         XCTAssertFalse(app.element("onboarding.openLoginItems").exists)
     }
 
@@ -34,7 +34,7 @@ final class OnboardingUITests: XCTestCase {
         for fixture in ["bundleIncomplete", "incompatible"] {
             let app = XCUIApplication.launchForUITesting(fixture: fixture)
             waitForElement(app.element("onboarding.\(fixture)"), "fixture should show its specific error")
-            XCTAssertFalse(app.element("overview.profilePicker").exists)
+            XCTAssertFalse(app.element("overview.page").exists)
             app.terminate()
         }
     }

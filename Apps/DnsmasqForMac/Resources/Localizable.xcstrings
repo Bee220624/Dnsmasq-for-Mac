@@ -123,6 +123,28 @@
         }
       }
     },
+    "Animation debug": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "动画调试"
+          }
+        }
+      }
+    },
+    "Animation preview only": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅预览动画，不会启动网络服务"
+          }
+        }
+      }
+    },
     "App bundle is incomplete": {
       "extractionState": "manual",
       "localizations": {
@@ -130,6 +152,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "App 包不完整"
+          }
+        }
+      }
+    },
+    "Appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外观"
           }
         }
       }
@@ -277,6 +310,28 @@
         }
       }
     },
+    "Check the Ethernet cable or BMC address.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请检查网线或 BMC 地址"
+          }
+        }
+      }
+    },
+    "Checking the previous session.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检查之前的会话。"
+          }
+        }
+      }
+    },
     "Checking…": {
       "extractionState": "manual",
       "localizations": {
@@ -409,6 +464,17 @@
         }
       }
     },
+    "Configure the connection before starting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动前先完成连接设置。"
+          }
+        }
+      }
+    },
     "Confirm the interface is on an isolated network.": {
       "extractionState": "manual",
       "localizations": {
@@ -420,6 +486,17 @@
         }
       }
     },
+    "Connect": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
+          }
+        }
+      }
+    },
     "Connect a USB or Thunderbolt Ethernet adapter. Wi-Fi and the interface carrying this Mac's internet connection cannot be used.": {
       "extractionState": "manual",
       "localizations": {
@@ -427,6 +504,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "请连接 USB 或 Thunderbolt 以太网卡。Wi-Fi 以及承载本机互联网连接的接口不可使用。"
+          }
+        }
+      }
+    },
+    "Connect to review your network and start.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击连接，确认网络后即可启动。"
           }
         }
       }
@@ -449,6 +537,83 @@
           "stringUnit": {
             "state": "translated",
             "value": "已连接"
+          }
+        }
+      }
+    },
+    "Connecting your local network…": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在连接本地网络…"
+          }
+        }
+      }
+    },
+    "Connecting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接中…"
+          }
+        }
+      }
+    },
+    "Connection appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接页面风格"
+          }
+        }
+      }
+    },
+    "Connection failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接失败"
+          }
+        }
+      }
+    },
+    "Connection needs attention": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接需要处理"
+          }
+        }
+      }
+    },
+    "Connection settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接设置"
+          }
+        }
+      }
+    },
+    "Connection successful": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接成功"
           }
         }
       }
@@ -526,6 +691,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "自定义 DNS"
+          }
+        }
+      }
+    },
+    "Cyber tunnel": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "赛博隧道"
           }
         }
       }
@@ -761,6 +937,39 @@
         }
       }
     },
+    "Disconnect": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "断开连接"
+          }
+        }
+      }
+    },
+    "Disconnecting": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在断开"
+          }
+        }
+      }
+    },
+    "Disconnecting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在断开…"
+          }
+        }
+      }
+    },
     "Dismiss": {
       "extractionState": "manual",
       "localizations": {
@@ -926,6 +1135,17 @@
         }
       }
     },
+    "Establishing a local connection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在建立本地连接…"
+          }
+        }
+      }
+    },
     "Ethernet": {
       "extractionState": "manual",
       "localizations": {
@@ -977,6 +1197,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "未通过"
+          }
+        }
+      }
+    },
+    "Failure": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败"
           }
         }
       }
@@ -1421,6 +1652,28 @@
         }
       }
     },
+    "MacBook": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MacBook"
+          }
+        }
+      }
+    },
+    "MacBook to server": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MacBook 与服务器"
+          }
+        }
+      }
+    },
     "Make another profile the default first": {
       "extractionState": "manual",
       "localizations": {
@@ -1432,6 +1685,17 @@
         }
       }
     },
+    "Making the connection": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在建立连接"
+          }
+        }
+      }
+    },
     "Manually selected interface": {
       "extractionState": "manual",
       "localizations": {
@@ -1439,6 +1703,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "手动选择网口"
+          }
+        }
+      }
+    },
+    "Minimal": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "极简"
           }
         }
       }
@@ -1472,6 +1747,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "网络地址"
+          }
+        }
+      }
+    },
+    "Network services are active on the selected adapter.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所选网卡上的网络服务已启动。"
+          }
+        }
+      }
+    },
+    "Network services are ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网络服务已就绪。"
           }
         }
       }
@@ -1751,6 +2048,17 @@
         }
       }
     },
+    "Plug in an Ethernet cable to get started.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接上网线，即可开始。"
+          }
+        }
+      }
+    },
     "Pool end": {
       "extractionState": "manual",
       "localizations": {
@@ -1791,6 +2099,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "检查中"
+          }
+        }
+      }
+    },
+    "Preparing network services on your Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在 Mac 上准备网络服务。"
+          }
+        }
+      }
+    },
+    "Preview outcome": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览结果"
           }
         }
       }
@@ -1890,6 +2220,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "就绪"
+          }
+        }
+      }
+    },
+    "Ready to connect": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "准备连接"
           }
         }
       }
@@ -2048,6 +2389,17 @@
         }
       }
     },
+    "Restoring your session": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在恢复会话"
+          }
+        }
+      }
+    },
     "Resume": {
       "extractionState": "manual",
       "localizations": {
@@ -2070,6 +2422,17 @@
         }
       }
     },
+    "Retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
+          }
+        }
+      }
+    },
     "Revert": {
       "extractionState": "manual",
       "localizations": {
@@ -2077,6 +2440,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "还原"
+          }
+        }
+      }
+    },
+    "Review the details below, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看下方详情后重试。"
           }
         }
       }
@@ -2176,6 +2550,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "请选择要删除的配置"
+          }
+        }
+      }
+    },
+    "Server": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器"
           }
         }
       }
@@ -2367,6 +2752,17 @@
         }
       }
     },
+    "Stopping services and restoring your network.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在停止服务并恢复网络设置。"
+          }
+        }
+      }
+    },
     "Subnet mask": {
       "extractionState": "manual",
       "localizations": {
@@ -2385,6 +2781,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "子网前缀"
+          }
+        }
+      }
+    },
+    "Success": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功"
           }
         }
       }
@@ -2873,6 +3280,39 @@
         }
       }
     },
+    "Your Mac and server, one connection away.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轻点连接，让 Mac 与服务器相连。"
+          }
+        }
+      }
+    },
+    "Your local network is ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地网络已就绪。"
+          }
+        }
+      }
+    },
+    "Your service is running": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务已启动"
+          }
+        }
+      }
+    },
     "dnsmasq": {
       "extractionState": "manual",
       "localizations": {
@@ -2924,6 +3364,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "所选网口"
+          }
+        }
+      }
+    },
+    "Reduce motion": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "减少动态效果"
           }
         }
       }

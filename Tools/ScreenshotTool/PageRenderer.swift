@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import MacNetModels
+import MacNetXPC
 
 /// Renders each page to a PNG, off-screen.
 ///
@@ -49,7 +50,7 @@ struct PageRenderer {
     /// These are the production types, constructed against a throwaway profile directory and a
     /// helper that is not installed — which is exactly the state a new user is in, and the one
     /// worth showing.
-    private func makeEnvironment() -> AppEnvironmentFixture {
+    private func makeEnvironment(helperClient: (any HelperLifecycleClient)? = nil) -> AppEnvironmentFixture {
         // Built explicitly rather than resolved from `Bundle.main`. Inside a test bundle,
         // `Bundle.main` is the xctest runner, so Settings would report version 16.0 and
         // `com.apple.dt.xctest.tool` — a screenshot that misstates the app's own identity.
@@ -68,7 +69,12 @@ struct PageRenderer {
             }(),
             architecture: "arm64"
         )
-        let helperStatus = HelperStatusModel(environment: appEnvironment)
+        let helperStatus: HelperStatusModel
+        if let helperClient {
+            helperStatus = HelperStatusModel(client: helperClient)
+        } else {
+            helperStatus = HelperStatusModel(environment: appEnvironment)
+        }
 
         let profileDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "dnsmasqformac-screenshots-\(UUID().uuidString)")
@@ -117,6 +123,8 @@ struct PageRenderer {
             .environment(fixture.leases)
             .environment(fixture.logs)
             .environment(\.appEnvironment, fixture.appEnvironment)
+            .environment(\.scenePhase, .active)
+            .environment(\.colorScheme, .light)
             .frame(width: Self.size.width, height: Self.size.height)
             // The renderer has no window to inherit a background from, so one is supplied —
             // otherwise the PNG would have a transparent ground and read as broken.
@@ -192,9 +200,15 @@ struct PageRenderer {
             page { OnboardingView() }
         }
 
-        try render("02-overview", fixture) {
-            page { OverviewConfigurationPreview() }
-        }
+        let connectionClient = ScreenshotSessionClient()
+        let connectionFixture = makeEnvironment(helperClient: connectionClient)
+        defer { try? FileManager.default.removeItem(at: connectionFixture.profileDirectory) }
+        await connectionFixture.profiles.load()
+        connectionFixture.interfaces.refresh()
+        await connectionFixture.helperStatus.refresh()
+
+        try render("02-overview", connectionFixture) { ConnectionOverview() }
+        try renderConnectionPreviews()
 
         try render("03-leases", fixture) {
             page { LeasesView() }
@@ -216,19 +230,144 @@ struct PageRenderer {
             page { NetworkSettingsPreview() }
         }
 
+        let expectedPages: Set<String> = [
+            "01-onboarding.png", "02-overview.png", "03-leases.png", "04-logs.png",
+            "05-profiles.png", "06-settings.png", "07-network-settings.png", "08-connecting.png",
+            "09-connected.png", "10-ready-to-connect.png", "11-connection-failed.png", "12-reduced-motion.png",
+        ]
         let written = try FileManager.default
             .contentsOfDirectory(atPath: outputDirectory.path)
-            .filter { $0.hasSuffix(".png") }
+            .filter { expectedPages.contains($0) }
             .sorted()
         for name in written {
             print("    \(outputDirectory.appending(path: name).path)")
         }
-        guard written.count == 7 else {
+        guard written.count == expectedPages.count else {
             FileHandle.standardError.write(
-                Data("expected seven pages, wrote \(written)\n".utf8))
+                Data("expected twelve pages, wrote \(written)\n".utf8))
             exit(EXIT_FAILURE)
         }
     }
+
+    private static let previewSize = CGSize(width: 900, height: 680)
+    private static let previewEpoch = Date(timeIntervalSinceReferenceDate: 0)
+
+    /// Uses the production composition with an explicit clock, so snapshots do not depend on
+    /// capture speed, service readiness, or when an off-screen window receives its next frame.
+    private func connectionPreview(
+        journey: ConnectionJourney, at date: Date, reducedMotion: Bool = false
+    ) -> some View {
+        ConnectionExperience(journey: journey, snapshotDate: date) { frame, date in
+            ConnectionPreviewButton(frame: frame, date: date) {}
+        }
+        .environment(\.connectionReducedMotionPreview, reducedMotion)
+        .environment(\.scenePhase, .active)
+        .environment(\.colorScheme, .light)
+        .padding(.horizontal, 32)
+        .frame(width: Self.previewSize.width, height: Self.previewSize.height)
+        .background(Color.white)
+    }
+
+    private func previewJourney(succeeds: Bool) -> ConnectionJourney {
+        var journey = ConnectionJourney()
+        journey.begin(at: Self.previewEpoch.addingTimeInterval(0.5))
+        journey.resolve(
+            succeeds ? .success : .failure,
+            at: Self.previewEpoch.addingTimeInterval(succeeds ? 2.2 : 2.25)
+        )
+        return journey
+    }
+
+    private func previewHost() throws -> (NSWindow, NSHostingView<AnyView>, NSBitmapImageRep) {
+        let hosting = NSHostingView(rootView: AnyView(Color.white))
+        hosting.frame = CGRect(origin: .zero, size: Self.previewSize)
+        let window = NSWindow(
+            contentRect: hosting.frame, styleMask: [.titled], backing: .buffered, defer: false
+        )
+        window.appearance = NSAppearance(named: .aqua)
+        window.contentView = hosting
+        guard let bitmap = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(Self.previewSize.width), pixelsHigh: Int(Self.previewSize.height),
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ) else {
+            throw CocoaError(.coderInvalidValue)
+        }
+        bitmap.size = Self.previewSize
+        return (window, hosting, bitmap)
+    }
+
+    private func capture(
+        journey: ConnectionJourney, at date: Date, reducedMotion: Bool = false,
+        hosting: NSHostingView<AnyView>, bitmap: NSBitmapImageRep, to url: URL
+    ) throws {
+        hosting.rootView = AnyView(connectionPreview(journey: journey, at: date, reducedMotion: reducedMotion))
+        hosting.layoutSubtreeIfNeeded()
+        hosting.setNeedsDisplay(hosting.bounds)
+        hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+        guard let png = bitmap.representation(using: .png, properties: [:]) else {
+            throw CocoaError(.coderInvalidValue)
+        }
+        try png.write(to: url)
+    }
+
+    func renderConnectionPreviews() throws {
+        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        let (window, hosting, bitmap) = try previewHost()
+        defer { window.contentView = nil }
+        let success = previewJourney(succeeds: true)
+        let failure = previewJourney(succeeds: false)
+        let snapshots: [(String, ConnectionJourney, TimeInterval, Bool)] = [
+            ("08-connecting", success, 2.2, false),
+            ("09-connected", success, 4.0, false),
+            ("10-ready-to-connect", ConnectionJourney(), 0, false),
+            ("11-connection-failed", failure, 3.2, false),
+            ("12-reduced-motion", success, 2.2, true),
+        ]
+        for (name, journey, seconds, reducedMotion) in snapshots {
+            try capture(
+                journey: journey, at: Self.previewEpoch.addingTimeInterval(seconds),
+                reducedMotion: reducedMotion, hosting: hosting, bitmap: bitmap,
+                to: outputDirectory.appending(path: "\(name).png")
+            )
+        }
+    }
+
+    /// Exports fixed 60 fps timeline samples. PNG encoding may run slower or faster than
+    /// playback, but never stretches animation timings or requires a real network session.
+    func renderConnectionAnimations() throws {
+        try renderConnectionPreviews()
+        let (window, hosting, bitmap) = try previewHost()
+        defer { window.contentView = nil }
+        let framesPerSecond = 60
+        let durationSeconds = 4.2
+        let frameCount = Int(durationSeconds * Double(framesPerSecond))
+        for succeeds in [true, false] {
+            let outcome = succeeds ? "success" : "failure"
+            let framesDirectory = outputDirectory.appending(path: "\(outcome)-frames")
+            try FileManager.default.createDirectory(at: framesDirectory, withIntermediateDirectories: true)
+            let journey = previewJourney(succeeds: succeeds)
+            for index in 0..<frameCount {
+                try autoreleasepool {
+                    let date = Self.previewEpoch.addingTimeInterval(Double(index) / Double(framesPerSecond))
+                    try capture(
+                        journey: index < framesPerSecond / 2 ? ConnectionJourney() : journey,
+                        at: date, hosting: hosting, bitmap: bitmap,
+                        to: framesDirectory.appending(path: String(format: "frame-%03d.png", index))
+                    )
+                }
+            }
+            let metadata = try JSONSerialization.data(withJSONObject: [
+                "frames": frameCount, "framesPerSecond": framesPerSecond,
+                "durationSeconds": durationSeconds, "beginSeconds": 0.5,
+                "outcome": outcome,
+            ])
+            try metadata.write(to: framesDirectory.appending(path: "timing.json"))
+            print("    \(framesDirectory.path): \(frameCount) frames at \(framesPerSecond) fps")
+        }
+    }
+
 }
 
 private struct NetworkSettingsPreview: View {
@@ -244,36 +383,31 @@ private struct NetworkSettingsPreview: View {
     }
 }
 
-/// The Overview cards, composed directly.
-///
-/// `OverviewView` shows onboarding until the helper is usable, which is correct behaviour but
-/// means the configuration cards are unreachable on a machine without a helper installed. This
-/// renders the same cards so the layout can be reviewed regardless.
-private struct OverviewConfigurationPreview: View {
-    @Environment(ProfileLibrary.self) private var library
-    @Environment(InterfaceMonitor.self) private var interfaces
+/// Preview-only lifecycle data. Rendering never starts a process or changes the network.
+private actor ScreenshotSessionClient: HelperLifecycleClient {
+    private var state: RuntimeState = .stopped
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                ProfileCard(isLocked: false)
-                InterfaceCard(isLocked: false)
-
-                if let profile = library.draft?.working,
-                   profile.dhcpConfiguration.enabled {
-                    SafetyCard(
-                        interfaceName: interfaces.selected?.bsdName,
-                        poolDescription: "\(profile.dhcpConfiguration.rangeStart) – "
-                            + "\(profile.dhcpConfiguration.rangeEnd)",
-                        isLocked: false
-                    )
-                }
-
-                PreflightCard(canValidate: true) {}
-            }
-            .padding(20)
-            .frame(maxWidth: 900, alignment: .leading)
-            .frame(maxWidth: .infinity)
-        }
+    func runtimeStatus() -> RuntimeState { state }
+    func installationState() -> HelperInstallationState { .enabled }
+    func handshake() -> HelperReadiness {
+        .ready(HelperServiceInfoSnapshot(HelperServiceInfo(
+            helperVersion: "Screenshot", protocolVersion: MacNetCoreInfo.protocolVersion,
+            effectiveUID: 0, buildType: .debug, bundleIdentifier: "screenshot", engineVerification: nil
+        )))
+    }
+    func recoverStaleState() -> RecoveryReport { RecoveryReport(outcome: .nothingToRecover) }
+    func install() -> HelperInstallationState { .enabled }
+    func uninstall() {}
+    nonisolated func openLoginItemsSettings() {}
+    func preflight(_ request: SessionStartRequest) -> PreflightReport { .pending(at: Date()) }
+    func startSession(_ request: SessionStartRequest) throws(ServiceFailure) -> ActiveSession {
+        throw ServiceFailure.invalidRequest("Screenshots cannot start network services.")
+    }
+    func stopSession(id: UUID) { state = .stopped }
+    func leaseSnapshot(sessionID: UUID) -> LeaseSnapshot {
+        LeaseSnapshot(sessionID: sessionID, leases: [], readAt: Date(), malformedLineCount: 0)
+    }
+    func logSnapshot(sessionID: UUID, after sequence: Int64) -> LogBatch {
+        LogBatch(sessionID: sessionID, events: [], highestSequence: sequence)
     }
 }

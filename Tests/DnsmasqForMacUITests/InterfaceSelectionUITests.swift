@@ -20,16 +20,18 @@ final class InterfaceSelectionUITests: XCTestCase {
         // Exactly one of the two, never neither. A blank Overview would be indistinguishable
         // from a page that failed to load.
         let onboarding = app.element("onboarding.page")
-        let picker = app.element("overview.interfacePicker")
+        let diagram = app.element("overview.page")
 
         let settled = onboarding.waitForExistence(timeout: 15)
-            || picker.waitForExistence(timeout: 5)
-        XCTAssertTrue(settled, "Overview must show onboarding or the configuration cards")
+            || diagram.waitForExistence(timeout: 5)
+        XCTAssertTrue(settled, "Overview must show onboarding or the connection panel")
     }
 
     @MainActor
     func testInterfaceCardIsPresentWhenTheHelperIsReady() throws {
         let app = XCUIApplication.launchForUITesting()
+
+        openConnectionSettings(in: app)
 
         XCTAssertTrue(isConfigurationShown(app), "ready fixture must show configuration")
         XCTAssertTrue(app.element("overview.interfacePicker").exists)
@@ -38,6 +40,8 @@ final class InterfaceSelectionUITests: XCTestCase {
     @MainActor
     func testRefreshIsAvailableWhenTheHelperIsReady() throws {
         let app = XCUIApplication.launchForUITesting()
+
+        openConnectionSettings(in: app)
 
         XCTAssertTrue(isConfigurationShown(app), "ready fixture must show configuration")
 
@@ -51,14 +55,15 @@ final class InterfaceSelectionUITests: XCTestCase {
     }
 
     @MainActor
-    func testStartStaysDisabledWhateverOverviewShows() throws {
+    func testConnectDoesNotStartWithoutIsolationConfirmation() throws {
         let app = XCUIApplication.launchForUITesting()
 
         let start = app.buttons["overview.startButton"]
         waitForElement(start, "the start button should exist")
 
-        // Choosing an interface is necessary but nowhere near sufficient: the helper must be
-        // installed, preflight must pass, and the isolation confirmation must be given.
-        XCTAssertFalse(start.isEnabled)
+        guard waitUntilHittable(start) else { return }
+        start.click()
+        waitForElement(app.element("overview.safetyConfirmation"), "confirmation should be offered")
+        XCTAssertEqual(app.element("status.phase").value as? String, "Stopped")
     }
 }

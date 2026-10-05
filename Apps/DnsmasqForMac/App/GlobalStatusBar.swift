@@ -45,8 +45,6 @@ struct GlobalStatusBar: View {
     @Environment(SessionController.self) private var session
     @Environment(ProfileLibrary.self) private var library
     @Environment(InterfaceMonitor.self) private var interfaces
-    @Environment(HelperStatusModel.self) private var helper
-    @Environment(\.sessionRequests) private var sessionRequests
 
     var body: some View {
         HStack(spacing: 16) {
@@ -68,7 +66,7 @@ struct GlobalStatusBar: View {
 
             Spacer(minLength: 12)
 
-            startStopButton
+            SessionActionButton()
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -106,79 +104,4 @@ struct GlobalStatusBar: View {
         .accessibilityElement(children: .combine)
     }
 
-    @ViewBuilder
-    private var startStopButton: some View {
-        if session.activeSession != nil || session.lastFailure?.code == .cleanupFailed {
-            Button {
-                Task { await session.stop() }
-            } label: {
-                Label(session.activeSession == nil ? "Clean Up" : "Stop", systemImage: "stop.fill")
-                    .frame(minWidth: 64)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
-            .disabled(session.isBusy)
-            .keyboardShortcut(".", modifiers: .command)
-            .accessibilityIdentifier("overview.stopButton")
-            .accessibilityValue(Text("Running"))
-        } else {
-            Button {
-                Task { await start() }
-            } label: {
-                Label("Start", systemImage: "play.fill")
-                    .frame(minWidth: 64)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(!canStart)
-            .accessibilityIdentifier("overview.startButton")
-            .accessibilityValue(Text(canStart ? "Ready" : "Not ready"))
-            .help(startHelp)
-        }
-    }
-
-    /// Whether Start is offered.
-    ///
-    /// The helper refuses anything unsafe regardless — this only decides whether to present an
-    /// action that would certainly fail. Both layers matter.
-    private var canStart: Bool {
-        session.canStart(
-            profile: library.draft?.working,
-            hasInterface: interfaces.selected != nil,
-            helperReady: isHelperReady && !helper.isBusy
-        )
-    }
-
-    private var isHelperReady: Bool {
-        if case .ready = helper.readiness { return true }
-        return false
-    }
-
-    /// Explains a disabled Start, so the user is never left guessing which of several
-    /// preconditions is missing.
-    private var startHelp: Text {
-        if !isHelperReady {
-            return Text("Install the privileged helper in Settings first.")
-        }
-        if interfaces.selected == nil {
-            return Text("Choose a network interface.")
-        }
-        if let profile = library.draft?.working,
-           session.requiresIsolationConfirmation(for: profile),
-           !session.isolationConfirmed {
-            return Text("Confirm the interface is on an isolated network.")
-        }
-        if session.preflightReport?.hasBlockingIssues == true {
-            return Text("Fix the problems listed under Preflight.")
-        }
-        return Text("Start the DHCP and DNS service.")
-    }
-
-    private func start() async {
-        guard let request = sessionRequests.make(
-            draft: library.draft,
-            interface: interfaces.selected,
-            isolationConfirmed: session.isolationConfirmed
-        ) else { return }
-        await session.start(request)
-    }
 }

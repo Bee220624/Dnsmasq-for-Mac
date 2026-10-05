@@ -3,6 +3,7 @@ import SwiftUI
 /// Main window shell: fixed sidebar, persistent status bar, and the selected page.
 struct RootView: View {
     @Environment(AppRouter.self) private var router
+    @Environment(HelperStatusModel.self) private var helper
 
     var body: some View {
         @Bindable var router = router
@@ -20,13 +21,20 @@ struct RootView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 260)
         } detail: {
             VStack(spacing: 0) {
-                GlobalStatusBar()
-                Divider()
+                if router.selectedSection != .overview || !isHelperReady {
+                    GlobalStatusBar()
+                    Divider()
+                }
                 detail
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationTitle(router.selectedSection.navigationTitle)
         }
+    }
+
+    private var isHelperReady: Bool {
+        if case .ready = helper.readiness { return true }
+        return false
     }
 
     @ViewBuilder

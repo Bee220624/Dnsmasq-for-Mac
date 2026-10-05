@@ -8,6 +8,7 @@ import AppKit
 // Usage:
 //
 //     DnsmasqForMacScreenshots --output <directory> [-AppleLanguages "(zh-Hans)"]
+//     DnsmasqForMacScreenshots --output <directory> --animate-connection
 //
 // The language is selected the way macOS selects it for any app — through `AppleLanguages` —
 // so the output is localized exactly as the shipping app would be in that language.
@@ -40,7 +41,12 @@ final class ToolDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         Task { @MainActor in
             do {
-                try await PageRenderer(outputRoot: outputRoot).renderPages()
+                let renderer = PageRenderer(outputRoot: outputRoot)
+                if arguments.contains("--animate-connection") {
+                    try renderer.renderConnectionAnimations()
+                } else {
+                    try await renderer.renderPages()
+                }
                 exit(EXIT_SUCCESS)
             } catch {
                 FileHandle.standardError.write(Data("render failed: \(error)\n".utf8))

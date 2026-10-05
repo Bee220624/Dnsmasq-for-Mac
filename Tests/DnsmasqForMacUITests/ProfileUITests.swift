@@ -11,6 +11,7 @@ final class ProfileUITests: XCTestCase {
     @MainActor
     func testProfileCardIsPresentWhenTheHelperIsReady() throws {
         let app = XCUIApplication.launchForUITesting()
+        openConnectionSettings(in: app)
 
         XCTAssertTrue(isConfigurationShown(app), "ready fixture must show configuration")
         XCTAssertTrue(app.element("overview.profilePicker").exists)
@@ -19,6 +20,7 @@ final class ProfileUITests: XCTestCase {
     @MainActor
     func testSaveAndRevertAreDisabledWithoutChanges() throws {
         let app = XCUIApplication.launchForUITesting()
+        openConnectionSettings(in: app)
 
         XCTAssertTrue(isConfigurationShown(app), "ready fixture must show configuration")
 

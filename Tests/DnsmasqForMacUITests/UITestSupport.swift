@@ -38,6 +38,15 @@ extension XCUIApplication {
 
 extension XCTestCase {
 
+    @MainActor
+    func openConnectionSettings(in app: XCUIApplication) {
+        if app.element("overview.interfacePicker").exists { return }
+        let connect = app.buttons["overview.startButton"]
+        guard waitUntilHittable(connect) else { return }
+        connect.click()
+        waitForElement(app.element("overview.interfacePicker"), "connection settings should open")
+    }
+
     /// Waits for an element to become hittable, not merely to exist.
     ///
     /// `waitForExistence` returns as soon as the element is in the tree, which on macOS happens
